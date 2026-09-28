@@ -1,0 +1,2 @@
+import { Component, inject } from '@angular/core'; import { ActivatedRoute, RouterLink } from '@angular/router';
+@Component({ imports:[RouterLink], template:`<main class="center-page"><section class="simple-card"><strong class="error-code">{{data['code']}}</strong><h1>{{data['title']}}</h1><p>{{data['message']}}</p><a class="primary button-link" routerLink="/">Return home</a></section></main>` }) export class MessagePage { data=inject(ActivatedRoute).snapshot.data; }

@@ -1,0 +1,2 @@
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core'; import { AppIcon } from '../icon/app-icon';
+@Component({selector:'app-empty-state',imports:[AppIcon],templateUrl:'./empty-state.html',styleUrl:'./empty-state.scss',changeDetection:ChangeDetectionStrategy.OnPush})export class EmptyState{title=input('No data found');description=input('There are no records to display.');actionLabel=input('');action=output<void>();}

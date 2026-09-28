@@ -1,0 +1,1 @@
+<label><app-icon name="search" [size]="18"/><input #field type="search" [value]="value()" [placeholder]="placeholder()" [attr.aria-label]="label()" (input)="update(field.value)">@if(field.value){<button type="button" aria-label="Clear search" (click)="clear(field)"><app-icon name="close" [size]="16"/></button>}</label>

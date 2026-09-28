@@ -1,0 +1,1 @@
+.progress{position:fixed;inset:0 0 auto;height:3px;background:#d7e8f4;z-index:120;overflow:hidden}.progress span{display:block;width:35%;height:100%;background:var(--color-blue-700);animation:move 1s ease-in-out infinite}@keyframes move{from{transform:translateX(-100%)}to{transform:translateX(400%)}}@media(prefers-reduced-motion:reduce){.progress span{animation-duration:2.5s}}

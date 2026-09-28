@@ -1,0 +1,2 @@
+import {HttpClient} from '@angular/common/http'; import {inject,Injectable} from '@angular/core';
+@Injectable({providedIn:'root'}) export class ProfileApiService{private http=inject(HttpClient);uploadImage(file:File){const body=new FormData();body.append('image',file,file.name);return this.http.post<{data:{url:string}}>('/api/v1/profile/image',body,{headers:{'X-Handle-Error-Locally':'true'}});}deleteImage(){return this.http.delete('/api/v1/profile/image');}image(){return this.http.get('/api/v1/profile/image',{responseType:'blob'});}}

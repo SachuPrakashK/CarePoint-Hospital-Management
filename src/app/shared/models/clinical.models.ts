@@ -1,0 +1,6 @@
+export interface Patient { id:string; mrn:string; firstName:string; middleName?:string; lastName:string; dob:string; gender:string; bloodGroup:string; phone:string; email?:string; city:string; emergencyContact?:string; allergies:string[]; status:'Active'|'Inactive'; createdAt:string; }
+export type AppointmentStatus='Scheduled'|'Confirmed'|'Checked In'|'Waiting'|'In Consultation'|'Completed'|'Cancelled'|'No Show';
+export interface Appointment { id:string; number:string; patientId:string; patientName:string; department:string; doctor:string; date:string; time:string; type:string; consultationType:string; reason:string; fee:number; status:AppointmentStatus; token?:number; }
+export interface Vital { id:string; recordedAt:string; recordedBy:string; temperature?:number; pulse?:number; systolic?:number; diastolic?:number; spo2?:number; height?:number; weight?:number; bmi?:number; painScore?:number; }
+export interface PrescriptionItem { medicine:string; strength:string; dose:string; frequency:string; route:string; duration:string; quantity:number; instructions:string; }
+export interface Consultation { appointmentId:string; chiefComplaint:string; symptoms:string; examination:string; primaryDiagnosis:string; secondaryDiagnoses:string[]; notes:string; treatmentPlan:string; vitals:Vital[]; prescription:unknown[]; followUpDate?:string; followUpInstructions?:string; }

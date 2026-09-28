@@ -1,0 +1,1 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core'; import { LoadingService } from '../../../core/services/loading.service'; @Component({selector:'app-global-loader',templateUrl:'./global-loader.html',styleUrl:'./global-loader.scss',changeDetection:ChangeDetectionStrategy.OnPush})export class GlobalLoader{readonly loading=inject(LoadingService)}

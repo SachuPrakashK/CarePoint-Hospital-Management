@@ -1,0 +1,246 @@
+:host {
+  display: block;
+}
+.app-shell {
+  min-height: 100vh;
+  background: var(--color-background);
+}
+aside {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--sidebar-width, 260px);
+  background: var(--color-blue-900);
+  color: #dbeafa;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  transition: transform 0.2s ease;
+}
+.logo {
+  height: var(--header-height, 72px);
+  display: flex;
+  align-items: center;
+  padding: 18px;
+}
+.logo img {
+  display: block;
+  width: 190px;
+  height: 44px;
+  object-fit: contain;
+}
+nav {
+  padding: 10px 12px;
+  display: grid;
+  gap: 3px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+nav a,
+.settings-link {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 12px;
+  color: #d9e8f4;
+  text-decoration: none;
+  border-radius: 7px;
+  font-size: 13px;
+}
+nav a:hover,
+nav a.active,
+.settings-link:hover,
+.settings-link.active {
+  color: #fff;
+  background: #6fa3d833;
+}
+.nav-icon {
+  width: 22px;
+  display: grid;
+  place-items: center;
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px;
+  border-top: 1px solid #ffffff1a;
+}
+.workspace {
+  margin-left: var(--sidebar-width, 260px);
+  min-height: 100vh;
+  transition: margin 0.2s ease;
+}
+header {
+  height: var(--header-height, 72px);
+  background: #fff;
+  border-bottom: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: auto minmax(220px, 430px) 1fr;
+  align-items: center;
+  gap: 20px;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.global-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f4f8fb;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0 12px;
+  color: var(--color-blue-700);
+}
+.global-search input {
+  border: 0;
+  background: transparent;
+  height: 40px;
+  outline: 0;
+  flex: 1;
+}
+.header-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.icon-button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-blue-700);
+  position: relative;
+  padding: 8px;
+}
+.icon-button i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: #d9463e;
+  border-radius: 50%;
+  right: 5px;
+  top: 5px;
+}
+.user-menu {
+  position: relative;
+}
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text);
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.profile small {
+  display: block;
+  color: var(--color-muted);
+}
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #dcecf7;
+  color: var(--color-blue-700);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 30;
+  width: 190px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  padding: 6px;
+  box-shadow: var(--shadow-dialog);
+}
+.profile-dropdown a,
+.profile-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  text-decoration: none;
+}
+.profile-dropdown a:hover,
+.profile-dropdown button:hover {
+  background: #edf5fb;
+}
+.workspace main {
+  padding: 28px;
+}
+.collapsed aside {
+  transform: translateX(-100%);
+}
+.collapsed .workspace {
+  margin-left: 0;
+}
+.backdrop {
+  display: none;
+}
+@media (max-width: 850px) {
+  aside,
+  .collapsed aside {
+    transform: translateX(-100%);
+  }
+  aside.open,
+  .collapsed aside.open {
+    transform: translateX(0);
+  }
+  .workspace,
+  .collapsed .workspace {
+    margin-left: 0;
+  }
+  header {
+    grid-template-columns: auto 1fr;
+    padding: 0 16px;
+  }
+  .global-search {
+    display: none;
+  }
+  .workspace main {
+    padding: 18px;
+  }
+  .profile > span:nth-child(2) {
+    display: none;
+  }
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: #0d3b6680;
+    border: 0;
+    z-index: 15;
+  }
+}
+@media (max-width: 480px) {
+  header {
+    gap: 8px;
+  }
+  .header-actions {
+    gap: 2px;
+  }
+  .profile {
+    padding: 4px;
+  }
+  .workspace main {
+    padding: 14px;
+  }
+}
