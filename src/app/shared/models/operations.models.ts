@@ -1,0 +1,23 @@
+export interface Medicine { id:string; name:string; genericName:string; brand:string; category:string; manufacturer:string; strength:string; form:string; unit:string; barcode?:string; status:'Active'|'Inactive'; }
+export interface MedicineBatch { id:string; medicineId:string; batchNumber:string; manufacturedAt:string; expiresAt:string; purchasePrice:number; sellingPrice:number; openingQuantity:number; reorderLevel:number; }
+export type StockMovementType='Receipt'|'Issue'|'Adjustment'|'Return'|'Damaged'|'Expired'|'Dispense'|'Transfer';
+export interface StockMovement { id:string; itemType:'Medicine'|'Inventory'; itemId:string; batchId?:string; type:StockMovementType; quantity:number; occurredAt:string; actor:string; reference:string; notes:string; }
+export interface DispenseItem { medicineId:string; batchId:string; prescribedQuantity:number; dispensedQuantity:number; unitPrice:number; }
+export interface Dispense { id:string; number:string; patientId:string; patientName:string; prescriptionRef:string; items:DispenseItem[]; pharmacist:string; dispensedAt?:string; status:'Pending Review'|'Reviewed'|'Dispensed'|'Partially Dispensed'|'Cancelled'; invoiceId?:string; }
+export type ChargeSource='Consultation'|'Admission'|'Bed'|'Laboratory'|'Radiology'|'Pharmacy'|'Procedure'|'Operation Theatre'|'Other';
+export interface InvoiceItem { id:string; source:ChargeSource; sourceId:string; description:string; quantity:number; unitPrice:number; discount:number; taxRate:number; }
+export type InvoiceStatus='Draft'|'Pending'|'Partially Paid'|'Paid'|'Cancelled'|'Refunded';
+export interface Invoice { id:string; number:string; patientId:string; patientName:string; encounterRef?:string; createdAt:string; items:InvoiceItem[]; insuranceAmount:number; status:InvoiceStatus; }
+export interface Payment { id:string; receiptNumber:string; invoiceId:string; amount:number; method:'Cash'|'Card'|'Bank Transfer'|'UPI / Digital Payment'|'Insurance'; reference:string; user:string; paidAt:string; }
+export interface Refund { id:string; paymentId:string; amount:number; reason:string; requestedBy:string; approvedBy?:string; method:string; createdAt:string; status:'Requested'|'Approved'|'Rejected'|'Processed'; }
+export interface InsuranceProvider { id:string; name:string; code:string; contact:string; address:string; status:'Active'|'Inactive'; }
+export interface PatientInsurance { id:string; patientId:string; providerId:string; policyNumber:string; memberNumber:string; startsAt:string; endsAt:string; coverageLimit:number; relationship:string; priority:'Primary'|'Secondary'; documentRefs:string[]; }
+export interface ClaimHistory { at:string; status:InsuranceClaim['status']; actor:string; note:string; }
+export interface InsuranceClaim { id:string; number:string; patientId:string; insuranceId:string; invoiceId:string; claimedAmount:number; approvedAmount:number; rejectedAmount:number; patientResponsibility:number; submittedAt?:string; settledAt?:string; status:'Draft'|'Submitted'|'Under Review'|'Approved'|'Partially Approved'|'Rejected'|'Settled'; documentRefs:string[]; history:ClaimHistory[]; }
+export interface Supplier { id:string; name:string; contactPerson:string; phone:string; email:string; address:string; taxNumber:string; status:'Active'|'Inactive'; }
+export interface InventoryItem { id:string; name:string; category:string; unit:string; store:string; supplierId:string; openingQuantity:number; reorderLevel:number; expiry?:string; }
+export interface PurchaseOrder { id:string; number:string; supplierId:string; itemType:'Medicine'|'Inventory'; itemId:string; quantity:number; unitPrice:number; status:'Requested'|'Approved'|'Ordered'|'Partially Received'|'Received'|'Cancelled'; requestedAt:string; receivedQuantity:number; }
+export interface Ambulance { id:string; number:string; registration:string; vehicleType:string; driver:string; driverContact:string; status:'Available'|'Assigned'|'On Trip'|'Maintenance'|'Out of Service'; }
+export interface AmbulanceBooking { id:string; patientId:string; pickup:string; destination:string; requestedAt:string; ambulanceId?:string; driver?:string; tripStartedAt?:string; tripEndedAt?:string; charges:number; status:'Requested'|'Assigned'|'On Trip'|'Completed'|'Cancelled'; }
+export interface AppNotification { id:string; type:string; title:string; message:string; createdAt:string; readAt?:string; audience:string; reference?:string; channels:('In App'|'Email'|'SMS'|'Push')[]; }
+export interface ManagedDocument { id:string; ownerType:string; ownerId:string; name:string; mimeType:string; size:number; uploadedAt:string; uploadedBy:string; sensitive:boolean; }

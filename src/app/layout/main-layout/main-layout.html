@@ -1,0 +1,75 @@
+<div class="app-shell" [class.collapsed]="collapsed()">
+  <aside [class.open]="mobileOpen()">
+    <a class="logo" routerLink="/" aria-label="CarePoint dashboard"
+      ><img src="logo-full.svg" alt="CarePoint Hospital Management"
+    /></a>
+    <nav aria-label="Primary navigation">
+      @for (item of nav; track item.path) {
+        @if (auth.has($any(item.permission))) {
+          <a [routerLink]="item.path" routerLinkActive="active" (click)="closeMobile()"
+            ><span class="nav-icon"><app-icon [name]="item.icon" /></span
+            ><span>{{ item.label }}</span></a
+          >
+        }
+      }
+    </nav>
+    <div class="sidebar-footer">
+      @if (auth.has('settings.view')) {
+        <a class="settings-link" routerLink="/settings" routerLinkActive="active"
+          ><span class="nav-icon"><app-icon name="settings" /></span><span>Settings</span></a
+        >
+      }
+    </div>
+  </aside>
+  <div class="workspace">
+    <header>
+      <button
+        class="icon-button sidebar-toggle"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="collapsed() ? 'Open sidebar' : 'Hide sidebar'"
+      >
+        <app-icon name="menu" />
+      </button>
+      <div class="global-search">
+        <app-icon name="search" /><input placeholder="Search" aria-label="Global search" />
+      </div>
+      <div class="header-actions">
+        <button class="icon-button" aria-label="Notifications">
+          <app-icon name="bell" /><i></i>
+        </button>
+        <div class="user-menu">
+          <button
+            class="profile"
+            (click)="$event.stopPropagation(); userMenu.set(!userMenu())"
+            [attr.aria-expanded]="userMenu()"
+            aria-haspopup="menu"
+          >
+            <span class="avatar">
+              @if (auth.user()?.avatarUrl) {
+                <img [src]="auth.user()?.avatarUrl" alt="" />
+              } @else {
+                AS
+              }</span
+            ><span
+              ><b>{{ auth.user()?.name }}</b
+              ><small>Hospital Admin</small></span
+            ><app-icon name="chevron-down" [size]="16" />
+          </button>
+          @if (userMenu()) {
+            <div class="profile-dropdown" role="menu">
+              <a routerLink="/profile" role="menuitem" (click)="userMenu.set(false)"
+                ><app-icon name="patients" [size]="17" />My Profile</a
+              ><button role="menuitem" (click)="auth.logout()">
+                <app-icon name="logout" [size]="17" />Logout
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+      <main><app-breadcrumbs /><router-outlet /></main>
+  </div>
+  @if (mobileOpen()) {
+    <button class="backdrop" aria-label="Close navigation" (click)="closeMobile()"></button>
+  }
+</div>

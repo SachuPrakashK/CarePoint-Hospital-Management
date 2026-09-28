@@ -1,0 +1,1 @@
+import { Routes } from '@angular/router'; import { permissionGuard } from '../../core/guards/permission.guard'; export const RADIOLOGY_ROUTES:Routes=[{path:'',canActivate:[permissionGuard],data:{permission:'radiology.view'},loadComponent:()=>import('./pages/radiology-page').then(m=>m.RadiologyPage)}];

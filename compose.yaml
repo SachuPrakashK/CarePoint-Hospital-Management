@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hospital_management
+      POSTGRES_USER: hospital_app
+      POSTGRES_PASSWORD: hospital_dev_password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hospital_app -d hospital_management"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - hospital_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  hospital_postgres_data:

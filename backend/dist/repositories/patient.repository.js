@@ -1,0 +1,2 @@
+import { prisma } from '../config/prisma.js';
+export const patientRepository = { list: (where, skip, take, orderBy) => prisma.patient.findMany({ where, skip, take, orderBy }), count: (where) => prisma.patient.count({ where }), find: (id) => prisma.patient.findFirst({ where: { id, deletedAt: null } }), create: (data) => prisma.patient.create({ data }), update: (id, data) => prisma.patient.update({ where: { id }, data }) };

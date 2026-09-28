@@ -1,0 +1,1 @@
+import { Routes } from '@angular/router'; import { permissionGuard } from '../../core/guards/permission.guard'; export const NURSING_ROUTES:Routes=[{path:'',canActivate:[permissionGuard],data:{permission:'nursing.view'},loadComponent:()=>import('./pages/nursing-page').then(m=>m.NursingPage)}];

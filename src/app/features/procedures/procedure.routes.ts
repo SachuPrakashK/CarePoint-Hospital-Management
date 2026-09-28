@@ -1,0 +1,1 @@
+import { Routes } from '@angular/router'; import { permissionGuard } from '../../core/guards/permission.guard'; export const PROCEDURE_ROUTES:Routes=[{path:'',canActivate:[permissionGuard],data:{permission:'procedures.view'},loadComponent:()=>import('./pages/procedure-page').then(m=>m.ProcedurePage)}];

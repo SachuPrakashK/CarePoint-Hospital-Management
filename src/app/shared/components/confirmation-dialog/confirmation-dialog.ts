@@ -1,0 +1,2 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core'; import { ConfirmationService } from '../../../core/services/confirmation.service'; import { AppIcon } from '../icon/app-icon';
+@Component({selector:'app-confirmation-dialog',imports:[AppIcon],templateUrl:'./confirmation-dialog.html',styleUrl:'./confirmation-dialog.scss',changeDetection:ChangeDetectionStrategy.OnPush})export class ConfirmationDialog{readonly confirmation=inject(ConfirmationService)}
