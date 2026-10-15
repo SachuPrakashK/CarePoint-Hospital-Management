@@ -1,0 +1,57 @@
+.patient,
+.med {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5ecee;
+}
+.section-card,
+.context-card { margin-top: 18px; }
+.context-card { padding: 18px; }
+.patient-context { max-width: 520px; }
+.nursing-grid { margin-top: 18px; align-items: start; }
+.table-wrap { overflow-x: auto; }
+table { min-width: 760px; }
+td small { display: block; margin-top: 4px; color: var(--color-muted); }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover,
+.clickable-row:focus-visible { background: var(--color-background); outline: none; }
+.med { flex-wrap: wrap; }
+.inline-actions { display: flex; flex: 0 0 auto !important; gap: 8px; }
+.history-list { display: grid; }
+.history-list article { padding: 14px 18px; border-bottom: 1px solid var(--color-border); }
+.history-list p { margin: 6px 0; }
+.history-list small,
+.state-message { color: var(--color-muted); }
+.state-message,
+.data-error { padding: 18px; }
+.data-error { color: var(--color-danger); }
+.handover-history { margin-bottom: 24px; }
+.crud-modal__body.form-grid { padding: 20px 24px; }
+@media (max-width: 700px) {
+  .page-head { align-items: stretch; }
+  .page-head > button { width: 100%; }
+  .nursing-grid { grid-template-columns: 1fr; }
+  .inline-actions { width: 100%; }
+  .inline-actions button { flex: 1; }
+}
+.patient {
+  cursor: pointer;
+}
+.patient.selected {
+  background: #eff9f6;
+}
+.patient div,
+.med div {
+  flex: 1;
+}
+.patient small,
+.med small {
+  display: block;
+  color: #6f8086;
+  margin-top: 4px;
+}
+.note-card {
+  margin-top: 18px;
+}

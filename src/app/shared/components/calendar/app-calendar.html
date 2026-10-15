@@ -1,0 +1,14 @@
+<section class="app-calendar" aria-label="Clinical timeline calendar">
+  <header>
+    <button type="button" class="icon-button" aria-label="Previous month" (click)="shift(-1)">‹</button>
+    <strong>{{ heading() }}</strong>
+    <button type="button" class="icon-button" aria-label="Next month" (click)="shift(1)">›</button>
+  </header>
+  <div class="weekdays" aria-hidden="true">@for (name of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; track name) { <span>{{ name }}</span> }</div>
+  <div class="days">
+    @for (day of days(); track day.iso) {
+      <button type="button" [class.outside]="!day.currentMonth" [class.today]="day.today" [class.selected]="day.selected" [attr.aria-pressed]="day.selected" [attr.aria-label]="day.iso" (click)="select(day)">{{ day.day }}</button>
+    }
+  </div>
+  <footer><button type="button" class="secondary" (click)="today()">Today</button></footer>
+</section>

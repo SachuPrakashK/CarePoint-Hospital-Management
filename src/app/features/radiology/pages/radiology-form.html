@@ -1,0 +1,67 @@
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="crud-modal__body">
+    <div class="form-grid">
+      <label class="field"
+        ><span class="form-label">Patient <span class="required-indicator">*</span></span
+        ><select formControlName="patientId">
+          <option value="">Select patient</option>
+          @for (p of patients.patients(); track p.id) {
+            <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} · {{ p.mrn }}</option>
+          }
+        </select></label
+      ><label class="field"
+        ><span class="form-label">Investigation <span class="required-indicator">*</span></span
+        ><select formControlName="investigation">
+          <option value="">Select investigation</option>
+          @for (investigation of investigations(); track investigation.id) {
+            <option [value]="investigation.name">
+              {{ investigation.name }} · {{ investigation.modality }}
+            </option>
+          }
+        </select></label
+      ><label class="field"
+        ><span class="form-label">Ordering doctor <span class="required-indicator">*</span></span
+        ><input formControlName="doctor" placeholder="Enter ordering doctor" /></label
+      ><label class="field"
+        ><span class="form-label">Scheduled date and time</span
+        ><input type="datetime-local" formControlName="scheduledAt" /></label
+      ><label class="field"
+        ><span class="form-label">Status <span class="required-indicator">*</span></span
+        ><select formControlName="status">
+          @for (
+            s of [
+              'Ordered',
+              'Scheduled',
+              'Performed',
+              'Reporting',
+              'Verified',
+              'Completed',
+              'Cancelled',
+            ];
+            track s
+          ) {
+            <option>{{ s }}</option>
+          }
+        </select></label
+      ><label class="field full"
+        ><span class="form-label">Findings</span
+        ><textarea formControlName="findings" placeholder="Enter radiology findings"></textarea></label
+      ><label class="field full"
+        ><span class="form-label">Impression</span
+        ><textarea formControlName="impression" placeholder="Enter clinical impression"></textarea></label
+      ><label class="field"
+        ><span class="form-label">Reported by</span><input formControlName="reportedBy" placeholder="Enter reporting clinician" /></label
+      ><label class="field"
+        ><span class="form-label">Verified by</span><input formControlName="verifiedBy" placeholder="Enter verifying clinician"
+      /></label>
+    </div>
+    @if (error) {
+      <p class="error" role="alert">{{ error }}</p>
+    }
+  </div>
+  <div class="crud-modal__footer">
+    <button class="primary" [disabled]="submitting || form.invalid">
+      {{ submitting ? 'Saving...' : entity() ? 'Update' : 'Create' }}
+    </button>
+  </div>
+</form>

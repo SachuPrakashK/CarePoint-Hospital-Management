@@ -1,0 +1,161 @@
+<div class="breadcrumbs">Administration / Users</div>
+<div class="page-head">
+  <div>
+    <h1>Users</h1>
+    <p class="muted">Manage staff access, roles, and account status.</p>
+  </div>
+  @if (auth.has('users.create')) {
+    <button class="primary" (click)="openCreate()">+ Create User</button>
+  }
+</div>
+<section class="card">
+  <div class="toolbar">
+    <app-search-field placeholder="Search users" (valueChange)="query($event)" />
+    <div class="toolbar-actions">
+      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+      <div
+        class="filter-anchor"
+        appClickOutside
+        (appClickOutside)="filtersOpen.set(false)"
+        (click)="$event.stopPropagation()"
+      >
+        <button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())">
+          <app-icon name="filter" [size]="17" /> Filters
+          @if (status() || role()) {
+            ({{ (status() ? 1 : 0) + (role() ? 1 : 0) }})
+          }
+        </button>
+        @if (filtersOpen()) {
+          <div class="filter-panel">
+            <div class="filter-grid">
+              <label class="field"
+                ><span>Status</span
+                ><select [value]="status()" (change)="status.set($any($event.target).value)">
+                  <option value="">All statuses</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                  <option value="LOCKED">Locked</option>
+                </select></label
+              >
+              <label class="field"
+                ><span>Role</span
+                ><select [value]="role()" (change)="role.set($any($event.target).value)">
+                  <option value="">All roles</option>
+                  @for (item of roles(); track item.id) {
+                    <option [value]="item.code">{{ item.name }}</option>
+                  }
+                </select></label
+              >
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="ghost" (click)="clearFilters()">Clear</button
+              ><button type="button" class="primary" (click)="applyFilters()">Apply</button>
+            </div>
+          </div>
+        }
+      </div>
+      @if (auth.has('users.export')) {
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="exporting() || !total()"
+          (click)="export()"
+        >
+          <app-icon name="download" [size]="17" /> {{ exporting() ? 'Exporting...' : 'Export' }}
+        </button>
+      }
+    </div>
+  </div>
+  @if (loading()) {
+    <div class="loading-state">Loading users...</div>
+  } @else if (users().length) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            @if(columnVisible('user')){<th [attr.aria-sort]="ariaSort('firstName')"><app-table-sort-header label="User" field="firstName" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('role')){<th>Role</th>}
+            @if(columnVisible('phone')){<th [attr.aria-sort]="ariaSort('phone')"><app-table-sort-header label="Phone" field="phone" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('created')){<th [attr.aria-sort]="ariaSort('createdAt')"><app-table-sort-header label="Created" field="createdAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('login')){<th [attr.aria-sort]="ariaSort('lastLoginAt')"><app-table-sort-header label="Last login" field="lastLoginAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('actions')){<th>Actions</th>}
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              @if(columnVisible('user')){<td>
+                <b>{{ user.firstName }} {{ user.lastName }}</b
+                ><br /><small>{{ user.email }}</small>
+              </td>}
+              @if(columnVisible('role')){<td>{{ roleName(user) }}</td>}
+              @if(columnVisible('phone')){<td>{{ user.phone || '—' }}</td>}
+              @if(columnVisible('created')){<td>{{ user.createdAt | date: 'mediumDate' }}</td>}
+              @if(columnVisible('login')){<td>{{ user.lastLoginAt ? (user.lastLoginAt | date: 'medium') : 'Never' }}</td>}
+              @if(columnVisible('status')){<td><app-status-badge [value]="user.status" /></td>}
+              @if(columnVisible('actions')){<td class="actions">
+                <app-actions-menu
+                  [id]="user.id"
+                  label="User actions"
+                  [canView]="false"
+                  [canEdit]="auth.has('users.update')"
+                  [canDelete]="auth.has('users.delete')"
+                  [canReset]="auth.has('users.reset_password')"
+                  (edit)="open(user)"
+                  (reset)="resetting.set(user)"
+                  (delete)="remove(user)"
+                />
+              </td>}
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <app-empty-state
+      title="No users found"
+      description="No staff accounts match your search or filters."
+      [actionLabel]="auth.has('users.create') ? 'Create User' : ''"
+      (action)="openCreate()"
+    />
+  }
+  <app-pagination
+    [loading]="loading()"
+    [page]="page()"
+    [pageSize]="pageSize()"
+    [totalItems]="total()"
+    [totalPages]="totalPages()"
+    itemLabel="users"
+    (pageChange)="go($event)"
+    (pageSizeChange)="resize($event)"
+  />
+</section>
+@if (createOpen()) {
+  <app-modal
+    title="Create User"
+    description="Fields marked * are required."
+    size="lg"
+    [dirty]="userForm.form.dirty"
+    (closed)="createOpen.set(false)"
+    ><app-user-form #userForm mode="create" (saved)="onCreated()"
+  /></app-modal>
+}
+@if (editing(); as user) {
+  <app-modal
+    title="Update User"
+    size="lg"
+    [dirty]="userForm.form.dirty"
+    (closed)="editing.set(null)"
+    ><app-user-form #userForm mode="edit" [user]="user" (saved)="onUpdated()"
+  /></app-modal>
+}
+@if (resetting(); as user) {
+  <app-modal
+    title="Reset Password"
+    size="sm"
+    [dirty]="resetForm.form.dirty"
+    (closed)="resetting.set(null)"
+    ><app-reset-password-form #resetForm [userId]="user.id" (saved)="resetting.set(null)"
+  /></app-modal>
+}

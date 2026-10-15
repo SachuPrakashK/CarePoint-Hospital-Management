@@ -1,0 +1,12 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { authenticate,requirePermissions } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { asyncHandler } from '../utils/async-handler.js';
+import { languageService as service } from '../services/language.service.js';
+export const languageRoutes=Router();languageRoutes.use(authenticate);
+languageRoutes.get('/',asyncHandler(async(_q,r)=>r.json({data:await service.listEnabled()})));
+languageRoutes.get('/configuration',requirePermissions('settings.view'),asyncHandler(async(_q,r)=>r.json({data:await service.listAll()})));
+languageRoutes.get('/preference',asyncHandler(async(q,r)=>r.json({data:await service.preference(q.auth!.userId)})));
+languageRoutes.put('/preference',validate(z.object({body:z.object({code:z.string().regex(/^[a-z]{2,3}(?:-[A-Z]{2})?$/)}),query:z.object({}).passthrough(),params:z.object({}).passthrough()})),asyncHandler(async(q,r)=>r.json({data:await service.select(q.auth!.userId,q.body.code)})));
+languageRoutes.patch('/:code',requirePermissions('settings.update'),validate(z.object({body:z.object({enabled:z.boolean()}),query:z.object({}).passthrough(),params:z.object({code:z.string()})})),asyncHandler(async(q,r)=>r.json({data:await service.update(String(q.params.code),q.body.enabled)})));

@@ -1,0 +1,121 @@
+@if (!supported()) {
+  <section class="card empty-state">
+    <h1>{{ key() }}</h1>
+    <p>This area is managed through the dedicated Users or Settings workspace.</p>
+    <a class="primary" routerLink="/users">Open User Management</a>
+  </section>
+} @else {
+  <div class="page-head">
+    <div>
+      @if (type() === 'laboratory-tests') { <a class="back-link" routerLink="/laboratory"><app-icon name="back" [size]="15" /> Laboratory</a> }
+      @else if (type() === 'radiology-investigations') { <a class="back-link" routerLink="/radiology"><app-icon name="back" [size]="15" /> Radiology</a> }
+      @else { <div class="breadcrumbs">Administration / {{ title() }}</div> }
+      <h1>{{ title() }}</h1>
+      <p class="muted">{{ description() }}</p>
+    </div>
+    <button class="primary" (click)="open()">+ Add {{ singular() }}</button>
+  </div>
+  <section class="card">
+    <div class="toolbar">
+      <app-search-field [placeholder]="type() === 'laboratory-tests' ? 'Search tests by code, name or category' : 'Search records'" [label]="type() === 'laboratory-tests' ? 'Search tests' : 'Search records'" (valueChange)="search.set($event); queryChanged()" />
+      <div class="toolbar-actions">
+        <app-column-config [columns]="applicableColumns()" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+        <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()"><button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())"><app-icon name="filter" [size]="17" /> Filters @if(status() || category()) { ({{ (status() ? 1 : 0) + (category() ? 1 : 0) }}) }</button>
+          @if(filtersOpen()) { <div class="filter-panel"><div class="filter-grid">
+            <label class="field"><span>Status</span><select aria-label="Status filter" [value]="status()" (change)="status.set($any($event.target).value)"><option value="">All statuses</option><option>Active</option><option>Inactive</option></select></label>
+            @if(type() === 'laboratory-tests') { <label class="field"><span>Category</span><input placeholder="Filter by category" [value]="category()" (input)="category.set($any($event.target).value)" /></label> }
+          </div><div class="filter-actions"><button type="button" class="secondary" (click)="clearFilters()">Clear all</button><button type="button" class="primary" (click)="queryChanged()">Apply filters</button></div></div> }
+        </div>
+      </div>
+    </div>
+    @if (loading()) {
+      <div class="loading-state">Loading...</div>
+    } @else if (error()) {
+      <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
+    } @else if (!items().length) {
+      <app-empty-state [title]="type() === 'laboratory-tests' ? 'No laboratory test definitions found' : 'No records available'" [description]="search() || status() ? 'Try changing the search or filters.' : 'Create the first master record.'" />
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              @if(columnVisible('name')){<th [attr.aria-sort]="ariaSort('name')"><app-table-sort-header label="Name" field="name" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('code')){<th [attr.aria-sort]="ariaSort('code')"><app-table-sort-header label="Code" field="code" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if (type() === 'specializations') {
+                @if(columnVisible('department')){<th [attr.aria-sort]="ariaSort('department')"><app-table-sort-header label="Department" field="department" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              }
+              @if (type() === 'radiology-investigations') {
+                @if(columnVisible('modality')){<th [attr.aria-sort]="ariaSort('modality')"><app-table-sort-header label="Modality" field="modality" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              }
+              @if (type() === 'laboratory-tests') {
+                @if(columnVisible('category')){<th [attr.aria-sort]="ariaSort('category')"><app-table-sort-header label="Category" field="category" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+                @if(columnVisible('unit')){<th [attr.aria-sort]="ariaSort('unit')"><app-table-sort-header label="Unit" field="unit" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              }
+              @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('actions')){<th>Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                @if(columnVisible('name')){<td>
+                  <b>{{ item.name }}</b>
+                </td>}
+                @if(columnVisible('code')){<td>{{ item.code }}</td>}
+                @if (type() === 'specializations') {
+                  @if(columnVisible('department')){<td>{{ item.department?.name }}</td>}
+                }
+                @if (type() === 'radiology-investigations') {
+                  @if(columnVisible('modality')){<td>{{ item.modality }}</td>}
+                }
+                @if (type() === 'laboratory-tests') {
+                  @if(columnVisible('category')){<td>{{ item.category }}</td>}
+                  @if(columnVisible('unit')){<td>{{ item.unit | displayValue: '—' }}</td>}
+                }
+                @if(columnVisible('status')){<td>
+                  <app-status-badge [value]="item.status" />
+                </td>}
+                @if(columnVisible('actions')){<td class="actions">
+                  <app-actions-menu
+                    [id]="item.id"
+                    [label]="item.name + ' actions'"
+                    [canView]="false"
+                    [canDelete]="item.status !== 'Inactive'"
+                    deleteLabel="Delete"
+                    (edit)="open(item)"
+                    (delete)="remove(item)"
+                  />
+                </td>}
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <app-pagination
+      [loading]="loading()"
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [totalItems]="total()"
+      [totalPages]="totalPages()"
+      itemLabel="records"
+      (pageChange)="go($event)"
+      (pageSizeChange)="resize($event)"
+    />
+  </section>
+  @if (modal()) {
+    <app-modal
+      [title]="(editing() ? 'Edit ' : 'Create ') + singular()"
+      size="md"
+      [dirty]="masterDirty()"
+      (closed)="modal.set(false)"
+      ><app-master-form
+        [type]="type()"
+        [mode]="editing() ? 'edit' : 'create'"
+        [entity]="editing()"
+        [departments]="departments()"
+        (dirtyChanged)="masterDirty.set($event)"
+        (saved)="changed()"
+    /></app-modal>
+  }
+}

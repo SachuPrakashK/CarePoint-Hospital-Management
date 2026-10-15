@@ -1,1 +1,8 @@
-import { Routes } from '@angular/router'; export const OPD_ROUTES:Routes=[{path:'',loadComponent:()=>import('./pages/queue-page').then(m=>m.QueuePage)},{path:'consultation/:id',loadComponent:()=>import('./pages/consultation-page').then(m=>m.ConsultationPage)}];
+import { Routes } from '@angular/router';
+export const OPD_ROUTES: Routes = [
+  { path: '', loadComponent: () => import('./pages/queue-page').then((m) => m.QueuePage) },
+  {
+    path: 'consultation/:id',
+    loadComponent: () => import('./pages/consultation-page').then((m) => m.ConsultationPage),
+  },
+];

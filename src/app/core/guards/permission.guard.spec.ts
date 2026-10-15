@@ -1,2 +1,10 @@
-import { TestBed } from '@angular/core/testing'; import { provideRouter } from '@angular/router'; import { AuthStore } from '../auth/auth.store';
-describe('RBAC permissions',()=>{beforeEach(()=>TestBed.configureTestingModule({providers:[provideRouter([])]}));it('denies permissions before authentication',()=>{sessionStorage.clear();expect(TestBed.inject(AuthStore).has('patients.view')).toBe(false)});});
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { AuthStore } from '../auth/auth.store';
+describe('RBAC permissions', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
+  it('denies permissions before authentication', () => {
+    sessionStorage.clear();
+    expect(TestBed.inject(AuthStore).has('patients.view')).toBe(false);
+  });
+});

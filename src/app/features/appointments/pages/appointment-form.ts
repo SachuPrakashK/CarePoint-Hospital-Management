@@ -1,2 +1,100 @@
-import { Component, inject, signal } from '@angular/core'; import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms'; import { Router, RouterLink } from '@angular/router'; import { ClinicalStore } from '../../../core/services/clinical.store';
-@Component({imports:[ReactiveFormsModule,RouterLink],template:`<div class="page-head"><div><div class="breadcrumbs">Appointments / New</div><h1>New appointment</h1><p class="muted">Availability is validated before the booking is created.</p></div></div><form class="card" [formGroup]="form" (ngSubmit)="save()"><div class="form-grid"><label class="field">Patient *<select formControlName="patientId"><option value="">Select patient</option>@for(p of store.patients();track p.id){<option [value]="p.id">{{p.firstName}} {{p.lastName}} · {{p.mrn}}</option>}</select></label><label class="field">Department *<select formControlName="department"><option>General Medicine</option><option>Cardiology</option><option>Dermatology</option></select></label><label class="field">Doctor *<select formControlName="doctor"><option>Dr. Ananya Sen</option><option>Dr. Vikram Rao</option><option>Dr. Nisha Das</option></select></label><label class="field">Appointment date *<input type="date" formControlName="date"></label><label class="field">Available time *<select formControlName="time"><option>09:00</option><option>09:30</option><option>10:00</option><option>10:15</option><option>11:00</option></select></label><label class="field">Appointment type<select formControlName="type"><option>Consultation</option><option>Follow-up</option><option>Walk-in</option></select></label><label class="field">Consultation type<select formControlName="consultationType"><option>In person</option><option>Video</option></select></label><label class="field">Consultation fee<input type="number" formControlName="fee"></label><label class="field full">Reason *<textarea formControlName="reason" placeholder="Reason for visit"></textarea></label>@if(error()){<div class="error full" role="alert">{{error()}}</div>}</div><div class="form-actions"><a routerLink="/appointments" class="secondary button-link">Cancel</a><button class="primary">Create appointment</button></div></form>`})export class AppointmentForm{readonly store=inject(ClinicalStore);private fb=inject(FormBuilder);private router=inject(Router);readonly error=signal('');readonly form=this.fb.nonNullable.group({patientId:['',Validators.required],department:['General Medicine'],doctor:['Dr. Ananya Sen'],date:[new Date().toISOString().slice(0,10),Validators.required],time:['09:00'],type:['Consultation'],consultationType:['In person'],reason:['',Validators.required],fee:[650,[Validators.required,Validators.min(0)]]});save(){this.form.markAllAsTouched();if(this.form.invalid)return;const v=this.form.getRawValue(),p=this.store.patients().find(x=>x.id===v.patientId)!;try{this.store.addAppointment({...v,patientName:`${p.firstName} ${p.lastName}`});void this.router.navigateByUrl('/appointments')}catch(e){this.error.set((e as Error).message)}}}
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
+import { ApiAppointment, AppointmentApiService, AppointmentOptions } from '../appointment-api.service';
+import { AppointmentInvalidationService } from '../appointment-invalidation.service';
+import { NotificationStore } from '../../../core/notifications/notification.store';
+import { AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { SafeApiError } from '../../../core/interceptors/api-error.interceptor';
+@Component({ selector: 'app-appointment-form', imports: [ReactiveFormsModule], templateUrl: './appointment-form.html' })
+export class AppointmentForm {
+  private api = inject(AppointmentApiService);
+  private invalidation = inject(AppointmentInvalidationService);
+  private notifications = inject(NotificationStore);
+  private fb = inject(FormBuilder);
+  readonly dates = inject(AppDateTimeService);
+  private toast = inject(ToastService);
+  readonly patientId = input('');
+  readonly patientName = input('');
+  readonly appointment = input<ApiAppointment | null>(null);
+  readonly saved = output<ApiAppointment>();
+  readonly error = signal('');
+  readonly saving = signal(false);
+  readonly options = signal<AppointmentOptions>({ patients: [], departments: [], doctors: [] });
+  readonly selectedDepartment = signal('');
+  readonly filteredDoctors = computed(() => {
+    const departmentId = this.selectedDepartment();
+    return this.options().doctors.filter((doctor) => !departmentId || doctor.departmentId === departmentId);
+  });
+  readonly isEdit = computed(() => Boolean(this.appointment()));
+  readonly form = this.fb.nonNullable.group({
+    patientId: ['', Validators.required],
+    departmentId: ['', Validators.required],
+    doctorId: ['', Validators.required],
+    date: [this.dates.today(), Validators.required],
+    time: ['09:00', Validators.required],
+    type: ['Consultation'],
+    consultationType: ['In person'],
+    reason: ['', Validators.required],
+    fee: [650, [Validators.required, Validators.min(0)]],
+  });
+  private readonly patientContext = effect(() => {
+    const id = this.patientId();
+    if (id) this.form.controls.patientId.setValue(id);
+  });
+  private readonly editContext = effect(() => {
+    const item = this.appointment();
+    if (!item) return;
+    const [date, time] = this.dates.formDateTime(new Date(item.appointmentAt)).split('T');
+    this.form.patchValue({ patientId: item.patientId, departmentId: item.departmentId,
+      doctorId: item.doctorId, date, time, type: item.type,
+      consultationType: item.consultationType, reason: item.reason, fee: item.fee });
+    this.form.markAsPristine();
+  });
+  constructor() {
+    void this.loadOptions();
+    this.form.controls.departmentId.valueChanges.subscribe((departmentId) => {
+      this.selectedDepartment.set(departmentId);
+      const selected = this.options().doctors.find((doctor) => doctor.id === this.form.controls.doctorId.value);
+      if (selected && selected.departmentId !== departmentId) this.form.controls.doctorId.setValue('');
+    });
+  }
+  async loadOptions() {
+    try {
+      this.options.set((await firstValueFrom(this.api.options())).data);
+    } catch {
+      this.error.set('Appointment options could not be loaded.');
+    }
+  }
+  async save() {
+    this.form.markAllAsTouched();
+    if (this.form.invalid || this.saving()) return;
+    this.saving.set(true);
+    this.error.set('');
+    const v = this.form.getRawValue();
+    try {
+      const payload = {
+          patientId: v.patientId,
+          departmentId: v.departmentId,
+          doctorId: v.doctorId,
+          appointmentAt: this.dates.formValueToApi(v.date, v.time),
+          type: v.type,
+          consultationType: v.consultationType,
+          reason: v.reason,
+          fee: v.fee,
+      };
+      const current = this.appointment();
+      const response = await firstValueFrom(current ? this.api.update(current.id, payload) : this.api.create(payload));
+      this.invalidation.notify();
+      void this.notifications.load();
+      this.toast.success(current ? 'Appointment updated successfully.' : 'Appointment created successfully.');
+      this.form.markAsPristine();
+      this.saved.emit(response.data);
+    } catch (e) {
+      this.error.set((e as SafeApiError).message || `Appointment could not be ${this.isEdit() ? 'updated' : 'created'}.`);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+}

@@ -1,0 +1,285 @@
+<div class="breadcrumbs">Appointments</div>
+<div class="page-head">
+  <div>
+    <h1>Appointments</h1>
+    <p class="muted">Coordinate bookings, availability, walk-ins and follow-ups.</p>
+  </div>
+  <button class="primary button-icon" type="button" (click)="createOpen.set(true)">
+    <app-icon name="plus" [size]="17" />New appointment
+  </button>
+</div>
+<div class="tabs" role="tablist">
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="view() === 'list'"
+    [class.active]="view() === 'list'"
+    (click)="setView('list')"
+  >
+    List
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="view() === 'calendar'"
+    [class.active]="view() === 'calendar'"
+    (click)="setView('calendar')"
+  >
+    Calendar
+  </button>
+</div>
+
+<section class="card">
+  @if (view() === 'list') {
+    <div class="toolbar">
+      <app-search-field
+        placeholder="Search appointments..."
+        label="Search appointments"
+        [value]="search()"
+        [disabled]="loading()"
+        (valueChange)="onSearch($event)"
+      />
+      <div class="toolbar-actions">
+        <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+        <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
+          <button
+            type="button"
+            class="secondary button-icon"
+            [attr.aria-expanded]="filtersOpen()"
+            (click)="filtersOpen.update((open) => !open)"
+          >
+            <app-icon name="filter" [size]="17" />Filters
+            @if (activeFilterCount()) {
+              ({{ activeFilterCount() }})
+            }
+          </button>
+          @if (filtersOpen()) {
+            <div class="filter-panel">
+              <div class="filter-grid">
+                <label class="field department"
+                  ><span class="form-label">Department</span
+                  ><select
+                    [value]="draftDepartmentId()"
+                    (change)="departmentChanged($any($event.target).value)"
+                  >
+                    <option value="">All departments</option>
+                    @for (department of options().departments; track department.id) {
+                      <option [value]="department.id">{{ department.name }}</option>
+                    }
+                  </select></label
+                >
+                <label class="field"
+                  ><span class="form-label">Doctor</span
+                  ><select
+                    [value]="draftDoctorId()"
+                    (change)="draftDoctorId.set($any($event.target).value)"
+                  >
+                    <option value="">All doctors</option>
+                    @for (doctor of filteredDoctors(); track doctor.id) {
+                      <option [value]="doctor.id">
+                        {{ doctor.firstName }} {{ doctor.lastName }}
+                      </option>
+                    }
+                  </select></label
+                >
+                <label class="field"
+                  ><span class="form-label">Status</span
+                  ><select
+                    [value]="draftStatus()"
+                    (change)="draftStatus.set($any($event.target).value)"
+                  >
+                    <option value="">All statuses</option>
+                    <option value="SCHEDULED">Scheduled</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="WAITING">Waiting</option>
+                    <option value="CHECKED_IN">Checked in</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select></label
+                >
+              </div>
+              <div class="filter-actions">
+                <button type="button" class="secondary" (click)="clearFilters()">
+                  Clear Filters</button
+                ><button type="button" class="primary" (click)="applyFilters()">
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+        <button
+          type="button"
+          class="secondary button-icon"
+          [disabled]="total() === 0 || exporting()"
+          (click)="export()"
+        >
+          <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
+        </button>
+      </div>
+    </div>
+    @if (loading()) {
+      <div class="empty">Loading appointments…</div>
+    } @else if (error()) {
+      <div class="error-state" role="alert">
+        {{ error() }} <button type="button" class="secondary" (click)="load()">Retry</button>
+      </div>
+    } @else if (appointments().length) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              @if(columnVisible('date')){<th [attr.aria-sort]="ariaSort('appointmentAt')"><app-table-sort-header label="Date & time" field="appointmentAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('number')){<th [attr.aria-sort]="ariaSort('number')"><app-table-sort-header label="Appointment" field="number" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('patient')"><app-table-sort-header label="Patient" field="patient" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('care')){<th [attr.aria-sort]="ariaSort('department')"><app-table-sort-header label="Department / Doctor" field="department" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('type')){<th [attr.aria-sort]="ariaSort('type')"><app-table-sort-header label="Type" field="type" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('actions')){<th class="actions-column">Actions</th>}
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of appointments(); track item.id) {
+              <tr
+                class="clickable"
+                tabindex="0"
+                (click)="viewAppointment(item)"
+                (keydown.enter)="viewAppointment(item)"
+              >
+                @if(columnVisible('date')){<td>
+                  <b>{{ date(item) }}</b
+                  ><br />{{ time(item) }}
+                </td>}
+                @if(columnVisible('number')){<td>{{ item.number }}</td>}
+                @if(columnVisible('patient')){<td>
+                  <b>{{ item.patientName }}</b>
+                </td>}
+                @if(columnVisible('care')){<td>
+                  {{ item.department }}<br /><small>{{ item.doctor }}</small>
+                </td>}
+                @if(columnVisible('type')){<td>{{ item.type }}</td>}
+                @if(columnVisible('status')){<td><app-status-badge [value]="item.status" /></td>}
+                @if(columnVisible('actions')){<td class="actions actions-column" (click)="$event.stopPropagation()">
+                  <app-actions-menu
+                    [id]="item.id"
+                    label="Appointment actions"
+                    deleteLabel="Cancel"
+                    [canDelete]="item.status !== 'CANCELLED' && item.status !== 'COMPLETED'"
+                    [canStatus]="allowedStatuses(item).length > 0"
+                    (view)="viewAppointment(item)"
+                    (edit)="editing.set(item)"
+                    (delete)="cancel(item)"
+                    (statusChange)="openStatus(item)"
+                  />
+                </td>}
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <app-empty-state
+        title="No appointments found"
+        [description]="
+          hasCriteria()
+            ? 'Try changing your search or clearing your filters.'
+            : 'Create the first appointment to get started.'
+        "
+        [actionLabel]="hasCriteria() ? 'Clear filters' : 'New appointment'"
+        (action)="hasCriteria() ? clearCriteria() : createOpen.set(true)"
+      />
+    }
+    <app-pagination
+      [loading]="loading()"
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [totalItems]="total()"
+      [totalPages]="totalPages()"
+      itemLabel="appointments"
+      (pageChange)="changePage($event)"
+      (pageSizeChange)="changePageSize($event)"
+    />
+  } @else {
+    <div class="calendar-head">
+      <button
+        type="button"
+        class="secondary icon-button"
+        aria-label="Previous week"
+        (click)="shiftWeek(-7)"
+      >
+        <app-icon name="chevron-left" [size]="18" /></button
+      ><button type="button" class="week-current" (click)="currentWeek()">
+        <span>This Week</span><b>{{ weekLabel() }}</b></button
+      ><button
+        type="button"
+        class="secondary icon-button"
+        aria-label="Next week"
+        (click)="shiftWeek(7)"
+      >
+        <app-icon name="chevron-right" [size]="18" />
+      </button>
+    </div>
+    @if (calendarLoading()) {
+      <div class="empty">Loading calendar…</div>
+    } @else if (error()) {
+      <div class="error-state" role="alert">
+        {{ error() }}
+        <button type="button" class="secondary" (click)="loadCalendar()">Retry</button>
+      </div>
+    } @else {
+      <div class="calendar">
+        <div class="week">
+          @for (day of weekDays(); track day.key) {
+            <section class="day">
+              <header>
+                <b>{{ day.day }}</b
+                ><span>{{ day.date }}</span>
+              </header>
+              @for (item of appointmentsForDay(day.key); track item.id) {
+                <button type="button" class="event" (click)="viewAppointment(item)">
+                  <small>{{ time(item) }}</small
+                  ><strong>{{ item.patientName }}</strong
+                  ><span>{{ item.doctor }}</span>
+                </button>
+              } @empty {
+                <p class="day-empty">No appointments</p>
+              }
+            </section>
+          }
+        </div>
+      </div>
+    }
+  }
+</section>
+
+@if (createOpen()) {
+  <app-modal
+    title="Create appointment"
+    description="Complete the required information below."
+    size="lg"
+    [dirty]="createForm.form.dirty"
+    (closed)="createOpen.set(false)"
+    ><app-appointment-form #createForm (saved)="saved()"
+  /></app-modal>
+}
+@if (editing(); as item) {
+  <app-modal
+    title="Edit appointment"
+    description="Update the appointment information below."
+    size="lg"
+    [dirty]="editForm.form.dirty"
+    (closed)="editing.set(null)"
+    ><app-appointment-form #editForm [appointment]="item" (saved)="saved()"
+  /></app-modal>
+}
+@if (statusTarget(); as item) {
+  <app-modal title="Change appointment status" description="Select the next valid workflow status." size="sm" (closed)="statusTarget.set(null)">
+    <div class="crud-modal__body form-grid">
+      <div class="field"><span class="form-label">Current status</span><app-status-badge [value]="item.status" /></div>
+      <label class="field"><span class="form-label">New status <span class="required-indicator">*</span></span>
+        <select [value]="newStatus()" (change)="newStatus.set($any($event.target).value)"><option value="">Select status</option>@for (status of allowedStatuses(item); track status) { <option [value]="status">{{ status.replaceAll('_', ' ') }}</option> }</select>
+      </label>
+    </div>
+    <div class="crud-modal__footer"><button type="button" class="primary" [disabled]="!newStatus() || statusUpdating()" (click)="updateStatus()">{{ statusUpdating() ? 'Updating…' : 'Update' }}</button></div>
+  </app-modal>
+}

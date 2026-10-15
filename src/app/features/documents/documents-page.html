@@ -1,0 +1,162 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Administration / Documents</div>
+    <h1>Documents</h1>
+    <p class="muted">Secure, authenticated hospital document storage.</p>
+  </div>
+  @if (auth.has('documents.create')) {
+    <button class="primary" (click)="uploadOpen.set(true)">+ Upload Document</button>
+  }
+</div>
+<section class="card">
+  <div class="toolbar">
+    <app-search-field placeholder="Search documents" (valueChange)="query($event)" />
+    <div class="toolbar-actions">
+      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+      <div
+        class="filter-anchor"
+        appClickOutside
+        (appClickOutside)="filtersOpen.set(false)"
+        (click)="$event.stopPropagation()"
+      >
+        <button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())">
+          <app-icon name="filter" [size]="17" /> Filters
+        </button>
+        @if (filtersOpen()) {
+          <div class="filter-panel">
+            <div class="filter-grid">
+              <label class="field"
+                ><span>Related record</span
+                ><select [value]="ownerType()" (change)="ownerType.set($any($event.target).value)">
+                  <option value="">All record types</option>
+                  <option value="Patient">Patient</option>
+                </select></label
+              ><label class="field"
+                ><span>File type</span
+                ><select [value]="mimeType()" (change)="mimeType.set($any($event.target).value)">
+                  <option value="">All file types</option>
+                  <option value="application/pdf">PDF</option>
+                  <option value="image/jpeg">JPEG</option>
+                  <option value="image/png">PNG</option>
+                  <option value="text/plain">Text</option>
+                </select></label
+              >
+            </div>
+            <div class="filter-actions">
+              <button class="ghost" type="button" (click)="clear()">Clear</button
+              ><button class="primary" type="button" (click)="apply()">Apply</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+  @if (store.loading()) {
+    <div class="loading-state">Loading documents...</div>
+  } @else if (store.error()) {
+    <div class="error-state">{{ store.error() }} <button (click)="load()">Retry</button></div>
+  } @else if (!store.documents().length) {
+    <app-empty-state
+      title="No documents found"
+      description="No documents match your search or filters."
+    />
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            @if(columnVisible('name')){<th [attr.aria-sort]="ariaSort('originalName')"><app-table-sort-header label="File name" field="originalName" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('owner')){<th [attr.aria-sort]="ariaSort('ownerType')"><app-table-sort-header label="Related record" field="ownerType" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('type')){<th [attr.aria-sort]="ariaSort('mimeType')"><app-table-sort-header label="Type" field="mimeType" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('size')){<th [attr.aria-sort]="ariaSort('size')"><app-table-sort-header label="Size" field="size" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('uploader')){<th [attr.aria-sort]="ariaSort('uploadedBy')"><app-table-sort-header label="Uploaded by" field="uploadedBy" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('date')){<th [attr.aria-sort]="ariaSort('createdAt')"><app-table-sort-header label="Uploaded date" field="createdAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('actions')){<th>Actions</th>}
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of store.documents(); track d.id) {
+            <tr>
+              @if(columnVisible('name')){<td>
+                <b>{{ d.name }}</b>
+              </td>}
+              @if(columnVisible('owner')){<td>{{ d.ownerType }} / {{ d.ownerId }}</td>}
+              @if(columnVisible('type')){<td>{{ d.mimeType }}</td>}
+              @if(columnVisible('size')){<td>{{ size(d.size) }}</td>}
+              @if(columnVisible('uploader')){<td>{{ d.uploadedBy }}</td>}
+              @if(columnVisible('date')){<td>{{ format(d.uploadedAt) }}</td>}
+              @if(columnVisible('actions')){<td class="actions">
+                <app-actions-menu
+                  [id]="d.id"
+                  [canEdit]="false"
+                  [canDelete]="auth.has('documents.delete')"
+                  (view)="store.download(d.id, true)"
+                  (delete)="remove(d.id)"
+                /><button
+                  class="ghost"
+                  [disabled]="!auth.has('documents.download')"
+                  (click)="store.download(d.id)"
+                >
+                  Download
+                </button>
+              </td>}
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <app-pagination
+    [loading]="store.loading()"
+    [page]="page()"
+    [pageSize]="pageSize()"
+    [totalItems]="store.total()"
+    [totalPages]="store.totalPages()"
+    itemLabel="documents"
+    (pageChange)="go($event)"
+    (pageSizeChange)="resize($event)"
+  />
+</section>
+@if (uploadOpen()) {
+  <app-modal
+    title="Upload Document"
+    size="md"
+    [dirty]="!!selected()"
+    (closed)="uploadOpen.set(false)"
+    ><div class="modal-body">
+      <div class="form-grid">
+        <label class="field full"
+          ><span class="form-label">Patient <span class="required-indicator">*</span></span
+          ><select [(ngModel)]="ownerId">
+            <option value="">Select patient</option>
+            @for (p of patients.patients(); track p.id) {
+              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
+            }
+          </select></label
+        ><label class="field full"
+          ><span class="form-label">File <span class="required-indicator">*</span></span
+          ><input type="file" accept=".pdf,.jpg,.jpeg,.png,.txt" (change)="choose($event)" />
+          @if (selected()) {
+            <small>{{ selected()!.name }} · {{ size(selected()!.size) }}</small>
+          }</label
+        ><label class="field full"
+          ><span
+            ><input type="checkbox" [(ngModel)]="sensitive" /> Restricted clinical document</span
+          ></label
+        >
+      </div>
+      @if (error()) {
+        <p class="field-error">{{ error() }}</p>
+      }
+    </div>
+    <div class="modal-footer">
+      <button
+        class="primary"
+        [disabled]="!selected() || !ownerId || uploading()"
+        (click)="upload()"
+      >
+        {{ uploading() ? 'Uploading...' : 'Upload' }}
+      </button>
+    </div></app-modal
+  >
+}

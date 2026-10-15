@@ -1,1 +1,10 @@
-import { Routes } from '@angular/router'; import { permissionGuard } from '../../core/guards/permission.guard'; export const PHARMACY_ROUTES:Routes=[{path:'',canActivate:[permissionGuard],data:{permission:'pharmacy.view'},loadComponent:()=>import('./pages/pharmacy-page').then(m=>m.PharmacyPage)}];
+import { Routes } from '@angular/router';
+import { permissionGuard } from '../../core/guards/permission.guard';
+export const PHARMACY_ROUTES: Routes = [
+  {
+    path: '',
+    canActivate: [permissionGuard],
+    data: { permission: 'pharmacy.view' },
+    loadComponent: () => import('./pages/pharmacy-page').then((m) => m.PharmacyPage),
+  },
+];

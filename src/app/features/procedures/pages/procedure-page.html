@@ -1,0 +1,301 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Clinical / Procedures & OT</div>
+    <h1>Procedures & Operation theatre</h1>
+    <p class="muted">Schedule clinical teams and manage theatre workflows.</p>
+  </div>
+  @if (canCreate()) {
+    <button class="primary" type="button" (click)="openCreate()">+ Schedule procedure</button>
+  }
+</div>
+<section class="stats procedure-stats">
+  <article class="card stat metric-card metric-card--blue">
+    <span class="muted">Total procedures</span>
+    <div class="value">{{ store.stats().total }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--purple">
+    <span class="muted">Scheduled</span>
+    <div class="value">{{ store.stats().scheduled }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--amber">
+    <span class="muted">In progress</span>
+    <div class="value">{{ store.stats().inProgress }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--green">
+    <span class="muted">Completed</span>
+    <div class="value">{{ store.stats().completed }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--cyan">
+    <span class="muted">Available theatres</span>
+    <div class="value">{{ store.stats().availableTheatres }}</div>
+  </article>
+</section>
+<section class="card">
+  <div class="toolbar">
+    <app-search-field
+      placeholder="Search procedures..."
+      label="Search procedures"
+      [value]="search()"
+      [disabled]="store.loading()"
+      (valueChange)="onSearch($event)"
+    />
+    <div class="toolbar-actions">
+      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+      <div
+        class="filter-anchor"
+        appClickOutside
+        (appClickOutside)="filtersOpen.set(false)"
+        (click)="$event.stopPropagation()"
+      >
+        <button
+          class="secondary button-icon"
+          type="button"
+          [attr.aria-expanded]="filtersOpen()"
+          (click)="filtersOpen.update((value) => !value)"
+        >
+          <app-icon name="filter" [size]="17" />Filters
+          @if (activeFilterCount()) {
+            ({{ activeFilterCount() }})
+          }
+        </button>
+        @if (filtersOpen()) {
+          <div class="filter-panel">
+            <div class="filter-grid procedure-filter-grid">
+              <label class="field"
+                ><span class="form-label">From date</span
+                ><input
+                  type="date"
+                  [value]="draftFromDate()"
+                  (change)="draftFromDate.set($any($event.target).value)" /></label
+              ><label class="field"
+                ><span class="form-label">To date</span
+                ><input
+                  type="date"
+                  [value]="draftToDate()"
+                  (change)="draftToDate.set($any($event.target).value)" /></label
+              ><label class="field"
+                ><span class="form-label">Theatre</span
+                ><select
+                  [value]="draftTheatreId()"
+                  (change)="draftTheatreId.set($any($event.target).value)"
+                >
+                  <option value="">All theatres</option>
+                  @for (item of store.lookups().theatres; track item.id) {
+                    <option [value]="item.id">{{ item.name }}</option>
+                  }
+                </select></label
+              ><label class="field"
+                ><span class="form-label">Status</span
+                ><select
+                  [value]="draftStatus()"
+                  (change)="draftStatus.set($any($event.target).value)"
+                >
+                  <option value="">All statuses</option>
+                  @for (item of store.lookups().statuses; track item) {
+                    <option [value]="item">{{ item }}</option>
+                  }
+                </select></label
+              >
+            </div>
+            @if (draftFromDate() && draftToDate() && draftFromDate() > draftToDate()) {
+              <p class="field-error">From date must be on or before to date.</p>
+            }
+            <div class="filter-actions">
+              <button class="secondary" type="button" (click)="clearFilters()">Clear Filters</button
+              ><button
+                class="primary"
+                type="button"
+                [disabled]="draftFromDate() && draftToDate() && draftFromDate() > draftToDate()"
+                (click)="applyFilters()"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+      <button
+        class="secondary button-icon"
+        type="button"
+        [disabled]="!store.records().length || exporting()"
+        (click)="export()"
+      >
+        <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
+      </button>
+    </div>
+  </div>
+  @if (store.loading()) {
+    <div class="empty">Loading procedures…</div>
+  } @else if (store.error()) {
+    <div class="error-state" role="alert">
+      {{ store.error() }} <button class="secondary" type="button" (click)="load()">Retry</button>
+    </div>
+  } @else if (store.records().length) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            @if(columnVisible('date')){<th [attr.aria-sort]="ariaSort('scheduledAt')"><app-table-sort-header label="Date/time" field="scheduledAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('patient')"><app-table-sort-header label="Patient" field="patient" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('procedure')){<th [attr.aria-sort]="ariaSort('name')"><app-table-sort-header label="Procedure" field="name" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('surgeon')){<th [attr.aria-sort]="ariaSort('doctor')"><app-table-sort-header label="Surgeon" field="doctor" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('theatre')){<th [attr.aria-sort]="ariaSort('theatre')"><app-table-sort-header label="Theatre" field="theatre" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('duration')){<th [attr.aria-sort]="ariaSort('durationMinutes')"><app-table-sort-header label="Duration" field="durationMinutes" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('actions')){<th class="actions-column">Actions</th>}
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of store.records(); track item.id) {
+            <tr
+              class="clickable-row"
+              tabindex="0"
+              (click)="view(item.id)"
+              (keydown.enter)="view(item.id)"
+            >
+              @if(columnVisible('date')){<td>{{ format(item.scheduledAt) }}</td>}
+              @if(columnVisible('patient')){<td>
+                <b>{{ item.patientName || 'Not available' }}</b
+                ><small>{{ item.mrn || 'Not available' }}</small>
+              </td>}
+              @if(columnVisible('procedure')){<td>
+                <b>{{ item.name }}</b
+                ><small>{{ item.indication }}</small>
+              </td>}
+              @if(columnVisible('surgeon')){<td>{{ item.doctorName || 'Not available' }}</td>}
+              @if(columnVisible('theatre')){<td>{{ item.theatreName || 'Not available' }}</td>}
+              @if(columnVisible('duration')){<td>{{ item.durationMinutes }} min</td>}
+              @if(columnVisible('status')){<td><app-status-badge [value]="item.status" /></td>}
+              @if(columnVisible('actions')){<td class="actions actions-column" (click)="$event.stopPropagation()">
+                <app-actions-menu
+                  [id]="item.id"
+                  [canDelete]="false"
+                  [canEdit]="canEdit() && !['Completed', 'Cancelled'].includes(item.status)"
+                  [canStatus]="canEdit() && !!nextStatus(item)"
+                  [statusLabel]="nextStatus(item) ? 'Mark ' + nextStatus(item) : 'Change status'"
+                  (view)="view(item.id)"
+                  (edit)="openEdit(item)"
+                  (statusChange)="advance(item)"
+                />
+              </td>}
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <app-empty-state
+      title="No procedures found"
+      [description]="
+        hasCriteria()
+          ? 'No procedures match your search or filters.'
+          : 'No procedures have been scheduled.'
+      "
+      [actionLabel]="hasCriteria() ? 'Clear filters' : ''"
+      (action)="clearCriteria()"
+    />
+  }
+  <app-pagination
+    [loading]="store.loading()"
+    [page]="page()"
+    [pageSize]="pageSize()"
+    [totalItems]="store.total()"
+    [totalPages]="store.totalPages()"
+    itemLabel="procedures"
+    (pageChange)="changePage($event)"
+    (pageSizeChange)="changePageSize($event)"
+  />
+</section>
+@if (formOpen()) {
+  <app-modal
+    [title]="editing() ? 'Edit procedure' : 'Schedule procedure'"
+    size="lg"
+    [dirty]="form.dirty"
+    (closed)="closeForm()"
+    ><form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="crud-modal__body">
+        <div class="form-grid">
+          <label class="field"
+            ><span class="form-label">Patient <span class="required-indicator">*</span></span
+            ><select formControlName="patientId" (change)="onPatientChange()">
+              <option value="">Select patient</option>
+              @for (item of clinical.patients(); track item.id) {
+                <option [value]="item.id">
+                  {{ item.firstName }} {{ item.lastName }} · {{ item.mrn }}
+                </option>
+              }
+            </select></label
+          >
+          @if (showAdmissionField()) {
+            <label class="field"
+              ><span class="form-label">Admission</span
+              ><select formControlName="admissionId">
+                <option value="">Select admission if applicable</option>
+                @for (item of admissionsForPatient(); track item.id) {
+                  <option [value]="item.id">{{ item.number }}</option>
+                }
+              </select></label
+            >
+          }
+          <label class="field"
+            ><span class="form-label">Procedure name <span class="required-indicator">*</span></span
+            ><input formControlName="name" placeholder="Enter procedure name" /></label
+          ><label class="field"
+            ><span class="form-label">Surgeon <span class="required-indicator">*</span></span
+            ><select formControlName="doctorId">
+              <option value="">Select surgeon</option>
+              @for (item of store.lookups().doctors; track item.id) {
+                <option [value]="item.id">{{ item.firstName }} {{ item.lastName }}</option>
+              }
+            </select></label
+          ><label class="field"
+            ><span class="form-label">Theatre <span class="required-indicator">*</span></span
+            ><select formControlName="theatreId">
+              <option value="">Select theatre</option>
+              @for (item of store.lookups().theatres; track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
+              }
+            </select></label
+          ><label class="field"
+            ><span class="form-label"
+              >Scheduled date/time <span class="required-indicator">*</span></span
+            ><input type="datetime-local" formControlName="scheduledAt" /></label
+          ><label class="field"
+            ><span class="form-label"
+              >Estimated duration <span class="required-indicator">*</span></span
+            ><input
+              type="number"
+              min="1"
+              formControlName="durationMinutes"
+              placeholder="Enter estimated duration in minutes" /></label
+          ><label class="field"
+            ><span class="form-label">Status <span class="required-indicator">*</span></span
+            ><select formControlName="status">
+              <option value="">Select status</option>
+              @for (item of store.lookups().statuses; track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select></label
+          ><label class="field full"
+            ><span class="form-label">Indication <span class="required-indicator">*</span></span
+            ><textarea
+              formControlName="indication"
+              placeholder="Enter clinical indication"
+            ></textarea></label
+          ><label class="field full"
+            ><span class="form-label">Notes</span
+            ><textarea formControlName="notes" placeholder="Enter procedure notes"></textarea>
+          </label>
+        </div>
+        @if (formError()) {
+          <p class="form-api-error" role="alert">{{ formError() }}</p>
+        }
+      </div>
+      <footer class="crud-modal__footer">
+        <button class="primary" type="submit" [disabled]="form.invalid || submitting()">
+          {{ submitting() ? 'Saving…' : editing() ? 'Update procedure' : 'Schedule procedure' }}
+        </button>
+      </footer>
+    </form></app-modal
+  >
+}

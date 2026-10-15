@@ -12,7 +12,10 @@ const schema = z.object({
   FRONTEND_URL: z.string().url().default('http://localhost:4200'),
   FILE_UPLOAD_PATH: z.string().default('./uploads'),
   FRONTEND_RESET_URL: z.string().url().default('http://localhost:4200/auth/reset-password'),
-  NOTIFICATION_WEBHOOK_URL: z.preprocess((value) => value === '' ? undefined : value, z.string().url().optional()),
+  NOTIFICATION_WEBHOOK_URL: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().url().optional(),
+  ),
 });
 
 export const env = schema.parse(process.env);

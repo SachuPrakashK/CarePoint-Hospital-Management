@@ -2,14 +2,21 @@
 
 # Compiled output
 /dist
+/backend/dist
 /tmp
 /out-tsc
 /bazel-out
+# Angular application source is TypeScript-only. Keep accidental in-place compiler output out.
+/src/**/*.js
+/src/**/*.js.map
 
 # Node
 /node_modules
+/backend/node_modules
 npm-debug.log
 yarn-error.log
+*.log
+*.log.*
 
 # IDEs and editors
 .idea/
@@ -34,6 +41,7 @@ yarn-error.log
 .sass-cache/
 /connect.lock
 /coverage
+/backend/coverage
 /libpeerconnection.log
 testem.log
 /typings
@@ -45,6 +53,16 @@ backend/.env
 backend/.env.*
 !backend/.env.example
 backend/uploads/
+
+# Local secrets and credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+secrets/
+backend/secrets/
 
 # System files
 .DS_Store

@@ -1,0 +1,20 @@
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  background: #183f4a;
+  color: #fff;
+  padding: 14px 18px;
+  border-radius: 8px;
+}
+.pharmacy-actions { display: flex; align-items: center; gap: var(--space-3, 12px); flex-wrap: wrap; }
+.pharmacy-actions .primary { display: inline-flex; align-items: center; justify-content: center; }
+.pharmacy-filter-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.expiry-cell { display: flex; align-items: flex-start; gap: 7px; flex-direction: column; white-space: nowrap; }
+.error-state { padding: 24px; color: var(--color-danger); }
+@media (max-width: 650px) {
+  .page-head { align-items: stretch; }
+  .pharmacy-actions { width: 100%; }
+  .pharmacy-actions .primary { flex: 1 1 140px; }
+  .pharmacy-filter-grid { grid-template-columns: 1fr; }
+}

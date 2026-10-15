@@ -1,2 +1,61 @@
-import { Component, inject, signal } from '@angular/core'; import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms'; import { Router, RouterLink } from '@angular/router'; import { InpatientStore } from '../../../core/services/inpatient.store'; import { ClinicalStore } from '../../../core/services/clinical.store';
-@Component({imports:[ReactiveFormsModule,RouterLink],template:`<div class="page-head"><div><div class="breadcrumbs">Inpatient / New admission</div><h1>Admit patient</h1><p class="muted">Admission and bed allocation are committed together.</p></div></div><form class="card" [formGroup]="form" (ngSubmit)="save()"><div class="form-grid"><label class="field">Patient *<select formControlName="patientId"><option value="">Select patient</option>@for(p of clinical.patients();track p.id){<option [value]="p.id">{{p.firstName}} {{p.lastName}} · {{p.mrn}}</option>}</select></label><label class="field">Admission type<select formControlName="type"><option>Emergency</option><option>Planned</option><option>Transfer</option></select></label><label class="field">Department<select formControlName="department"><option>General Medicine</option><option>Cardiology</option><option>Neurology</option><option>Orthopedics</option></select></label><label class="field">Attending doctor<select formControlName="attendingDoctor"><option>Dr. Ananya Sen</option><option>Dr. Vikram Rao</option></select></label><label class="field">Admission date/time<input type="datetime-local" formControlName="admittedAt"></label><label class="field">Available bed *<select formControlName="bedId"><option value="">Select bed</option>@for(b of store.availableBeds();track b.id){<option [value]="b.id">{{b.name}} · {{b.ward}} · {{b.roomType}}</option>}</select></label><label class="field full">Reason for admission *<textarea formControlName="reason" placeholder="Clinical reason for admission"></textarea></label><label class="field full">Initial diagnosis *<input formControlName="initialDiagnosis" placeholder="Working diagnosis"></label><label class="field full">Notes<textarea formControlName="notes" placeholder="Admission notes"></textarea></label>@if(error()){<div class="error full">{{error()}}</div>}</div><div class="form-actions"><a class="secondary button-link" routerLink="/inpatient">Cancel</a><button class="primary">Admit patient</button></div></form>`})export class AdmissionForm{readonly store=inject(InpatientStore);readonly clinical=inject(ClinicalStore);private fb=inject(FormBuilder);private router=inject(Router);readonly error=signal('');readonly form=this.fb.nonNullable.group({patientId:['',Validators.required],type:['Planned' as const],department:['General Medicine'],attendingDoctor:['Dr. Ananya Sen'],admittedAt:[new Date().toISOString().slice(0,16)],bedId:['',Validators.required],reason:['',Validators.required],initialDiagnosis:['',Validators.required],notes:['']});save(){this.form.markAllAsTouched();if(this.form.invalid)return;const v=this.form.getRawValue(),p=this.clinical.patients().find(x=>x.id===v.patientId)!;try{this.store.admit({patientId:v.patientId,patientName:`${p.firstName} ${p.lastName}`,admittedAt:new Date(v.admittedAt).toISOString(),type:v.type,department:v.department,attendingDoctor:v.attendingDoctor,reason:v.reason,initialDiagnosis:v.initialDiagnosis,notes:v.notes},v.bedId);void this.router.navigateByUrl('/inpatient')}catch(e){this.error.set((e as Error).message)}}}
+import { Component, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { InpatientStore } from '../../../core/services/inpatient.store';
+import { ClinicalStore } from '../../../core/services/clinical.store';
+import { AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { AppModal } from '../../../shared/components/modal/app-modal';
+import { ToastService } from '../../../core/services/toast.service';
+@Component({ imports: [ReactiveFormsModule, AppModal], templateUrl: './admission-form.html' })
+export class AdmissionForm {
+  readonly store = inject(InpatientStore);
+  readonly clinical = inject(ClinicalStore);
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private dates = inject(AppDateTimeService);
+  private toast = inject(ToastService);
+  readonly error = signal('');
+  readonly submitting = signal(false);
+  readonly form = this.fb.nonNullable.group({
+    patientId: ['', Validators.required],
+    type: ['Planned' as const],
+    departmentId: ['', Validators.required],
+    attendingDoctorId: ['', Validators.required],
+    admittedAt: [this.dates.formDateTime()],
+    bedId: ['', Validators.required],
+    reason: ['', Validators.required],
+    initialDiagnosis: ['', Validators.required],
+    notes: [''],
+  });
+  async save() {
+    this.form.markAllAsTouched();
+    if (this.form.invalid || this.submitting()) return;
+    const v = this.form.getRawValue(),
+      p = this.clinical.patients().find((x) => x.id === v.patientId)!;
+    try {
+      this.submitting.set(true);
+      await this.store.admit(
+        {
+          patientId: v.patientId,
+          patientName: `${p.firstName} ${p.lastName}`,
+          admittedAt: this.dates.formDateTimeToApi(v.admittedAt),
+          type: v.type,
+          departmentId: v.departmentId,
+          attendingDoctorId: v.attendingDoctorId,
+          reason: v.reason,
+          initialDiagnosis: v.initialDiagnosis,
+          notes: v.notes,
+        },
+        v.bedId,
+      );
+      this.form.markAsPristine();
+      this.toast.success('Admission created successfully.');
+      await this.router.navigateByUrl('/inpatient');
+    } catch (e) {
+      this.error.set((e as Error).message);
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+  close() { void this.router.navigateByUrl('/inpatient'); }
+}

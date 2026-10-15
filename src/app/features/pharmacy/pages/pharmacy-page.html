@@ -1,0 +1,335 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Operations / Pharmacy</div>
+    <h1>Pharmacy</h1>
+    <p class="muted">Prescription dispensing, batches and stock ledger.</p>
+  </div>
+  @if (canManage()) {
+    <div class="page-actions pharmacy-actions">
+      <button class="primary" type="button" (click)="open('medicine')">+ Medicine</button
+      ><button class="primary" type="button" (click)="open('batch')">+ Stock receipt</button>
+    </div>
+  }
+</div>
+<section class="stats">
+  <article class="card stat metric-card metric-card--blue">
+    <span class="muted">Pending prescriptions</span>
+    <div class="value">{{ pending() }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--green">
+    <span class="muted">Medicines</span>
+    <div class="value">{{ store.medicines().length }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--red">
+    <span class="muted">Low stock</span>
+    <div class="value">{{ store.lowStockCount() }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--purple">
+    <span class="muted">Expiring in {{ store.expirySoonDays() }} days</span>
+    <div class="value">{{ store.expiringCount() }}</div>
+  </article>
+</section>
+<div class="tabs" role="tablist" aria-label="Pharmacy views">
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'queue'"
+    [class.active]="tab() === 'queue'"
+    (click)="selectTab('queue')"
+  >
+    Pharmacy queue
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'stock'"
+    [class.active]="tab() === 'stock'"
+    (click)="selectTab('stock')"
+  >
+    Medicine stock
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'ledger'"
+    [class.active]="tab() === 'ledger'"
+    (click)="selectTab('ledger')"
+  >
+    Stock ledger
+  </button>
+</div>
+@if (tab() === 'queue') {
+  <section class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Prescription</th>
+            <th>Patient</th>
+            <th>Medicine</th>
+            <th>Prescribed</th>
+            <th>Available</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of store.dispenses(); track d.id) {
+            @for (i of d.items; track i.id) {
+              <tr>
+                <td>{{ d.number }}</td>
+                <td>
+                  <b>{{ d.patientName || 'Not available' }}</b>
+                </td>
+                <td>{{ medicine(i.medicineId) }}</td>
+                <td>{{ i.prescribedQuantity }}</td>
+                <td>{{ store.medicineQuantity(i.medicineId) }}</td>
+                <td><app-status-badge [value]="d.status" /></td>
+                <td>
+                  <button
+                    class="primary"
+                    type="button"
+                    [disabled]="d.status === 'Dispensed'"
+                    (click)="
+                      dispense(d.id, i.medicineId, i.batchId, i.prescribedQuantity, i.unitPrice)
+                    "
+                  >
+                    Dispense
+                  </button>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">No prescriptions awaiting pharmacy review.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+} @else if (tab() === 'stock') {
+  <section class="card">
+    <div class="toolbar">
+      <app-search-field
+        placeholder="Search medicines..."
+        label="Search medicines"
+        [value]="search()"
+        [disabled]="store.stockLoading()"
+        (valueChange)="onSearch($event)"
+      />
+      <div class="toolbar-actions">
+        <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+        <div
+          class="filter-anchor"
+          appClickOutside
+          (appClickOutside)="filtersOpen.set(false)"
+          (click)="$event.stopPropagation()"
+        >
+          <button
+            class="secondary button-icon"
+            type="button"
+            [disabled]="filtersDisabled()"
+            [attr.aria-expanded]="filtersOpen()"
+            (click)="toggleFilters()"
+          >
+            <app-icon name="filter" [size]="17" />Filters
+            @if (activeFilterCount()) {
+              ({{ activeFilterCount() }})
+            }
+          </button>
+          @if (filtersOpen()) {
+            <div class="filter-panel">
+              <div class="filter-grid pharmacy-filter-grid">
+                <label class="field"
+                  ><span class="form-label">Category</span
+                  ><select
+                    [value]="draftCategory()"
+                    (change)="draftCategory.set($any($event.target).value)"
+                  >
+                    <option value="">All categories</option>
+                    @for (item of store.categories(); track item) {
+                      <option [value]="item">{{ item }}</option>
+                    }
+                  </select></label
+                >
+                <label class="field"
+                  ><span class="form-label">Stock level</span
+                  ><select
+                    [value]="draftLowStock() ? 'true' : ''"
+                    (change)="draftLowStock.set($any($event.target).value === 'true')"
+                  >
+                    <option value="">All stock levels</option>
+                    <option value="true">Low stock only</option>
+                  </select></label
+                >
+                <label class="field"
+                  ><span class="form-label">Expiry</span
+                  ><select
+                    [value]="draftExpiry()"
+                    (change)="draftExpiry.set($any($event.target).value)"
+                  >
+                    <option value="">All expiry dates</option>
+                    <option value="expired">Expired</option>
+                    <option value="expiring_soon">
+                      Expiring within {{ store.expirySoonDays() }} days
+                    </option>
+                    <option value="valid">Valid beyond {{ store.expirySoonDays() }} days</option>
+                  </select></label
+                >
+              </div>
+              <div class="filter-actions">
+                <button class="secondary" type="button" (click)="clearFilters()">
+                  Clear Filters</button
+                ><button class="primary" type="button" (click)="applyFilters()">
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+        <button
+          class="secondary button-icon"
+          type="button"
+          [disabled]="!store.stockBatches().length || exporting()"
+          (click)="exportStock()"
+        >
+          <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
+        </button>
+      </div>
+    </div>
+    @if (store.stockLoading()) {
+      <div class="empty">Loading medicine stock…</div>
+    } @else if (store.stockError()) {
+      <div class="error-state" role="alert">
+        {{ store.stockError() }}
+        <button class="secondary" type="button" (click)="loadStock()">Retry</button>
+      </div>
+    } @else if (store.stockBatches().length) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              @if(columnVisible('medicine')){<th [attr.aria-sort]="ariaSort('medicine')"><app-table-sort-header label="Medicine" field="medicine" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('generic')){<th>Generic / Brand</th>} @if(columnVisible('category')){<th>Category</th>}
+              @if(columnVisible('batch')){<th [attr.aria-sort]="ariaSort('batchNumber')"><app-table-sort-header label="Batch" field="batchNumber" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('expiry')){<th [attr.aria-sort]="ariaSort('expiresAt')"><app-table-sort-header label="Expiry" field="expiresAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('price')){<th [attr.aria-sort]="ariaSort('purchasePrice')"><app-table-sort-header label="Purchase / Sale" field="purchasePrice" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('available')){<th [attr.aria-sort]="ariaSort('quantity')"><app-table-sort-header label="Available" field="quantity" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('stock')){<th>Stock</th>}
+            </tr>
+          </thead>
+          <tbody>
+            @for (b of store.stockBatches(); track b.id) {
+              <tr [class.clickable-row]="canManage()" (click)="canManage() && open('batch', b)">
+                @if(columnVisible('medicine')){<td>
+                  <b>{{ b.medicine?.name || 'Not available' }}</b>
+                </td>}
+                @if(columnVisible('generic')){<td>
+                  {{ b.medicine?.genericName || 'Not available' }} ·
+                  {{ b.medicine?.brand || 'Not available' }}
+                </td>}
+                @if(columnVisible('category')){<td>{{ b.medicine?.category || 'Not available' }}</td>}
+                @if(columnVisible('batch')){<td>{{ b.batchNumber }}</td>}
+                @if(columnVisible('expiry')){<td>
+                  <span class="expiry-cell"
+                    >{{ formatExpiry(b.expiresAt) }}<app-status-badge [value]="b.expiryStatus"
+                  /></span>
+                </td>}
+                @if(columnVisible('price')){<td>₹{{ b.purchasePrice }} / ₹{{ b.sellingPrice }}</td>}
+                @if(columnVisible('available')){<td>{{ b.quantity }}</td>}
+                @if(columnVisible('stock')){<td><app-status-badge [value]="b.lowStock ? 'Low Stock' : 'Healthy'" /></td>}
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (store.stockTotal()) {
+        <app-pagination
+          [page]="page()"
+          [pageSize]="pageSize()"
+          [totalItems]="store.stockTotal()"
+          [totalPages]="store.stockTotalPages()"
+          [loading]="store.stockLoading()"
+          itemLabel="batches"
+          (pageChange)="changePage($event)"
+          (pageSizeChange)="changePageSize($event)"
+        />
+      }
+    } @else if (hasCriteria()) {
+      <app-empty-state
+        title="No medicines match your search or filters."
+        description="Change or clear the search and filters to see other medicine stock."
+        actionLabel="Clear search and filters"
+        (action)="clearCriteria()"
+      />
+    } @else {
+      <app-empty-state
+        title="No medicines found."
+        description="No medicine stock receipts have been recorded yet."
+      />
+    }
+  </section>
+} @else {
+  <section class="card">
+    @if (store.ledgerLoading()) {
+      <div class="empty">Loading stock ledger…</div>
+    } @else if (store.ledgerError()) {
+      <div class="error-state" role="alert">
+        {{ store.ledgerError() }}
+        <button class="secondary" type="button" (click)="store.loadLedger()">Retry</button>
+      </div>
+    } @else if (store.stockLedger().length) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Medicine</th>
+              <th>Batch</th>
+              <th>Quantity</th>
+              <th>Reference</th>
+              <th>Recorded by</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (x of store.stockLedger(); track x.id) {
+              <tr>
+                <td>{{ format(x.createdAt) }}</td>
+                <td>{{ x.type }}</td>
+                <td>{{ x.medicine?.name || 'Not available' }}</td>
+                <td>{{ x.batch?.batchNumber || 'Not available' }}</td>
+                <td>{{ x.quantity }}</td>
+                <td>{{ x.reference || 'Not available' }}</td>
+                <td>{{ x.createdBy?.displayName || 'System user' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <app-empty-state
+        title="No stock movements recorded."
+        description="Stock receipts, dispensing, and adjustments will appear here."
+      />
+    }
+  </section>
+}
+@if (message()) {
+  <div class="toast" role="status">{{ message() }}</div>
+}
+@if (formKind()) {
+  <app-modal
+    [title]="
+      (editing() ? 'Edit ' : 'Create ') + (formKind() === 'medicine' ? 'medicine' : 'stock receipt')
+    "
+    size="lg"
+    [dirty]="formDirty()"
+    (closed)="close()"
+    ><app-pharmacy-form
+      [kind]="formKind()!"
+      [entity]="editing()"
+      (dirtyChanged)="formDirty.set($event)"
+      (saved)="saved()"
+  /></app-modal>
+}

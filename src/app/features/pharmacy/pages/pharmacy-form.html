@@ -1,0 +1,135 @@
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="crud-modal__body">
+    <div class="form-grid">
+      @if (kind() === 'medicine') {
+        <label class="field"
+          ><span class="form-label">Medicine name <span class="required-indicator">*</span></span
+          ><input formControlName="name" placeholder="Enter medicine name" />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <small class="field-error">Medicine name is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Generic name <span class="required-indicator">*</span></span
+          ><input formControlName="genericName" placeholder="Enter generic name" />
+          @if (form.controls.genericName.touched && form.controls.genericName.invalid) {
+            <small class="field-error">Generic name is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Brand <span class="required-indicator">*</span></span
+          ><input formControlName="brand" placeholder="Enter brand name" />
+          @if (form.controls.brand.touched && form.controls.brand.invalid) {
+            <small class="field-error">Brand name is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Category <span class="required-indicator">*</span></span
+          ><input formControlName="category" placeholder="Enter medicine category" />
+          @if (form.controls.category.touched && form.controls.category.invalid) {
+            <small class="field-error">Category is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Strength <span class="required-indicator">*</span></span
+          ><input formControlName="strength" placeholder="Enter strength, for example 500 mg" />
+          @if (form.controls.strength.touched && form.controls.strength.invalid) {
+            <small class="field-error">Strength is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Form <span class="required-indicator">*</span></span
+          ><input formControlName="form" placeholder="Enter dosage form" />
+          @if (form.controls.form.touched && form.controls.form.invalid) {
+            <small class="field-error">Dosage form is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Unit <span class="required-indicator">*</span></span
+          ><input formControlName="unit" placeholder="Enter dispensing unit" />
+          @if (form.controls.unit.touched && form.controls.unit.invalid) {
+            <small class="field-error">Dispensing unit is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Barcode</span
+          ><input formControlName="barcode" placeholder="Enter barcode"
+        /></label>
+      } @else {
+        <label class="field"
+          ><span class="form-label">Medicine <span class="required-indicator">*</span></span
+          ><select formControlName="medicineId">
+            <option value="">Select medicine</option>
+            @for (item of store.medicines(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select>
+          @if (form.controls.medicineId.touched && form.controls.medicineId.invalid) {
+            <small class="field-error">Medicine is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Batch number <span class="required-indicator">*</span></span
+          ><input formControlName="batchNumber" placeholder="Enter batch number" />
+          @if (form.controls.batchNumber.touched && form.controls.batchNumber.invalid) {
+            <small class="field-error">Batch number is required.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Expiry <span class="required-indicator">*</span></span
+          ><input type="date" formControlName="expiresAt" />
+          @if (form.controls.expiresAt.touched && form.controls.expiresAt.hasError('required')) {
+            <small class="field-error">Expiry date is required.</small>
+          } @else if (
+            form.controls.expiresAt.touched && form.controls.expiresAt.hasError('futureDate')
+          ) {
+            <small class="field-error">Expiry date must be in the future.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Purchase price <span class="required-indicator">*</span></span
+          ><input
+            type="number"
+            min="0"
+            formControlName="purchasePrice"
+            placeholder="Enter purchase price"
+          />
+          @if (form.controls.purchasePrice.touched && form.controls.purchasePrice.invalid) {
+            <small class="field-error">Enter a valid non-negative purchase price.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Selling price <span class="required-indicator">*</span></span
+          ><input
+            type="number"
+            min="0"
+            formControlName="sellingPrice"
+            placeholder="Enter selling price"
+          />
+          @if (form.controls.sellingPrice.touched && form.controls.sellingPrice.invalid) {
+            <small class="field-error">Enter a valid non-negative selling price.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Quantity <span class="required-indicator">*</span></span
+          ><input
+            type="number"
+            min="1"
+            formControlName="quantity"
+            placeholder="Enter received quantity"
+          />
+          @if (form.controls.quantity.touched && form.controls.quantity.invalid) {
+            <small class="field-error">Received quantity must be at least 1.</small>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Reorder level <span class="required-indicator">*</span></span
+          ><input
+            type="number"
+            min="0"
+            formControlName="reorderLevel"
+            placeholder="Enter reorder level"
+          />
+          @if (form.controls.reorderLevel.touched && form.controls.reorderLevel.invalid) {
+            <small class="field-error">Enter a valid non-negative reorder level.</small>
+          }
+        </label>
+      }
+    </div>
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+  </div>
+  <div class="crud-modal__footer">
+    <button class="primary" [disabled]="form.invalid || submitting">
+      {{ submitting ? 'Saving...' : entity() ? 'Update' : 'Create' }}
+    </button>
+  </div>
+</form>

@@ -1,2 +1,16 @@
-import { Routes } from '@angular/router'; import { permissionGuard } from '../../core/guards/permission.guard';
-export const PATIENT_ROUTES:Routes=[{path:'',canActivate:[permissionGuard],data:{permission:'patients.view'},loadComponent:()=>import('./pages/patient-list').then(m=>m.PatientList)},{path:'new',canActivate:[permissionGuard],data:{permission:'patients.create'},loadComponent:()=>import('./pages/patient-form').then(m=>m.PatientForm)},{path:':id',canActivate:[permissionGuard],data:{permission:'patients.view'},loadComponent:()=>import('./pages/patient-details').then(m=>m.PatientDetails)}];
+import { Routes } from '@angular/router';
+import { permissionGuard } from '../../core/guards/permission.guard';
+export const PATIENT_ROUTES: Routes = [
+  {
+    path: '',
+    canActivate: [permissionGuard],
+    data: { permission: 'patients.view' },
+    loadComponent: () => import('./pages/patient-list').then((m) => m.PatientList),
+  },
+  {
+    path: ':id',
+    canActivate: [permissionGuard],
+    data: { permission: 'patients.view' },
+    loadComponent: () => import('./pages/patient-details').then((m) => m.PatientDetails),
+  },
+];

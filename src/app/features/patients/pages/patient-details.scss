@@ -1,0 +1,43 @@
+.details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 22px;
+}
+.details > div {
+    display: grid;
+    gap: 6px;
+}
+.details small,
+.patient-facts small {
+    color: var(--color-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+.details .full {
+    grid-column: 1/-1;
+}
+.patient-facts {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+.patient-facts span {
+    display: grid;
+    gap: 3px;
+}
+.patient-heading {
+    align-items: center;
+}
+@media (max-width: 650px) {
+    .details {
+        grid-template-columns: 1fr;
+    }
+    .details .full {
+        grid-column: auto;
+    }
+    .patient-heading > button {
+        margin-top: 16px;
+    }
+}

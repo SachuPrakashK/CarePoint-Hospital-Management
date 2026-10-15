@@ -1,0 +1,93 @@
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="crud-modal__body">
+    <div class="form-grid">
+      @if (kind() === 'provider') {
+        <label class="field"
+          ><span class="form-label">Name <span class="required-indicator">*</span></span
+          ><input formControlName="name" /></label
+        ><label class="field"
+          ><span class="form-label">Code <span class="required-indicator">*</span></span
+          ><input formControlName="code" /></label
+        ><label class="field"
+          ><span class="form-label">Contact</span><input formControlName="contact" /></label
+        ><label class="field full"
+          ><span class="form-label">Address</span><textarea formControlName="address"></textarea>
+        </label>
+      } @else {
+        <label class="field"
+          ><span class="form-label">Patient <span class="required-indicator">*</span></span
+          ><select formControlName="patientId">
+            <option value="">Select</option>
+            @for (p of patients.patients(); track p.id) {
+              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
+            }
+          </select></label
+        >
+        @if (kind() === 'policy') {
+          <label class="field"
+            ><span class="form-label">Provider <span class="required-indicator">*</span></span
+            ><select formControlName="providerId">
+              <option value="">Select</option>
+              @for (p of store.providers(); track p.id) {
+                <option [value]="p.id">{{ p.name }}</option>
+              }
+            </select></label
+          ><label class="field"
+            ><span class="form-label">Policy number <span class="required-indicator">*</span></span
+            ><input formControlName="policyNumber" /></label
+          ><label class="field"
+            ><span class="form-label">Member number</span
+            ><input formControlName="memberNumber" /></label
+          ><label class="field"
+            ><span class="form-label">Valid from <span class="required-indicator">*</span></span
+            ><input type="date" formControlName="startsAt" /></label
+          ><label class="field"
+            ><span class="form-label">Valid to <span class="required-indicator">*</span></span
+            ><input type="date" formControlName="endsAt" /></label
+          ><label class="field"
+            ><span class="form-label">Coverage limit <span class="required-indicator">*</span></span
+            ><input type="number" min="0" formControlName="coverageLimit" /></label
+          ><label class="field"
+            ><span class="form-label">Relationship <span class="required-indicator">*</span></span
+            ><input formControlName="relationship" /></label
+          ><label class="field"
+            ><span class="form-label">Priority <span class="required-indicator">*</span></span
+            ><select formControlName="priority">
+              <option>Primary</option>
+              <option>Secondary</option>
+            </select></label
+          >
+        } @else {
+          <label class="field"
+            ><span class="form-label">Policy <span class="required-indicator">*</span></span
+            ><select formControlName="insuranceId">
+              <option value="">Select</option>
+              @for (p of policies(); track p.id) {
+                <option [value]="p.id">{{ p.policyNumber }}</option>
+              }
+            </select></label
+          ><label class="field"
+            ><span class="form-label">Invoice <span class="required-indicator">*</span></span
+            ><select formControlName="invoiceId">
+              <option value="">Select</option>
+              @for (i of invoices(); track i.id) {
+                <option [value]="i.id">{{ i.number }}</option>
+              }
+            </select></label
+          ><label class="field"
+            ><span class="form-label">Claim amount <span class="required-indicator">*</span></span
+            ><input type="number" min="0.01" formControlName="claimedAmount"
+          /></label>
+        }
+      }
+    </div>
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+  </div>
+  <div class="crud-modal__footer">
+    <button class="primary" [disabled]="form.invalid || submitting">
+      {{ submitting ? 'Saving...' : entity() ? 'Update' : 'Create' }}
+    </button>
+  </div>
+</form>

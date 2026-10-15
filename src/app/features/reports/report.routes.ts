@@ -1,1 +1,10 @@
-import { Routes } from '@angular/router'; import { permissionGuard } from '../../core/guards/permission.guard'; export const REPORT_ROUTES:Routes=[{path:'',canActivate:[permissionGuard],data:{permission:'reports.view'},loadComponent:()=>import('./reports-page').then(m=>m.ReportsPage)}];
+import { Routes } from '@angular/router';
+import { permissionGuard } from '../../core/guards/permission.guard';
+export const REPORT_ROUTES: Routes = [
+  {
+    path: '',
+    canActivate: [permissionGuard],
+    data: { permission: 'reports.view' },
+    loadComponent: () => import('./reports-page').then((m) => m.ReportsPage),
+  },
+];

@@ -1,0 +1,26 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (error) {
+    <div class="form-error" role="alert">{{ error }}</div>
+  }
+  <div class="modal-form-grid">
+    <label class="field">
+      <span class="form-label">Amount <span class="required-indicator">*</span></span>
+      <input type="number" min="0.01" step="0.01" formControlName="amount" />
+      @if (form.controls.amount.touched && form.controls.amount.invalid) {
+        <span class="field-error">Enter a valid refund amount.</span>
+      }
+    </label>
+    <label class="field modal-form-span">
+      <span class="form-label">Reason <span class="required-indicator">*</span></span>
+      <textarea formControlName="reason" maxlength="500"></textarea>
+      @if (form.controls.reason.touched && form.controls.reason.invalid) {
+        <span class="field-error">Enter a refund reason.</span>
+      }
+    </label>
+  </div>
+  <footer class="modal-form-footer">
+    <button class="danger" type="submit" [disabled]="form.invalid || submitting">
+      {{ submitting ? 'Requesting…' : 'Request refund' }}
+    </button>
+  </footer>
+</form>

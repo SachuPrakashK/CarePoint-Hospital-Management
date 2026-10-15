@@ -1,3 +1,74 @@
-import {Component,effect,inject,input} from '@angular/core'; import {RouterLink} from '@angular/router'; import {PatientStore} from '../patient.store';
-@Component({imports:[RouterLink],template:`@if(store.loading()&&!store.selected()){<div class="card empty">Loading patient…</div>}@else if(store.selected();as p){<div class="page-head"><div><h1>{{p.firstName}} {{p.lastName}}</h1><p class="muted">{{p.mrn}} · {{p.phone}}</p></div><div class="head-actions"><a class="secondary button-link" routerLink="/patients">Back</a><a class="primary button-link" routerLink="/appointments/new">Book appointment</a></div></div><div class="tabs"><button class="active">Overview</button><button>Appointments</button><button>Visits</button><button>Prescriptions</button><button>Documents</button><a [routerLink]="['/clinical',p.id]">Medical Records</a></div><div class="grid-2"><section class="card"><div class="section-title"><h2>Patient information</h2></div><div class="details"><div><small>DATE OF BIRTH</small><b>{{p.dob}}</b></div><div><small>GENDER</small><b>{{p.gender}}</b></div><div><small>BLOOD GROUP</small><b>{{p.bloodGroup}}</b></div><div><small>CITY</small><b>{{p.city||'—'}}</b></div><div><small>EMAIL</small><b>{{p.email||'—'}}</b></div><div><small>EMERGENCY CONTACT</small><b>{{p.emergencyContact||'—'}}</b></div></div></section><section class="card"><div class="section-title"><h2>Clinical alerts</h2></div><div class="details"><div class="full"><small>ALLERGIES</small><p>@for(a of p.allergies;track a){<span class="status danger">{{a}}</span>}@empty{No known allergies}</p></div></div></section></div>}@else{<div class="empty">Patient not found.</div>}`,styles:[`.details{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:22px}.details div{display:grid;gap:6px}.details small{color:#72838a;font-size:11px}.full{grid-column:1/-1}`]})
-export class PatientDetails{id=input.required<string>();readonly store=inject(PatientStore);private loader=effect(()=>{void this.store.loadDetails(this.id());});}
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { PatientStore } from '../patient.store';
+import { PatientDetailStore, PatientTab } from '../patient-detail.store';
+import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { AppDateTimePipe, AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { AppointmentForm } from '../../appointments/pages/appointment-form';
+import { AppIcon } from '../../../shared/components/icon/app-icon';
+import { AppModal } from '../../../shared/components/modal/app-modal';
+import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
+
+type DetailsTab = 'overview' | PatientTab;
+
+@Component({
+  imports: [EmptyState, AppDateTimePipe, AppointmentForm, AppIcon, AppModal, StatusBadge],
+  providers: [PatientDetailStore],
+  templateUrl: './patient-details.html',
+  styleUrl: './patient-details.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class PatientDetails {
+  readonly id = input.required<string>();
+  readonly store = inject(PatientStore);
+  readonly detail = inject(PatientDetailStore);
+  readonly dates = inject(AppDateTimeService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  readonly tabs: ReadonlyArray<{ id: DetailsTab; label: string }> = [
+    { id: 'overview', label: 'Overview' }, { id: 'appointments', label: 'Appointments' },
+    { id: 'visits', label: 'Visits' }, { id: 'prescriptions', label: 'Prescriptions' },
+    { id: 'documents', label: 'Documents' }, { id: 'medical-records', label: 'Medical Records' },
+    { id: 'laboratory', label: 'Laboratory' }, { id: 'radiology', label: 'Radiology' },
+    { id: 'billing', label: 'Billing' }, { id: 'insurance', label: 'Insurance' },
+  ];
+  readonly activeTab = signal<DetailsTab>(this.validTab(this.route.snapshot.queryParamMap.get('tab')));
+  private readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  readonly appointmentOpen = signal(false);
+  readonly rows = computed<any[]>(() => {
+    const tab = this.activeTab();
+    return tab === 'overview' || tab === 'medical-records' ? [] : (this.detail.data()[tab] ?? []);
+  });
+  readonly medical = computed<Record<string, any[]>>(() => this.detail.data()['medical-records'] ?? {});
+  readonly hasMedicalRecords = computed(() => Object.values(this.medical()).some((items) => items.length));
+  readonly activeError = computed(() => {
+    const tab = this.activeTab();
+    return tab === 'overview' ? undefined : this.detail.errors()[tab];
+  });
+  private readonly patientLoader = effect(() => { void this.store.loadDetails(this.id()); });
+  private readonly queryTabLoader = effect(() => {
+    const tab = this.validTab(this.queryParams().get('tab'));
+    if (tab !== this.activeTab()) this.activeTab.set(tab);
+  });
+  private readonly tabLoader = effect(() => {
+    const id = this.id();
+    const tab = this.activeTab();
+    if (tab !== 'overview') void this.detail.load(id, tab);
+  });
+  selectTab(tab: DetailsTab) {
+    this.activeTab.set(tab);
+    void this.router.navigate([], { relativeTo: this.route, queryParams: tab === 'overview' ? {} : { tab }, replaceUrl: true });
+  }
+  retry() { const tab = this.activeTab(); if (tab !== 'overview') void this.detail.load(this.id(), tab, true); }
+  age(dob: string) { return this.dates.calculateAge(dob); }
+  async appointmentCreated() {
+    this.detail.invalidate('appointments');
+    await this.detail.load(this.id(), 'appointments', true);
+    this.appointmentOpen.set(false);
+    void this.router.navigate(['/appointments']);
+  }
+  private validTab(value: string | null): DetailsTab {
+    return this.tabs.some((tab) => tab.id === value) ? value as DetailsTab : 'overview';
+  }
+}

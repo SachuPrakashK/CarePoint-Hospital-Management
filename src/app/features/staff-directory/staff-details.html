@@ -1,0 +1,86 @@
+<a class="back-link" [routerLink]="['/', kind]"
+  >‹ {{ kind === 'doctors' ? 'Doctors' : 'Employees' }}</a
+>
+@if (loading()) {
+  <div class="loading-state">Loading details...</div>
+} @else if (error()) {
+  <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
+} @else if (record(); as item) {
+  <div class="page-head">
+    <div>
+      <h1>{{ item.firstName }} {{ item.lastName }}</h1>
+      <p class="muted">{{ item.employeeCode }}</p>
+    </div>
+    <app-status-badge [value]="item.status" />
+  </div>
+  <section class="card">
+    <div class="section-title">
+      <h2>{{ kind === 'doctors' ? 'Doctor' : 'Employee' }} details</h2>
+    </div>
+    <dl class="details-grid">
+      <div>
+        <dt>Gender</dt>
+        <dd>{{ item.gender || 'Not available' }}</dd>
+      </div>
+      <div>
+        <dt>Date of birth</dt>
+        <dd>{{ item.dateOfBirth ? dates.formatDate(item.dateOfBirth) : 'Not available' }}</dd>
+      </div>
+      <div>
+        <dt>Phone</dt>
+        <dd>{{ item.phone || 'Not available' }}</dd>
+      </div>
+      <div>
+        <dt>Email</dt>
+        <dd>{{ item.email || 'Not available' }}</dd>
+      </div>
+      <div>
+        <dt>Department</dt>
+        <dd>{{ item.department?.name || 'Not available' }}</dd>
+      </div>
+      <div>
+        <dt>{{ kind === 'doctors' ? 'Specialization' : 'Designation' }}</dt>
+        <dd>{{ item.specialization?.name || item.designation || 'Not available' }}</dd>
+      </div>
+      @if (kind === 'doctors') {
+        <div>
+          <dt>Registration number</dt>
+          <dd>{{ item.medicalRegistration || 'Not available' }}</dd>
+        </div>
+        <div>
+          <dt>Qualification</dt>
+          <dd>{{ item.qualification || 'Not available' }}</dd>
+        </div>
+        <div>
+          <dt>Experience</dt>
+          <dd>{{ item.yearsOfExperience ?? 0 }} years</dd>
+        </div>
+        <div>
+          <dt>Consultation fee</dt>
+          <dd>{{ item.consultationFee ?? 0 }}</dd>
+        </div>
+      } @else {
+        <div>
+          <dt>Joining date</dt>
+          <dd>{{ item.joiningDate ? dates.formatDate(item.joiningDate) : 'Not available' }}</dd>
+        </div>
+        <div>
+          <dt>Employment type</dt>
+          <dd>{{ item.employmentType || 'Not available' }}</dd>
+        </div>
+      }
+      <div>
+        <dt>Address</dt>
+        <dd>{{ item.address || 'Not available' }}</dd>
+      </div>
+      <div>
+        <dt>Created</dt>
+        <dd>{{ dates.formatDateTime(item.createdAt) }}</dd>
+      </div>
+      <div>
+        <dt>Updated</dt>
+        <dd>{{ dates.formatDateTime(item.updatedAt) }}</dd>
+      </div>
+    </dl>
+  </section>
+}

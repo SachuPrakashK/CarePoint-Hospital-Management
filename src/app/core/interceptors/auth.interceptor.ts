@@ -1,2 +1,29 @@
-import {HttpErrorResponse,HttpInterceptorFn} from '@angular/common/http'; import {inject} from '@angular/core'; import {catchError,from,switchMap,throwError} from 'rxjs'; import {AuthStore} from '../auth/auth.store';
-export const authInterceptor:HttpInterceptorFn=(request,next)=>{const auth=inject(AuthStore),token=auth.session()?.accessToken,isApi=request.url.startsWith('/api'),isAuth=request.url.includes('/auth/login')||request.url.includes('/auth/refresh');const outgoing=isApi&&token?request.clone({setHeaders:{Authorization:`Bearer ${token}`}}):request;return next(outgoing).pipe(catchError((error:HttpErrorResponse)=>{if(error.status!==401||!isApi||isAuth||request.headers.has('X-Skip-Auth-Refresh'))return throwError(()=>error);return from(auth.refresh()).pipe(switchMap(ok=>{const nextToken=auth.session()?.accessToken;if(!ok||!nextToken)return throwError(()=>error);return next(request.clone({setHeaders:{Authorization:`Bearer ${nextToken}`,'X-Skip-Auth-Refresh':'true'}}));}));}));};
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { catchError, from, switchMap, throwError } from 'rxjs';
+import { AuthStore } from '../auth/auth.store';
+export const authInterceptor: HttpInterceptorFn = (request, next) => {
+  const auth = inject(AuthStore),
+    token = auth.session()?.accessToken,
+    isApi = request.url.startsWith('/api'),
+    isAuth = request.url.includes('/auth/login') || request.url.includes('/auth/refresh');
+  const outgoing =
+    isApi && token ? request.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : request;
+  return next(outgoing).pipe(
+    catchError((error: HttpErrorResponse) => {
+      if (error.status !== 401 || !isApi || isAuth || !auth.authenticated() || request.headers.has('X-Skip-Auth-Refresh'))
+        return throwError(() => error);
+      return from(auth.refresh()).pipe(
+        switchMap((ok) => {
+          const nextToken = auth.session()?.accessToken;
+          if (!ok || !nextToken) return throwError(() => error);
+          return next(
+            request.clone({
+              setHeaders: { Authorization: `Bearer ${nextToken}`, 'X-Skip-Auth-Refresh': 'true' },
+            }),
+          );
+        }),
+      );
+    }),
+  );
+};

@@ -3,7 +3,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": []
+    "types": [],
+    "noEmit": true
   },
   "include": [
     "src/**/*.ts"

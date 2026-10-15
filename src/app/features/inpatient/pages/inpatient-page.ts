@@ -1,2 +1,208 @@
-import { Component, inject, signal } from '@angular/core'; import { RouterLink } from '@angular/router'; import { InpatientStore } from '../../../core/services/inpatient.store'; import { ClinicalStore } from '../../../core/services/clinical.store';
-@Component({imports:[RouterLink],template:`<div class="page-head"><div><div class="breadcrumbs">Clinical / Inpatient</div><h1>Admissions & bed management</h1><p class="muted">Live capacity, occupancy and inpatient movement.</p></div><a class="primary button-link" routerLink="new">+ New admission</a></div><section class="stats"><article class="card stat"><span class="muted">Current admissions</span><div class="value">{{store.activeAdmissions().length}}</div></article><article class="card stat"><span class="muted">Available beds</span><div class="value">{{store.availableBeds().length}}</div></article><article class="card stat"><span class="muted">Occupied beds</span><div class="value">{{store.occupiedBeds().length}}</div></article><article class="card stat"><span class="muted">Occupancy</span><div class="value">{{occupancy()}}%</div></article></section><div class="tabs"><button [class.active]="tab()==='admissions'" (click)="tab.set('admissions')">Admissions</button><button [class.active]="tab()==='beds'" (click)="tab.set('beds')">Bed board</button><button [class.active]="tab()==='wards'" (click)="tab.set('wards')">Wards & rooms</button></div>@if(tab()==='admissions'){<section class="card"><div class="toolbar"><label class="search-box">⌕<input placeholder="Search"></label><button class="secondary">Department</button><button class="secondary">Status</button></div><div class="table-wrap"><table><thead><tr><th>Admission</th><th>Patient</th><th>Doctor</th><th>Location</th><th>Admitted</th><th>Status</th><th></th></tr></thead><tbody>@for(a of store.admissions();track a.id){<tr><td>{{a.number}}</td><td><b>{{a.patientName}}</b><br><small>{{patientMrn(a.patientId)}}</small></td><td>{{a.attendingDoctor}}<br><small>{{a.department}}</small></td><td>{{activeLocation(a.id)}}</td><td>{{format(a.admittedAt)}}</td><td><span class="status">{{a.status}}</span></td><td><a class="secondary button-link" [routerLink]="[a.id]">Open</a></td></tr>}</tbody></table></div></section>}@else if(tab()==='beds'){<section>@for(ward of wards();track ward){<div class="ward"><div class="section-title"><h2>{{ward}}</h2><span class="muted">{{available(ward)}} available</span></div><div class="bed-grid">@for(b of beds(ward);track b.id){<article class="bed" [class]="b.status.toLowerCase()"><div class="bed-icon">▰</div><b>{{b.name}}</b><small>{{b.roomType}} · Room {{b.room}}</small><span class="status">{{b.status}}</span>@if(b.patientId){<small>{{patientName(b.patientId)}}</small>}</article>}</div></div>}</section>}@else{<section class="card"><div class="section-title"><h2>Configurable ward structure</h2><button class="primary">+ Add ward</button></div><div class="table-wrap"><table><thead><tr><th>Ward</th><th>Floor</th><th>Rooms</th><th>Beds</th><th>Available</th><th>Status</th></tr></thead><tbody>@for(w of wards();track w){<tr><td><b>{{w}}</b></td><td>{{beds(w)[0].floor}}</td><td>{{roomCount(w)}}</td><td>{{beds(w).length}}</td><td>{{available(w)}}</td><td><span class="status">Active</span></td></tr>}</tbody></table></div></section>}`,styles:[`.ward{background:white;border:1px solid #e0e8ea;border-radius:10px;margin-bottom:16px}.bed-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px}.bed{display:grid;gap:6px;border:1px solid #dbe5e7;border-left:4px solid #17a186;border-radius:8px;padding:13px}.bed.occupied{border-left-color:#e08c3b}.bed.cleaning{border-left-color:#637fbd}.bed.maintenance,.bed.blocked{border-left-color:#b54b43}.bed small{color:#6f8086}.bed-icon{font-size:22px}`]})export class InpatientPage{readonly store=inject(InpatientStore);private clinical=inject(ClinicalStore);readonly tab=signal<'admissions'|'beds'|'wards'>('admissions');occupancy(){return Math.round(this.store.occupiedBeds().length/this.store.beds().length*100)}wards(){return [...new Set(this.store.beds().map(b=>b.ward))]}beds(w:string){return this.store.beds().filter(b=>b.ward===w)}available(w:string){return this.beds(w).filter(b=>b.status==='Available').length}roomCount(w:string){return new Set(this.beds(w).map(b=>b.room)).size}patientName(id:string){const p=this.clinical.patients().find(x=>x.id===id);return p?`${p.firstName} ${p.lastName}`:'Unknown'}patientMrn(id:string){return this.clinical.patients().find(x=>x.id===id)?.mrn??'—'}activeLocation(id:string){const a=this.store.admissions().find(x=>x.id===id);const x=a?.allocations.find(v=>!v.endedAt);return x?`${x.ward} / ${x.room}`:'—'}format(v:string){return new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}}
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { InpatientStore } from '../../../core/services/inpatient.store';
+import { ClinicalStore } from '../../../core/services/clinical.store';
+import { AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { AuthStore } from '../../../core/auth/auth.store';
+import { ToastService } from '../../../core/services/toast.service';
+import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
+import { SearchField } from '../../../shared/components/search/search-field';
+import { AppPagination } from '../../../shared/components/pagination/app-pagination';
+import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { AppIcon } from '../../../shared/components/icon/app-icon';
+import { AppModal } from '../../../shared/components/modal/app-modal';
+import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
+import { ColumnConfig } from '../../../shared/components/column-config/column-config';
+import { TableColumnDefinition, TableSort } from '../../../shared/models/table.models';
+import { TablePreferencesService } from '../../../core/services/table-preferences.service';
+
+@Component({
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    StatusBadge,
+    SearchField,
+    AppPagination,
+    EmptyState,
+    AppIcon,
+    AppModal,
+    ClickOutsideDirective,
+    TableSortHeader,ColumnConfig,
+  ],
+  templateUrl: './inpatient-page.html',
+  styleUrl: './inpatient-page.scss',
+})
+export class InpatientPage {
+  readonly store = inject(InpatientStore);
+  readonly auth = inject(AuthStore);
+  private clinical = inject(ClinicalStore);
+  private dates = inject(AppDateTimeService);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
+  private tablePreferences=inject(TablePreferencesService);
+  readonly tab = signal<'admissions' | 'beds' | 'wards'>('admissions');
+  readonly search = signal('');
+  readonly departmentId = signal('');
+  readonly status = signal('');
+  readonly draftDepartmentId = signal('');
+  readonly draftStatus = signal('');
+  readonly filtersOpen = signal(false);
+  readonly page = signal(1);
+  readonly pageSize = signal(10);
+  readonly exporting = signal(false);
+  readonly sort=signal<TableSort|null>(null);
+  readonly columns:readonly TableColumnDefinition[]=[{id:'admission',header:'Admission',visibleByDefault:true,required:true,sortable:true,sortKey:'number'},{id:'patient',header:'Patient',visibleByDefault:true,required:true,sortable:true,sortKey:'patient'},{id:'care',header:'Department / Doctor',visibleByDefault:true,sortable:true,sortKey:'department'},{id:'bed',header:'Ward / Room / Bed',visibleByDefault:true},{id:'admitted',header:'Admitted',visibleByDefault:true,sortable:true,sortKey:'admittedAt'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'}];
+  readonly visibleColumns=signal(this.tablePreferences.load('admissions',this.columns));
+  constructor(){void this.tablePreferences.loadRemote('admissions',this.columns).then(ids=>this.visibleColumns.set(ids));}
+  readonly wardOpen = signal(false);
+  readonly wardSubmitting = signal(false);
+  readonly wardError = signal('');
+  readonly activeFilterCount = computed(
+    () => [this.departmentId(), this.status()].filter(Boolean).length,
+  );
+  readonly hasCriteria = computed(
+    () => Boolean(this.search().trim()) || this.activeFilterCount() > 0,
+  );
+  readonly wardForm = this.fb.nonNullable.group({
+    code: ['', [Validators.required, Validators.maxLength(30)]],
+    name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    floor: ['', [Validators.required, Validators.maxLength(50)]],
+    status: ['Active', Validators.required],
+  });
+  occupancy() {
+    const total = this.store.beds().length;
+    return total ? Math.round((this.store.occupiedBeds().length / total) * 100) : 0;
+  }
+  bedWards() {
+    return [...new Set(this.store.beds().map((bed) => bed.ward))];
+  }
+  beds(ward: string) {
+    return this.store.beds().filter((bed) => bed.ward === ward);
+  }
+  available(ward: string) {
+    return this.beds(ward).filter((bed) => bed.status === 'Available').length;
+  }
+  wardBedCount(ward: any) {
+    return (ward.rooms ?? []).reduce(
+      (total: number, room: any) => total + (room.beds?.length ?? 0),
+      0,
+    );
+  }
+  patientName(id: string) {
+    const patient = this.clinical.patients().find((item) => item.id === id);
+    return patient ? `${patient.firstName} ${patient.lastName}` : 'Not available';
+  }
+  patientMrn(id: string) {
+    return this.clinical.patients().find((item) => item.id === id)?.mrn ?? 'Not available';
+  }
+  activeAllocation(admission: any) {
+    return (
+      admission.allocations.find((allocation: any) => !allocation.endedAt) ??
+      admission.allocations.at(-1)
+    );
+  }
+  format(value: string) {
+    return this.dates.formatDateTime(value);
+  }
+  async loadAdmissions() {
+    await this.store.loadAdmissions({
+      page: this.page(),
+      pageSize: this.pageSize(),
+      search: this.search(),
+      departmentId: this.departmentId(),
+      status: this.status(),
+      sortBy:this.sort()?.field,sortOrder:this.sort()?.direction,
+    });
+  }
+  onSearch(value: string) {
+    this.search.set(value);
+    this.page.set(1);
+    void this.loadAdmissions();
+  }
+  async applyFilters() {
+    this.departmentId.set(this.draftDepartmentId());
+    this.status.set(this.draftStatus());
+    this.page.set(1);
+    this.filtersOpen.set(false);
+    await this.loadAdmissions();
+  }
+  async clearFilters() {
+    this.draftDepartmentId.set('');
+    this.draftStatus.set('');
+    this.departmentId.set('');
+    this.status.set('');
+    this.page.set(1);
+    this.filtersOpen.set(false);
+    await this.loadAdmissions();
+  }
+  async clearCriteria() {
+    this.search.set('');
+    await this.clearFilters();
+  }
+  async changePage(page: number) {
+    this.page.set(page);
+    await this.loadAdmissions();
+  }
+  async changePageSize(pageSize: number) {
+    this.pageSize.set(pageSize);
+    this.page.set(1);
+    await this.loadAdmissions();
+  }
+  async changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);await this.loadAdmissions();}
+  ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}
+  columnVisible(id:string){return this.visibleColumns().includes(id);}
+  async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns.some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save('admissions',ids);}
+  async resetColumns(){await this.tablePreferences.reset('admissions');this.visibleColumns.set(this.tablePreferences.load('admissions',this.columns));}
+  viewAdmission(id: string) {
+    void this.router.navigate(['/inpatient', id]);
+  }
+  export() {
+    if (this.exporting() || !this.store.admissions().length) return;
+    this.exporting.set(true);
+    try {
+      const exportColumns=[{id:'admission',header:'Admission',value:(item:any)=>item.number},{id:'patient',header:'Patient',value:(item:any)=>item.patientName},{id:'care',header:'Department / Doctor',value:(item:any)=>`${item.department??''} / ${item.attendingDoctor??''}`},{id:'bed',header:'Ward / Room / Bed',value:(item:any)=>{const allocation=this.activeAllocation(item);return `${allocation?.ward??''} / ${allocation?.room??''} / ${allocation?.bedName??''}`;}},{id:'admitted',header:'Admitted',value:(item:any)=>item.admittedAt},{id:'status',header:'Status',value:(item:any)=>item.status}].filter(column=>this.columnVisible(column.id));
+      const rows=[exportColumns.map(column=>column.header),...this.store.admissions().map(item=>exportColumns.map(column=>column.value(item)))];
+      const blob = new Blob(
+        [
+          rows
+            .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
+            .join('\n'),
+        ],
+        { type: 'text/csv' },
+      );
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = 'admissions.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+  openWard() {
+    this.wardForm.reset({ code: '', name: '', floor: '', status: 'Active' });
+    this.wardForm.markAsPristine();
+    this.wardError.set('');
+    this.wardOpen.set(true);
+  }
+  async createWard() {
+    this.wardForm.markAllAsTouched();
+    if (this.wardForm.invalid || this.wardSubmitting()) return;
+    this.wardSubmitting.set(true);
+    this.wardError.set('');
+    try {
+      await this.store.createWard(this.wardForm.getRawValue());
+      this.wardForm.markAsPristine();
+      this.wardOpen.set(false);
+      this.toast.success('Ward created successfully.');
+    } catch (error: any) {
+      this.wardError.set(error?.error?.message ?? error?.message ?? 'Ward could not be created.');
+    } finally {
+      this.wardSubmitting.set(false);
+    }
+  }
+}

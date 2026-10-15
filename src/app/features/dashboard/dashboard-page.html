@@ -1,0 +1,134 @@
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">Operational information from the hospital API.</p>
+  </div>
+  <a class="primary button-link" routerLink="/appointments/new">+ New appointment</a>
+</div>
+@if (store.error(); as error) {
+  <div class="error-state" role="alert">
+    {{ error }} <button class="secondary" (click)="store.load()">Retry</button>
+  </div>
+}
+@if (store.loading() && !store.summary()) {
+  <div class="card empty">Loading dashboard…</div>
+} @else {
+  <section class="stats">
+    @for (item of store.stats(); track item.label) {
+      <article
+        class="card stat dashboard-stat"
+        [class]="'card stat dashboard-stat dashboard-stat--' + item.variant"
+      >
+        <span class="muted">{{ item.label }}</span>
+        <div class="value">{{ item.value }}</div>
+        <span class="trend">{{ item.note }}</span>
+      </article>
+    }
+  </section>
+  <section class="dashboard-charts">
+    <article class="card chart-card">
+      <div class="section-title"><h2>Operational workload</h2></div>
+      @if (store.loading()) {
+        <div class="chart-state">Loading chart…</div>
+      } @else if (store.error()) {
+        <div class="chart-state error" role="alert">
+          Unable to load chart data. <button class="secondary" (click)="store.load()">Retry</button>
+        </div>
+      } @else if (store.hasOperationalWorkload()) {
+        <app-operational-workload-chart [data]="store.operationalWorkload()" />
+      } @else {
+        <div class="chart-state">
+          <app-chart-empty-state
+            title="No data available"
+            message="Operational workload will appear when records exist."
+          />
+        </div>
+      }
+    </article>
+    <article class="card chart-card">
+      <div class="section-title"><h2>Appointments by department</h2></div>
+      @if (store.loading()) {
+        <div class="chart-state">Loading chart…</div>
+      } @else if (store.error()) {
+        <div class="chart-state error" role="alert">
+          Unable to load chart data. <button class="secondary" (click)="store.load()">Retry</button>
+        </div>
+      } @else if (store.hasDepartmentAppointments()) {
+        <app-appointments-department-chart [data]="store.departmentAppointments()" />
+      } @else {
+        <div class="chart-state">
+          <app-chart-empty-state
+            title="No data available"
+            message="Department activity will appear when appointments exist."
+          />
+        </div>
+      }
+    </article>
+    <article class="card chart-card">
+      <div class="section-title"><h2>Appointment status</h2></div>
+      @if (store.loading()) {
+        <div class="chart-state">Loading chart…</div>
+      } @else if (store.error()) {
+        <div class="chart-state error" role="alert">
+          Unable to load chart data. <button class="secondary" (click)="store.load()">Retry</button>
+        </div>
+      } @else if (store.hasAppointmentStatuses()) {
+        <app-appointment-status-chart [data]="store.appointmentStatuses()" />
+      } @else {
+        <div class="chart-state">
+          <app-chart-empty-state
+            title="No data available"
+            message="Appointment statuses will appear when records exist."
+          />
+        </div>
+      }
+    </article>
+  </section>
+  <section class="card">
+    <div class="section-title">
+      <h2>Recent appointments</h2>
+      <a class="view-all-link" routerLink="/appointments"
+        >View All <app-icon name="chevron-right" [size]="16"
+      /></a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of store.recentAppointments(); track item.id) {
+            <tr
+              class="clickable-row"
+              tabindex="0"
+              (click)="viewAppointment(item.id)"
+              (keydown.enter)="viewAppointment(item.id)"
+              (keydown.space)="$event.preventDefault(); viewAppointment(item.id)"
+            >
+              <td>{{ item.appointment_at | appDateTime: 'date' }}</td>
+              <td>{{ item.appointment_at | appDateTime: 'time' }}</td>
+              <td>
+                <b>{{ item.patient_name }}</b
+                ><br /><small class="muted">{{ item.number }}</small>
+              </td>
+              <td>{{ item.doctor_name }}</td>
+              <td>
+                <app-status-badge [value]="item.status" />
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="empty">No recent appointments.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}

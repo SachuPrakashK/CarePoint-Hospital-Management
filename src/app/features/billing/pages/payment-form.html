@@ -1,0 +1,33 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (error) {
+    <div class="form-error" role="alert">{{ error }}</div>
+  }
+  <div class="modal-form-grid">
+    <label class="field">
+      <span class="form-label">Amount <span class="required-indicator">*</span></span>
+      <input type="number" min="0.01" step="0.01" formControlName="amount" />
+      @if (form.controls.amount.touched && form.controls.amount.invalid) {
+        <span class="field-error">Enter a valid payment amount.</span>
+      }
+    </label>
+    <label class="field">
+      <span class="form-label">Method <span class="required-indicator">*</span></span>
+      <select formControlName="method">
+        <option>Cash</option>
+        <option>Card</option>
+        <option>Bank Transfer</option>
+        <option>UPI / Digital Payment</option>
+        <option>Insurance</option>
+      </select>
+    </label>
+    <label class="field modal-form-span">
+      <span class="form-label">Reference</span>
+      <input formControlName="reference" maxlength="100" placeholder="Transaction reference" />
+    </label>
+  </div>
+  <footer class="modal-form-footer">
+    <button class="primary" type="submit" [disabled]="form.invalid || submitting">
+      {{ submitting ? 'Saving…' : 'Save payment' }}
+    </button>
+  </footer>
+</form>

@@ -1,0 +1,3 @@
+<button type="button" class="sort-header" (click)="toggle()" [attr.aria-label]="'Sort by ' + label() + (direction() ? ', ' + direction() : ', not sorted')">
+  <span>{{ label() }}</span><span class="sort-icon" aria-hidden="true">{{ direction() === 'asc' ? '↑' : direction() === 'desc' ? '↓' : '↕' }}</span>
+</button>

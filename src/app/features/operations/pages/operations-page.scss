@@ -1,0 +1,41 @@
+.vehicle {
+  font-size: 20px !important;
+}
+.booking {
+  margin-top: 18px;
+}
+.notification {
+  display: grid;
+  grid-template-columns: 35px 1fr;
+  gap: 12px;
+  padding: 15px 18px;
+  border-bottom: 1px solid #e4ebed;
+  cursor: pointer;
+}
+.notification.unread {
+  background: #f0faf7;
+}
+.notification p {
+  margin: 4px 0;
+}
+.notification small {
+  color: #6c7e84;
+}
+.notice-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #ffe8c2;
+  color: #855700;
+}
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  background: #173e49;
+  color: white;
+  padding: 13px;
+  border-radius: 8px;
+}

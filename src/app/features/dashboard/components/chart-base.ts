@@ -1,4 +1,12 @@
-import { Directive, ElementRef, NgZone, OnDestroy, ViewChild, afterNextRender, inject } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  NgZone,
+  OnDestroy,
+  ViewChild,
+  afterNextRender,
+  inject,
+} from '@angular/core';
 import * as am5 from '@amcharts/amcharts5';
 
 @Directive()
@@ -7,7 +15,9 @@ export abstract class ChartBase implements OnDestroy {
   protected root?: am5.Root;
   protected readonly zone = inject(NgZone);
   private observer?: ResizeObserver;
-  constructor() { afterNextRender(() => this.mount()); }
+  constructor() {
+    afterNextRender(() => this.mount());
+  }
   protected abstract build(root: am5.Root): void;
   private mount(): void {
     if (this.root) return;
@@ -19,6 +29,9 @@ export abstract class ChartBase implements OnDestroy {
       this.observer.observe(this.host.nativeElement);
     });
   }
-  ngOnDestroy(): void { this.observer?.disconnect(); this.root?.dispose(); this.root = undefined; }
+  ngOnDestroy(): void {
+    this.observer?.disconnect();
+    this.root?.dispose();
+    this.root = undefined;
+  }
 }
-

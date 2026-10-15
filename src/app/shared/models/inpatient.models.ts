@@ -111,6 +111,8 @@ export interface MedicationAdministration {
   scheduledAt: string;
   dose: string;
   route: string;
+  frequency?: string;
+  orderedBy?: string;
   administeredAt?: string;
   administeredBy?: string;
   status: MedicationStatus;

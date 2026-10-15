@@ -1,0 +1,12 @@
+<div class="column-anchor">
+  <button type="button" class="secondary" [attr.aria-expanded]="open()" (click)="togglePanel()">Columns</button>
+  @if(open()){
+    <section class="column-panel" aria-label="Configure columns">
+      <h3>Configure Columns</h3>
+      @for(column of columns();track column.id){
+        <label><input type="checkbox" [checked]="checked(column.id)" [disabled]="column.required" (change)="toggle(column.id,$any($event.target).checked)" />{{column.header}}</label>
+      }
+      <div class="column-actions"><button type="button" class="secondary" (click)="resetDefaults()">Reset to Default</button><button type="button" class="primary" (click)="submit()">Apply</button></div>
+    </section>
+  }
+</div>

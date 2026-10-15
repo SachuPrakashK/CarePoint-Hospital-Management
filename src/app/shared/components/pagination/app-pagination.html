@@ -1,0 +1,26 @@
+@if (!loading() && totalItems() > 0) {
+<nav class="app-pagination" aria-label="Pagination">
+  <div class="pagination-summary">
+    Showing {{ start() }}–{{ end() }} of {{ totalItems() }} {{ itemLabel() }}
+  </div>
+  <label class="page-size">Rows per page:
+    <span class="page-size-select"><select [value]="pageSize()" aria-label="Rows per page" (change)="pageSizeChange.emit(+$any($event.target).value)">
+      @for (size of pageSizes; track size) { <option [value]="size">{{ size }}</option> }
+    </select><app-icon name="chevron-down" [size]="15" /></span>
+  </label>
+  <div class="page-buttons">
+    <button type="button" class="page-nav" [disabled]="page() <= 1" (click)="go(page() - 1)">
+      <app-icon name="chevron-left" [size]="16" /><span>Previous</span>
+    </button>
+    <div class="page-numbers">
+      @for (item of pages(); track $index) {
+        @if (item === 'ellipsis') { <span class="page-ellipsis" aria-hidden="true">…</span> }
+        @else { <button type="button" [class.active]="item === page()" [attr.aria-current]="item === page() ? 'page' : null" (click)="go(item)">{{ item }}</button> }
+      }
+    </div>
+    <button type="button" class="page-nav" [disabled]="page() >= totalPages()" (click)="go(page() + 1)">
+      <span>Next</span><app-icon name="chevron-right" [size]="16" />
+    </button>
+  </div>
+</nav>
+}

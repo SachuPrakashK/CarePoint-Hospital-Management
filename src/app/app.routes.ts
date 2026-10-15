@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   {
@@ -37,8 +38,31 @@ export const routes: Routes = [
         loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
       },
       {
-        path: 'super-admins',
-        loadComponent: () => import('./features/super-admins/super-admin-page').then((m) => m.SuperAdminPage),
+        path: 'users',
+        canActivate: [permissionGuard],
+        data: { permission: 'users.view' },
+        loadComponent: () => import('./features/users/user-page').then((m) => m.UserPage),
+      },
+      {
+        path: 'roles',
+        canActivate: [permissionGuard],
+        data: { permission: 'roles.view' },
+        loadComponent: () =>
+          import('./features/administration/roles-page').then((m) => m.RolesPage),
+      },
+      {
+        path: 'settings',
+        canActivate: [permissionGuard],
+        canDeactivate: [(component) => component.canLeave()],
+        data: { permission: 'settings.view' },
+        loadComponent: () =>
+          import('./features/settings/settings-page').then((m) => m.SettingsPage),
+      },
+      {path:'help-support',canActivate:[permissionGuard],data:{permission:'support.view'},loadComponent:()=>import('./features/support/help-support-page').then(m=>m.HelpSupportPage)},
+      {
+        path: 'notifications',
+        loadComponent: () =>
+          import('./features/notifications/notifications-page').then((m) => m.NotificationsPage),
       },
       {
         path: 'patients',
@@ -116,6 +140,34 @@ export const routes: Routes = [
         path: 'documents',
         loadComponent: () =>
           import('./features/documents/documents-page').then((m) => m.DocumentsPage),
+      },
+      {
+        path: 'doctors',
+        canActivate: [permissionGuard],
+        data: { permission: 'doctors.view', kind: 'doctors' },
+        loadComponent: () =>
+          import('./features/staff-directory/staff-page').then((m) => m.StaffPage),
+      },
+      {
+        path: 'doctors/:id',
+        canActivate: [permissionGuard],
+        data: { permission: 'doctors.view', kind: 'doctors' },
+        loadComponent: () =>
+          import('./features/staff-directory/staff-details').then((m) => m.StaffDetails),
+      },
+      {
+        path: 'employees',
+        canActivate: [permissionGuard],
+        data: { permission: 'employees.view', kind: 'employees' },
+        loadComponent: () =>
+          import('./features/staff-directory/staff-page').then((m) => m.StaffPage),
+      },
+      {
+        path: 'employees/:id',
+        canActivate: [permissionGuard],
+        data: { permission: 'employees.view', kind: 'employees' },
+        loadComponent: () =>
+          import('./features/staff-directory/staff-details').then((m) => m.StaffDetails),
       },
       {
         path: ':entity',

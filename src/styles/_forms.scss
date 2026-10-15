@@ -1,1 +1,163 @@
-.field,label.field{display:grid;gap:6px;font-size:13px;font-weight:600}.field input,.field select,.field textarea,label.field input,label.field select,label.field textarea,.toolbar select{min-height:var(--input-height);border:1px solid #c6d5df;border-radius:var(--radius-sm);padding:9px 11px;background:#fff;color:var(--color-text)}.field textarea{min-height:88px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--color-blue-500)}.field input:disabled,.field select:disabled{background:#edf2f5}.required,.required-indicator{display:inline;color:var(--color-danger);font-weight:700;margin-left:.2rem;line-height:1}.error{color:var(--color-danger);font-size:12px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px;padding:22px}.full{grid-column:1/-1}.form-actions{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--color-border)}
+.field,
+label.field {
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 0;
+}
+.form-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    max-width: 100%;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.field input,
+.field select,
+.field textarea,
+label.field input,
+label.field select,
+label.field textarea,
+.toolbar select {
+    min-height: var(--input-height);
+    border: 1px solid #c6d5df;
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    background: #fff;
+    color: var(--color-text);
+}
+.field textarea {
+    min-height: 88px;
+    resize: vertical;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: var(--color-blue-500);
+}
+.field input:disabled,
+.field select:disabled {
+    background: #edf2f5;
+}
+input::placeholder,
+textarea::placeholder {
+    font-weight: 400;
+}
+.password-field {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: var(--input-height);
+    overflow: hidden;
+    border: 1px solid #c6d5df;
+    border-radius: var(--radius-sm);
+    background: #fff;
+    transition:
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+.auth-card .password-field {
+    min-height: 46px;
+}
+.password-field:focus-within {
+    border-color: var(--color-blue-500);
+    box-shadow: 0 0 0 3px rgb(111 163 216 / 22%);
+}
+.password-field.password-field--invalid {
+    border-color: var(--color-danger);
+}
+.password-field.password-field--invalid:focus-within {
+    box-shadow: 0 0 0 3px rgb(180 35 24 / 14%);
+}
+.field .password-field__input,
+label.field .password-field__input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 9px 4px 9px 11px;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.field .password-field__input:focus,
+label.field .password-field__input:focus {
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+}
+.password-toggle {
+    display: inline-flex;
+    flex: 0 0 42px;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-blue-700);
+    cursor: pointer;
+}
+.password-toggle:hover {
+    color: var(--color-blue-900);
+}
+.password-toggle:focus {
+    outline: 0;
+}
+.password-toggle:focus-visible {
+    border-radius: calc(var(--radius-sm) - 2px);
+    outline: 2px solid var(--color-focus);
+    outline-offset: -4px;
+}
+.password-toggle app-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.required-indicator {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    color: var(--color-danger);
+    font-weight: 700;
+    line-height: 1;
+}
+.error {
+    color: var(--color-danger);
+    font-size: 12px;
+}
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    padding: 22px;
+    min-width: 0;
+}
+.full {
+    grid-column: 1/-1;
+}
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 22px;
+    border-top: 1px solid var(--color-border);
+}
+.upload {
+    position: relative;
+}
+.upload input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}

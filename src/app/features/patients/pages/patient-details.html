@@ -1,0 +1,57 @@
+@if (store.loading() && !store.selected()) {
+  <div class="card empty">Loading patient…</div>
+} @else if (store.error()) {
+  <div class="error-state" role="alert">{{ store.error() }}</div>
+} @else if (store.selected(); as p) {
+  <div class="page-head patient-heading">
+    <div><h1>{{ p.firstName }} {{ p.lastName }}</h1><p class="muted">MRN: {{ p.mrn }}</p>
+      <div class="patient-facts"><span><small>Age</small><b>{{ age(p.dob) }}</b></span><span><small>Gender</small><b>{{ p.gender }}</b></span><span><small>Blood group</small><b>{{ p.bloodGroup || '—' }}</b></span></div>
+    </div>
+    <button class="primary button-icon" (click)="appointmentOpen.set(true)"><app-icon name="calendar" [size]="17" />Book appointment</button>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Patient details sections">
+    @for (tab of tabs; track tab.id) { <button type="button" role="tab" [class.active]="activeTab() === tab.id" [attr.aria-selected]="activeTab() === tab.id" [attr.aria-controls]="'patient-tab-' + tab.id" (click)="selectTab(tab.id)">{{ tab.label }}</button> }
+  </div>
+  <section class="tab-panel" role="tabpanel" [id]="'patient-tab-' + activeTab()">
+    @if (activeTab() === 'overview') {
+      <div class="grid-2">
+        <section class="card"><div class="section-title"><h2>Patient information</h2></div><div class="details">
+          <div><small>Date of birth</small><b>{{ p.dob | appDateTime: 'date' }}</b></div><div><small>Phone</small><b>{{ p.phone }}</b></div>
+          <div><small>Email</small><b>{{ p.email || '—' }}</b></div><div><small>City</small><b>{{ p.city || '—' }}</b></div>
+          <div><small>Emergency contact</small><b>{{ p.emergencyContact || '—' }}</b></div><div><small>Status</small><app-status-badge [value]="p.status" /></div>
+        </div></section>
+        <section class="card"><div class="section-title"><h2>Clinical alerts</h2></div><div class="details"><div class="full"><small>Allergies</small><p>@for (allergy of p.allergies; track allergy) { <span class="status danger">{{ allergy }}</span> } @empty { No known allergies }</p></div></div></section>
+      </div>
+    } @else if (detail.loading() === activeTab()) {
+      <div class="tab-state">Loading {{ activeTab().replace('-', ' ') }}…</div>
+    } @else if (activeError(); as error) {
+      <div class="tab-state error-state" role="alert"><div>{{ error }}</div><button class="secondary" (click)="retry()">Retry</button></div>
+    } @else if (activeTab() === 'medical-records') {
+      @if (hasMedicalRecords()) {
+        <div class="record-list">
+          @for (diagnosis of medical()['diagnoses']; track diagnosis.id) { <article class="record-card"><b>{{ diagnosis.description }}</b><div class="record-card__meta"><span>{{ diagnosis.code }}</span><span>{{ diagnosis.diagnosedAt | appDateTime }}</span></div></article> }
+          @for (history of medical()['histories']; track history.id) { <article class="record-card"><b>{{ history.condition }}</b><p>{{ history.notes || 'No notes' }}</p><div class="record-card__meta"><span>{{ history.category }}</span><span>{{ history.recordedAt | appDateTime }}</span></div></article> }
+          @for (allergy of medical()['allergies']; track allergy.id) { <article class="record-card"><b>Allergy: {{ allergy.substance }}</b><p>{{ allergy.reaction || 'Reaction not recorded' }}</p></article> }
+          @for (vital of medical()['vitals']; track vital.id) { <article class="record-card"><b>Vitals</b><div class="record-card__meta"><span>Pulse {{ vital.pulse ?? '—' }}</span><span>BP {{ vital.systolic ?? '—' }}/{{ vital.diastolic ?? '—' }}</span><span>SpO₂ {{ vital.spo2 ?? '—' }}</span><span>{{ vital.recordedAt | appDateTime }}</span></div></article> }
+        </div>
+      } @else { <app-empty-state title="No medical records found" description="Clinical records will appear after they are documented." /> }
+    } @else if (rows().length) {
+      <div class="table-wrap"><table><thead><tr>
+        @if (activeTab() === 'appointments') { <th>Appointment</th><th>Date</th><th>Doctor</th><th>Department</th><th>Status</th> }
+        @if (activeTab() === 'visits') { <th>Visit</th><th>Date</th><th>Doctor</th><th>Chief complaint</th> }
+        @if (activeTab() === 'prescriptions') { <th>Prescription</th><th>Date</th><th>Doctor</th><th>Medicines</th><th>Status</th> }
+        @if (activeTab() === 'documents') { <th>Document</th><th>Type</th><th>Uploaded</th><th>Size</th> }
+      </tr></thead><tbody>@for (item of rows(); track item.id) { <tr>
+        @if (activeTab() === 'appointments') { <td>{{ item.number }}</td><td>{{ item.appointmentAt | appDateTime }}</td><td>{{ item.doctor.firstName }} {{ item.doctor.lastName }}</td><td>{{ item.department.name }}</td><td><app-status-badge [value]="item.status" /></td> }
+        @if (activeTab() === 'visits') { <td>{{ item.appointment.number }}</td><td>{{ item.appointment.appointmentAt | appDateTime }}</td><td>{{ item.doctor.firstName }} {{ item.doctor.lastName }}</td><td>{{ item.chiefComplaint }}</td> }
+        @if (activeTab() === 'prescriptions') { <td>{{ item.number }}</td><td>{{ item.createdAt | appDateTime }}</td><td>{{ item.doctor.firstName }} {{ item.doctor.lastName }}</td><td>{{ item.items.length }}</td><td><app-status-badge [value]="item.status" /></td> }
+        @if (activeTab() === 'documents') { <td>{{ item.originalName }}</td><td>{{ item.mimeType }}</td><td>{{ item.createdAt | appDateTime }}</td><td>{{ (item.size / 1024).toFixed(1) }} KB</td> }
+      </tr> }</tbody></table></div>
+    } @else {
+      <app-empty-state [title]="'No ' + activeTab().replace('-', ' ') + ' found'" [description]="'No ' + activeTab().replace('-', ' ') + ' records are available for this patient.'" />
+    }
+  </section>
+  @if (appointmentOpen()) { <app-modal title="Create appointment" description="Complete the required information below." size="lg" [dirty]="appointmentForm.form.dirty" (closed)="appointmentOpen.set(false)"><app-appointment-form #appointmentForm [patientId]="p.id" [patientName]="p.firstName + ' ' + p.lastName + ' · ' + p.mrn" (saved)="appointmentCreated()" /></app-modal> }
+} @else {
+  <app-empty-state title="Patient not found" description="The requested patient record is unavailable." />
+}

@@ -1,0 +1,51 @@
+<button
+  type="button"
+  class="icon-button action-trigger"
+  [attr.aria-label]="label()"
+  [attr.aria-expanded]="activeId() === id()"
+  (click)="toggle($event)"
+>
+  <app-icon name="more" [size]="19" />
+</button>
+@if (activeId() === id()) {
+  <div
+    class="action-menu action-menu--overlay"
+    [style.top.px]="position().top"
+    [style.right.px]="position().right"
+    role="menu"
+    (click)="$event.stopPropagation()"
+  >
+    @if (canView()) {
+      <button type="button" role="menuitem" (click)="choose($event, 'view')">
+        <app-icon name="eye" [size]="16" />View
+      </button>
+    }
+    @if (canEdit()) {
+      <button
+        type="button"
+        role="menuitem"
+        [disabled]="editDisabled()"
+        [attr.title]="editDisabled() ? editDisabledReason() : null"
+        [attr.aria-label]="editDisabled() ? 'Edit unavailable: ' + editDisabledReason() : 'Edit'"
+        (click)="choose($event, 'edit')"
+      >
+        <app-icon name="edit" [size]="16" />Edit
+      </button>
+    }
+    @if (canDelete()) {
+      <button type="button" role="menuitem" class="danger" (click)="choose($event, 'delete')">
+        <app-icon name="trash" [size]="16" />{{ deleteLabel() }}
+      </button>
+    }
+    @if (canReset()) {
+      <button type="button" role="menuitem" (click)="choose($event, 'reset')">
+        <app-icon name="shield" [size]="16" />Reset Password
+      </button>
+    }
+    @if (canStatus()) {
+      <button type="button" role="menuitem" (click)="choose($event, 'statusChange')">
+        <app-icon name="queue" [size]="16" />{{ statusLabel() }}
+      </button>
+    }
+  </div>
+}

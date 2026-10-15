@@ -1,0 +1,95 @@
+<form [formGroup]="form" (ngSubmit)="save()" class="crud-modal__form">
+  <div class="crud-modal__body">
+    <div class="form-grid">
+      <label class="field"
+        ><span class="form-label">Code <span class="required-indicator">*</span></span
+        ><input
+          formControlName="code"
+          [placeholder]="type() === 'laboratory-tests' ? 'Enter test code' : type() === 'radiology-investigations' ? 'Enter investigation code' : 'Enter code'"
+        />
+        @if (form.controls.code.touched && form.controls.code.invalid) {
+          <span class="error">Enter a valid code.</span>
+        }
+      </label>
+      <label class="field"
+        ><span class="form-label">Name <span class="required-indicator">*</span></span
+        ><input
+          formControlName="name"
+          [placeholder]="
+            type() === 'laboratory-tests' ? 'Enter laboratory test name' : type() === 'radiology-investigations' ? 'Enter investigation name' : 'Enter name'
+          "
+        />
+        @if (form.controls.name.touched && form.controls.name.invalid) {
+          <span class="error">Enter a valid name.</span>
+        }
+      </label>
+      @if (type() === 'specializations') {
+        <label class="field"
+          ><span class="form-label">Department <span class="required-indicator">*</span></span
+          ><select formControlName="departmentId">
+            <option value="">Select department</option>
+            @for (d of departments(); track d.id) {
+              <option [value]="d.id">{{ d.name }}</option>
+            }
+          </select></label
+        >
+      }
+      @if (type() === 'radiology-investigations') {
+        <label class="field"
+          ><span class="form-label">Modality <span class="required-indicator">*</span></span
+          ><select formControlName="modality"><option value="">Select modality</option><option>X-ray</option><option>CT</option><option>MRI</option><option>Ultrasound</option><option>Mammography</option><option>Fluoroscopy</option></select></label>
+      }
+      @if (type() === 'laboratory-tests') {
+        <label class="field"
+          ><span class="form-label">Category <span class="required-indicator">*</span></span
+          ><input formControlName="category" placeholder="Enter test category" />
+          @if (form.controls.category.touched && form.controls.category.invalid) {
+            <span class="error">Enter a valid test category.</span>
+          }</label
+        ><label class="field"
+          ><span class="form-label">Unit</span
+          ><input
+            formControlName="unit"
+            placeholder="Enter measurement unit, if applicable" /></label
+        ><label class="field"
+          ><span class="form-label">Reference range</span
+          ><input formControlName="referenceRange" placeholder="Enter normal reference range"
+        /></label>
+      }
+      @if (type() === 'radiology-investigations' || type() === 'laboratory-tests') {
+        <label class="field full"
+          ><span class="form-label">Description</span
+          ><textarea
+            formControlName="description"
+            [placeholder]="
+              type() === 'laboratory-tests' ? 'Enter test description' : 'Enter investigation description'
+            "
+          ></textarea>
+        </label>
+      }
+      <label class="field"
+        ><span class="form-label">Status <span class="required-indicator">*</span></span
+        ><select formControlName="status">
+          <option>Active</option>
+          <option>Inactive</option>
+        </select></label
+      >
+      @if (error()) {
+        <div class="error-state full" role="alert">{{ error() }}</div>
+      }
+    </div>
+  </div>
+  <div class="crud-modal__footer">
+    <button class="primary" type="submit" [disabled]="submitting() || form.invalid">
+      {{
+        submitting()
+          ? mode() === 'create'
+            ? 'Creating...'
+            : 'Updating...'
+          : mode() === 'create'
+            ? 'Create'
+            : 'Update'
+      }}
+    </button>
+  </div>
+</form>
