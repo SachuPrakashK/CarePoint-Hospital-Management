@@ -8,7 +8,7 @@ export interface StaffRecord {
   lastName: string;
   gender: string;
   dateOfBirth?: string;
-  phone: string;
+  phone?: string | null;
   email: string;
   address?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';

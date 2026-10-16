@@ -23,7 +23,7 @@
 
 <section class="card section-card">
   <div class="section-title"><h2>Assigned patients</h2><app-column-config [columns]="assignedColumns" [visible]="assignedVisible()" (apply)="applyColumns('assigned',$event)" (reset)="resetColumns('assigned')"/></div>
-  @if (store.nursingLoading()) { <p class="state-message">Loading assigned patients…</p> }
+  @if (store.nursingLoading()) { <p class="state-message loading-state loading-state--table" role="status" aria-live="polite">Loading assigned patients…</p> }
   @else if (store.assignedPatients().length) {
     <div class="table-wrap"><table><thead><tr>@if(visible('assigned','patient')){<th [attr.aria-sort]="ariaSort('assigned','patient')"><app-table-sort-header label="Patient" field="patient" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','admission')){<th [attr.aria-sort]="ariaSort('assigned','admission')"><app-table-sort-header label="Admission" field="admission" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','location')){<th [attr.aria-sort]="ariaSort('assigned','location')"><app-table-sort-header label="Location" field="location" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','doctor')){<th [attr.aria-sort]="ariaSort('assigned','doctor')"><app-table-sort-header label="Doctor" field="doctor" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','shift')){<th [attr.aria-sort]="ariaSort('assigned','shift')"><app-table-sort-header label="Shift" field="shift" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','status')){<th [attr.aria-sort]="ariaSort('assigned','status')"><app-table-sort-header label="Status" field="status" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}</tr></thead><tbody>
       @for (assignment of assignedRows(); track assignment.id) {
@@ -39,7 +39,7 @@
   <section class="card section-card">
     <div class="section-title"><h2>Medication administration record</h2></div>
     @if (!selected()) { <app-empty-state title="Select a patient" description="Choose an assigned patient to view medication orders." /> }
-    @else if (store.nursingLoading()) { <p class="state-message">Loading medication records…</p> }
+    @else if (store.nursingLoading()) { <p class="state-message loading-state loading-state--section" role="status" aria-live="polite">Loading medication records…</p> }
     @else if (selectedMedications().length) {
       @for (item of selectedMedications(); track item.id) {
         <article class="med"><div><b>{{ item.medication }} · {{ item.dose }}</b><small>{{ item.route }} · {{ item.frequency || 'Frequency not available' }}</small><small>Scheduled {{ formatDateTime(item.scheduledAt) }}<br />Ordered by {{ item.orderedBy || 'Not available' }}</small></div><app-status-badge [value]="item.status" />

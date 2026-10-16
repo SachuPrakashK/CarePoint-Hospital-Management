@@ -1,8 +1,8 @@
-<a class="back-link" [routerLink]="['/', kind]"
+<!-- <a class="back-link" [routerLink]="['/', kind]"
   >‹ {{ kind === 'doctors' ? 'Doctors' : 'Employees' }}</a
->
+> -->
 @if (loading()) {
-  <div class="loading-state">Loading details...</div>
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading details...</div>
 } @else if (error()) {
   <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
 } @else if (record(); as item) {
@@ -11,7 +11,14 @@
       <h1>{{ item.firstName }} {{ item.lastName }}</h1>
       <p class="muted">{{ item.employeeCode }}</p>
     </div>
-    <app-status-badge [value]="item.status" />
+    <div class="head-actions">
+      <app-status-badge [value]="item.status" />
+      @if (auth.has(kind === 'doctors' ? 'doctors.update' : 'employees.update')) {
+        <button type="button" class="primary" [disabled]="editLoading()" (click)="edit()">
+          {{ editLoading() ? 'Loading...' : 'Edit' }}
+        </button>
+      }
+    </div>
   </div>
   <section class="card">
     <div class="section-title">
@@ -83,4 +90,21 @@
       </div>
     </dl>
   </section>
+}
+@if (editOpen() && record(); as item) {
+  <app-modal
+    [title]="'Edit ' + (kind === 'doctors' ? 'Doctor' : 'Employee')"
+    size="xl"
+    [dirty]="dirty()"
+    (closed)="editOpen.set(false)"
+  >
+    <app-staff-form
+      [kind]="kind"
+      [record]="item"
+      [options]="options()"
+      (dirtyChanged)="dirty.set($event)"
+      (cancelled)="editOpen.set(false)"
+      (saved)="saved()"
+    />
+  </app-modal>
 }

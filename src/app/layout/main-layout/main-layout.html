@@ -99,7 +99,7 @@
                 }
               </div>
               @if (notifications.loading()) {
-                <div class="notification-state">Loading notifications…</div>
+                <div class="notification-state loading-state loading-state--compact" role="status" aria-live="polite">Loading notifications…</div>
               } @else if (notifications.error()) {
                 <div class="notification-state error" role="alert">
                   {{ notifications.error()

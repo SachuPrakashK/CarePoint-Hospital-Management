@@ -20,6 +20,7 @@ import {
   selector: 'app-staff-form',
   imports: [ReactiveFormsModule],
   templateUrl: './staff-form.html',
+  styleUrl: './staff-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffForm {
@@ -29,6 +30,7 @@ export class StaffForm {
   readonly record = input<StaffRecord | null>(null);
   readonly options = input.required<StaffOptions>();
   readonly saved = output<void>();
+  readonly cancelled = output<void>();
   readonly dirtyChanged = output<boolean>();
   readonly submitting = signal(false);
   readonly error = signal('');
@@ -82,7 +84,7 @@ export class StaffForm {
         lastName: value.lastName,
         gender: value.gender,
         dateOfBirth: value.dateOfBirth?.slice(0, 10) ?? '',
-        phone: value.phone,
+        phone: value.phone ?? '',
         email: value.email,
         address: value.address ?? '',
         employeeCode: value.employeeCode,
@@ -98,6 +100,15 @@ export class StaffForm {
         status: value.status === 'LOCKED' ? 'INACTIVE' : value.status,
         roleCode: value.roles[0]?.role.code ?? '',
       });
+    else
+      this.form.reset({
+        firstName: '', lastName: '', gender: '', dateOfBirth: '', phone: '', email: '',
+        address: '', employeeCode: '', departmentId: '', specializationId: '',
+        medicalRegistration: '', qualification: '', yearsOfExperience: 0, consultationFee: 0,
+        designation: '', joiningDate: '', employmentType: 'FULL_TIME', status: 'ACTIVE', roleCode: '',
+      });
+    this.form.markAsPristine();
+    this.dirtyChanged.emit(false);
   });
   constructor() {
     this.form.valueChanges.subscribe(() => this.dirtyChanged.emit(this.form.dirty));

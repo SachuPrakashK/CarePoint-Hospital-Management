@@ -1,5 +1,6 @@
-<form [formGroup]="form" (ngSubmit)="submit()">
-  <div class="modal-body">
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="crud-modal__body staff-form-body" tabindex="0">
+    <section class="staff-form-section">
     <h3>Personal information</h3>
     <div class="form-grid">
       <label class="field"
@@ -29,6 +30,8 @@
         ><textarea formControlName="address" placeholder="Enter address"></textarea>
       </label>
     </div>
+    </section>
+    <section class="staff-form-section">
     <h3>{{ kind() === 'doctors' ? 'Professional' : 'Employment' }} information</h3>
     <div class="form-grid">
       <label class="field"
@@ -104,14 +107,16 @@
         </select></label
       >
     </div>
+    </section>
     @if (error()) {
       <p class="field-error">{{ error() }}</p>
     }
   </div>
-  <div class="modal-footer">
+  <div class="crud-modal__footer">
+    <button type="button" class="secondary" [disabled]="submitting()" (click)="cancelled.emit()">Cancel</button>
     <button class="primary" [disabled]="form.invalid || submitting()">
       {{
-        submitting() ? (record() ? 'Updating...' : 'Creating...') : record() ? 'Update' : 'Create'
+        submitting() ? (record() ? 'Saving...' : 'Creating...') : record() ? 'Save Changes' : 'Create'
       }}
     </button>
   </div>

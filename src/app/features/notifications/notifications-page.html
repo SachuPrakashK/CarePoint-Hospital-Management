@@ -10,7 +10,7 @@
 </div>
 <section class="card notification-page">
   @if (store.loading()) {
-    <div class="notification-state">Loading notifications…</div>
+    <div class="notification-state loading-state loading-state--section" role="status" aria-live="polite">Loading notifications…</div>
   } @else if (store.error()) {
     <div class="notification-state error" role="alert">
       {{ store.error() }} <button class="secondary" (click)="store.load()">Retry</button>

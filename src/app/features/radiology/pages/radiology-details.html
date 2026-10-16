@@ -1,6 +1,6 @@
 <a class="back-link" routerLink="/radiology"><app-icon name="back" [size]="15" /> Radiology</a>
 @if (loading()) {
-  <div class="loading-state">Loading radiology order...</div>
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading radiology order...</div>
 } @else if (notFound()) {
   <section class="card error-state"><h1>Radiology order not found</h1><p>The requested record does not exist or is no longer available.</p></section>
 } @else if (error()) {

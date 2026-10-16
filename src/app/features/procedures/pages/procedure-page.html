@@ -125,7 +125,7 @@
     </div>
   </div>
   @if (store.loading()) {
-    <div class="empty">Loading procedures…</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading procedures…</div>
   } @else if (store.error()) {
     <div class="error-state" role="alert">
       {{ store.error() }} <button class="secondary" type="button" (click)="load()">Retry</button>

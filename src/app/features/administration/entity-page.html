@@ -29,7 +29,7 @@
       </div>
     </div>
     @if (loading()) {
-      <div class="loading-state">Loading...</div>
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading...</div>
     } @else if (error()) {
       <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
     } @else if (!items().length) {

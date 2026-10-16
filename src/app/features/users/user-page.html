@@ -19,7 +19,7 @@
         (appClickOutside)="filtersOpen.set(false)"
         (click)="$event.stopPropagation()"
       >
-        <button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())">
+        <button type="button" class="secondary button-icon" (click)="filtersOpen.set(!filtersOpen())">
           <app-icon name="filter" [size]="17" /> Filters
           @if (status() || role()) {
             ({{ (status() ? 1 : 0) + (role() ? 1 : 0) }})
@@ -57,7 +57,7 @@
       @if (auth.has('users.export')) {
         <button
           type="button"
-          class="secondary"
+          class="secondary button-icon"
           [disabled]="exporting() || !total()"
           (click)="export()"
         >
@@ -67,7 +67,7 @@
     </div>
   </div>
   @if (loading()) {
-    <div class="loading-state">Loading users...</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading users...</div>
   } @else if (users().length) {
     <div class="table-wrap">
       <table>

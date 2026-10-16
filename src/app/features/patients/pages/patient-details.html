@@ -1,5 +1,5 @@
 @if (store.loading() && !store.selected()) {
-  <div class="card empty">Loading patient…</div>
+  <div class="card loading-state loading-state--page" role="status" aria-live="polite">Loading patient…</div>
 } @else if (store.error()) {
   <div class="error-state" role="alert">{{ store.error() }}</div>
 } @else if (store.selected(); as p) {
@@ -23,7 +23,7 @@
         <section class="card"><div class="section-title"><h2>Clinical alerts</h2></div><div class="details"><div class="full"><small>Allergies</small><p>@for (allergy of p.allergies; track allergy) { <span class="status danger">{{ allergy }}</span> } @empty { No known allergies }</p></div></div></section>
       </div>
     } @else if (detail.loading() === activeTab()) {
-      <div class="tab-state">Loading {{ activeTab().replace('-', ' ') }}…</div>
+      <div class="tab-state loading-state loading-state--section" role="status" aria-live="polite">Loading {{ activeTab().replace('-', ' ') }}…</div>
     } @else if (activeError(); as error) {
       <div class="tab-state error-state" role="alert"><div>{{ error }}</div><button class="secondary" (click)="retry()">Retry</button></div>
     } @else if (activeTab() === 'medical-records') {

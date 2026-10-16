@@ -6,7 +6,7 @@
   </div>
 </div>
 @if (loading()) {
-  <section class="card tab-state">Loading laboratory order…</section>
+  <section class="card tab-state loading-state loading-state--page" role="status" aria-live="polite">Loading laboratory order…</section>
 } @else if (error()) {
   <section class="card tab-state error-state" role="alert">{{ error() }} <button class="secondary" (click)="load()">Retry</button></section>
 } @else if (order(); as item) {

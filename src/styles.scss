@@ -387,6 +387,12 @@ tbody tr.clickable:hover {
     display: none
 }
 
+.loading-state {
+    padding: 55px 20px;
+    text-align: center;
+    color: #6b7e84
+}
+
 @media(max-width:1050px) {
     .stats {
         grid-template-columns: repeat(2, 1fr)

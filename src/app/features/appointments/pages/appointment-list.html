@@ -119,7 +119,7 @@
       </div>
     </div>
     @if (loading()) {
-      <div class="empty">Loading appointments…</div>
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading appointments…</div>
     } @else if (error()) {
       <div class="error-state" role="alert">
         {{ error() }} <button type="button" class="secondary" (click)="load()">Retry</button>
@@ -220,7 +220,7 @@
       </button>
     </div>
     @if (calendarLoading()) {
-      <div class="empty">Loading calendar…</div>
+      <div class="loading-state loading-state--section" role="status" aria-live="polite">Loading calendar…</div>
     } @else if (error()) {
       <div class="error-state" role="alert">
         {{ error() }}

@@ -52,7 +52,7 @@
     </div>
   </div>
   @if (store.loading()) {
-    <div class="loading-state">Loading documents...</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading documents...</div>
   } @else if (store.error()) {
     <div class="error-state">{{ store.error() }} <button (click)="load()">Retry</button></div>
   } @else if (!store.documents().length) {

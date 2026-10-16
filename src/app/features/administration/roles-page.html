@@ -19,7 +19,7 @@
         (appClickOutside)="filtersOpen.set(false)"
         (click)="$event.stopPropagation()"
       >
-        <button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())">
+        <button type="button" class="secondary button-icon" (click)="filtersOpen.set(!filtersOpen())">
           <app-icon name="filter" [size]="17" /> Filters
           @if (status()) {
             (1)
@@ -55,7 +55,7 @@
     </div>
   </div>
   @if (loading()) {
-    <div class="loading-state">Loading roles...</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading roles...</div>
   } @else if (error()) {
     <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
   } @else if (!items().length) {

@@ -1,5 +1,5 @@
 @if (loading()) {
-  <div class="empty">Loading admission details…</div>
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading admission details…</div>
 } @else if (error()) {
   <div class="error-state" role="alert">
     {{ error() }} <button type="button" class="secondary" (click)="loadAdmission()">Retry</button>
@@ -161,7 +161,7 @@
     </div>
   } @else {
     @if (tabState(activeTab()).loading) {
-      <div class="empty">Loading {{ activeTab() }} records…</div>
+      <div class="loading-state loading-state--section" role="status" aria-live="polite">Loading {{ activeTab() }} records…</div>
     } @else if (tabState(activeTab()).error) {
       <div class="error-state" role="alert">
         {{ tabState(activeTab()).error }}

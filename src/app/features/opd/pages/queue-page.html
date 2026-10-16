@@ -109,7 +109,7 @@
     </div>
   </div>
   @if (loading()) {
-    <div class="empty">Loading OPD queue…</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading OPD queue…</div>
   } @else if (error()) {
     <div class="error-state" role="alert">
       {{ error() }} <button class="secondary" (click)="load()">Retry</button>

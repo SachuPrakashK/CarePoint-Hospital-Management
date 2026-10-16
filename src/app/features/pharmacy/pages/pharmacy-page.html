@@ -199,7 +199,7 @@
       </div>
     </div>
     @if (store.stockLoading()) {
-      <div class="empty">Loading medicine stock…</div>
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading medicine stock…</div>
     } @else if (store.stockError()) {
       <div class="error-state" role="alert">
         {{ store.stockError() }}
@@ -272,7 +272,7 @@
 } @else {
   <section class="card">
     @if (store.ledgerLoading()) {
-      <div class="empty">Loading stock ledger…</div>
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading stock ledger…</div>
     } @else if (store.ledgerError()) {
       <div class="error-state" role="alert">
         {{ store.ledgerError() }}

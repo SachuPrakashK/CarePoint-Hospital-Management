@@ -63,6 +63,7 @@ export class StaffPage {
   readonly total = signal(0);
   readonly totalPages = signal(0);
   readonly modal = signal(false);
+  readonly editLoading = signal<string | null>(null);
   readonly editing = signal<StaffRecord | null>(null);
   readonly dirty = signal(false);
   readonly deleting = signal('');
@@ -134,8 +135,22 @@ export class StaffPage {
     void this.load();
   }
   changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);void this.load();}ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}columnVisible(id:string){return this.visibleColumns().includes(id);}async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns.some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save(this.kind,ids);}async resetColumns(){await this.tablePreferences.reset(this.kind);this.visibleColumns.set(this.tablePreferences.load(this.kind,this.columns));}
-  open(item: StaffRecord | null = null) {
-    this.editing.set(item);
+  async open(item: StaffRecord | null = null) {
+    if (item) {
+      if (this.editLoading()) return;
+      this.editLoading.set(item.id);
+      try {
+        const response = await firstValueFrom(this.api.get(this.kind, item.id));
+        this.editing.set(response.data);
+      } catch {
+        this.toast.error(`${this.singular} details could not be loaded.`);
+        return;
+      } finally {
+        this.editLoading.set(null);
+      }
+    } else {
+      this.editing.set(null);
+    }
     this.dirty.set(false);
     this.modal.set(true);
   }
@@ -145,6 +160,7 @@ export class StaffPage {
   async saved() {
     this.toast.success(`${this.singular} ${this.editing() ? 'updated' : 'created'}.`);
     await this.load();
+    this.modal.set(false);
   }
   async remove(item: StaffRecord) {
     if (
@@ -185,7 +201,7 @@ export class StaffPage {
           sortBy:this.sort()?.field,sortOrder:this.sort()?.direction,
         }),
       );
-      const exportColumns=[{id:'code',header:'ID',value:(x:StaffRecord)=>x.employeeCode},{id:'name',header:'Name',value:(x:StaffRecord)=>`${x.firstName} ${x.lastName}`},{id:'department',header:'Department',value:(x:StaffRecord)=>x.department?.name??''},{id:'position',header:this.kind==='doctors'?'Specialization':'Designation',value:(x:StaffRecord)=>x.specialization?.name??x.designation??''},{id:'phone',header:'Phone',value:(x:StaffRecord)=>x.phone},{id:'email',header:'Email',value:(x:StaffRecord)=>x.email},{id:'experience',header:this.kind==='doctors'?'Experience':'Joining date',value:(x:StaffRecord)=>this.kind==='doctors'?x.yearsOfExperience??0:x.joiningDate??''},{id:'status',header:'Status',value:(x:StaffRecord)=>x.status}].filter(column=>this.columnVisible(column.id));
+      const exportColumns=[{id:'code',header:'ID',value:(x:StaffRecord)=>x.employeeCode},{id:'name',header:'Name',value:(x:StaffRecord)=>`${x.firstName} ${x.lastName}`},{id:'department',header:'Department',value:(x:StaffRecord)=>x.department?.name??''},{id:'position',header:this.kind==='doctors'?'Specialization':'Designation',value:(x:StaffRecord)=>x.specialization?.name??x.designation??''},{id:'phone',header:'Phone',value:(x:StaffRecord)=>x.phone??''},{id:'email',header:'Email',value:(x:StaffRecord)=>x.email},{id:'experience',header:this.kind==='doctors'?'Experience':'Joining date',value:(x:StaffRecord)=>this.kind==='doctors'?x.yearsOfExperience??0:x.joiningDate??''},{id:'status',header:'Status',value:(x:StaffRecord)=>x.status}].filter(column=>this.columnVisible(column.id));
       const csv=[exportColumns.map(column=>column.header),...r.data.map(item=>exportColumns.map(column=>column.value(item)))].map(row=>row.map(value=>`"${String(value).replaceAll('"','""')}"`).join(',')).join('\n');
       const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
       const a = document.createElement('a');

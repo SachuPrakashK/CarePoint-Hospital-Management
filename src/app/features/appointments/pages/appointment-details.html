@@ -5,7 +5,7 @@
   </div>
 </div>
 @if (loading()) {
-  <div class="card empty">Loading appointment…</div>
+  <div class="card loading-state loading-state--page" role="status" aria-live="polite">Loading appointment…</div>
 } @else if (error()) {
   <div class="error-state" role="alert">{{ error() }}</div>
 } @else if (appointment(); as item) {

@@ -133,7 +133,7 @@
       </div>
     </div>
     @if (store.loading()) {
-      <div class="empty">Loading admissions…</div>
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading admissions…</div>
     } @else if (store.error()) {
       <div class="error-state" role="alert">
         {{ store.error() }}

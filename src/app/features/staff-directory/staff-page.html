@@ -25,7 +25,7 @@
         (appClickOutside)="filtersOpen.set(false)"
         (click)="$event.stopPropagation()"
       >
-        <button class="secondary" type="button" (click)="filtersOpen.set(!filtersOpen())">
+        <button class="secondary button-icon" type="button" (click)="filtersOpen.set(!filtersOpen())">
           <app-icon name="filter" [size]="17" /> Filters
         </button>
         @if (filtersOpen()) {
@@ -76,7 +76,7 @@
       </div>
       @if (can('export')) {
         <button
-          class="secondary"
+          class="secondary button-icon"
           type="button"
           [disabled]="exporting() || !total()"
           (click)="export()"
@@ -87,7 +87,7 @@
     </div>
   </div>
   @if (loading()) {
-    <div class="loading-state">Loading {{ kind }}...</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading {{ kind }}...</div>
   } @else if (error()) {
     <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
   } @else if (!items().length) {
@@ -124,7 +124,7 @@
             >
               @if(columnVisible('code')){<td>{{ item.employeeCode }}</td>} @if(columnVisible('name')){<td>
                 <b>{{ item.firstName }} {{ item.lastName }}</b>
-              </td>} @if(columnVisible('department')){<td>{{ item.department?.name || 'Not available' }}</td>} @if(columnVisible('position')){<td>{{ item.specialization?.name || item.designation || 'Not available' }}</td>} @if(columnVisible('phone')){<td>{{ item.phone }}</td>} @if(columnVisible('email')){<td>{{ item.email }}</td>} @if(columnVisible('experience')){<td>
+              </td>} @if(columnVisible('department')){<td>{{ item.department?.name || 'Not available' }}</td>} @if(columnVisible('position')){<td>{{ item.specialization?.name || item.designation || 'Not available' }}</td>} @if(columnVisible('phone')){<td>{{ item.phone || '—' }}</td>} @if(columnVisible('email')){<td>{{ item.email }}</td>} @if(columnVisible('experience')){<td>
                 {{
                   kind === 'doctors'
                     ? (item.yearsOfExperience ?? 0) + ' years'
@@ -159,7 +159,7 @@
 </section>
 @if (modal()) {
   <app-modal
-    [title]="(editing() ? 'Edit ' : 'Add ') + singular"
+    [title]="editing() ? 'Edit ' + singular : kind === 'employees' ? 'Add Employment' : 'Add Doctor'"
     size="xl"
     [dirty]="dirty()"
     (closed)="modal.set(false)"
@@ -168,6 +168,7 @@
       [record]="editing()"
       [options]="options()"
       (dirtyChanged)="dirty.set($event)"
+      (cancelled)="modal.set(false)"
       (saved)="saved()"
   /></app-modal>
 }

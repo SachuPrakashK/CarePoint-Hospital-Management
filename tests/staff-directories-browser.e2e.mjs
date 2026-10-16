@@ -12,7 +12,7 @@ const env = Object.fromEntries(
     }),
 );
 const api = 'http://127.0.0.1:3000/api/v1',
-  front = 'http://127.0.0.1:4200';
+  front = process.argv[2] || process.env.FRONTEND_URL || 'http://127.0.0.1:4200';
 const request = async (path, options = {}) => {
   const r = await fetch(api + path, {
     ...options,
@@ -119,7 +119,39 @@ try {
     await page.getByText(common.employeeCode).waitFor();
     await page.goto(`${front}/employees`);
     await page.getByRole('heading', { name: 'Employees' }).waitFor();
-    await page.locator('tbody').getByText(empCommon.employeeCode).waitFor();
+    await page.getByRole('searchbox', { name: 'Search' }).fill(empCommon.employeeCode);
+    const employeeRow = page.getByRole('row').filter({ hasText: empCommon.employeeCode });
+    await employeeRow.waitFor();
+    await employeeRow.getByText(empCommon.phone).waitFor();
+    for (const name of ['Filters', 'Export']) {
+      const button = page.getByRole('button', { name: new RegExp(name, 'i') });
+      assert.ok(['flex', 'inline-flex'].includes(await button.evaluate((element) => getComputedStyle(element).display)));
+      assert.equal(await button.evaluate((element) => getComputedStyle(element).alignItems), 'center');
+    }
+    await page.getByRole('button', { name: '+ Add Employee' }).click();
+    const createDialog = page.getByRole('dialog', { name: 'Add Employment' });
+    const body = createDialog.locator('.staff-form-body');
+    assert.equal(await body.evaluate((element) => getComputedStyle(element).overflowY), 'auto');
+    assert.ok(await createDialog.locator('.crud-modal__footer').isVisible());
+    await createDialog.getByRole('button', { name: 'Cancel' }).click();
+    await employeeRow.getByRole('button', { name: /record actions/i }).click();
+    await page.getByRole('menuitem', { name: 'Edit' }).click();
+    const editDialog = page.getByRole('dialog', { name: 'Edit Employee' });
+    assert.equal(await editDialog.getByPlaceholder('Enter phone number').inputValue(), empCommon.phone);
+    assert.equal(await editDialog.locator('select[formControlName="departmentId"]').inputValue(), empCommon.departmentId);
+    assert.equal(await editDialog.locator('input[formControlName="joiningDate"]').inputValue(), empCommon.joiningDate);
+    await editDialog.getByPlaceholder('Enter designation').fill('Senior Staff Nurse');
+    await editDialog.getByRole('button', { name: 'Save Changes' }).click();
+    await editDialog.waitFor({ state: 'detached' });
+    const persisted = await request(`/employees/${employee.id}`, { headers: auth });
+    assert.equal(persisted.body.data.designation, 'Senior Staff Nurse');
+    assert.equal(persisted.body.data.phone, empCommon.phone);
+    await page.goto(`${front}/employees/${employee.id}`);
+    await page.getByRole('heading', { name: 'E2E Employee' }).waitFor();
+    await page.getByText(empCommon.phone).waitFor();
+    await page.getByText('Senior Staff Nurse').waitFor();
+    await page.reload();
+    await page.getByText(empCommon.employeeCode).waitFor();
   } finally {
     await browser.close();
   }
