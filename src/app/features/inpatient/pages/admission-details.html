@@ -1,0 +1,377 @@
+@if (loading()) {
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading admission details…</div>
+} @else if (error()) {
+  <div class="error-state" role="alert">
+    {{ error() }} <button type="button" class="secondary" (click)="loadAdmission()">Retry</button>
+  </div>
+} @else if (admission(); as admission) {
+  <div class="page-head">
+    <div>
+      <div class="breadcrumbs">Inpatient / {{ admission.number }}</div>
+      <h1>{{ display(admission.patientName) }}</h1>
+      <p class="muted">
+        {{ display(admission.department) }} · {{ display(admission.attendingDoctor) }}
+      </p>
+    </div>
+    <app-status-badge [value]="admission.status" />
+  </div>
+  <div class="tabs detail-tabs" role="tablist" aria-label="Admission details">
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'admission'"
+      [class.active]="activeTab() === 'admission'"
+      (click)="selectTab('admission')"
+    >
+      Admission
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'clinical'"
+      [class.active]="activeTab() === 'clinical'"
+      (click)="selectTab('clinical')"
+    >
+      Clinical Record
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'nursing'"
+      [class.active]="activeTab() === 'nursing'"
+      (click)="selectTab('nursing')"
+    >
+      Nursing
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'beds'"
+      [class.active]="activeTab() === 'beds'"
+      (click)="selectTab('beds')"
+    >
+      Bed History
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'medications'"
+      [class.active]="activeTab() === 'medications'"
+      (click)="selectTab('medications')"
+    >
+      Medications
+    </button>
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'investigations'"
+      [class.active]="activeTab() === 'investigations'"
+      (click)="selectTab('investigations')"
+    >
+      Investigations
+    </button>
+  </div>
+  @if (activeTab() === 'admission') {
+    <div class="grid-2">
+      <section class="card">
+        <div class="section-title"><h2>Admission details</h2></div>
+        <div class="detail-grid">
+          <span
+            ><small>ADMISSION NUMBER</small><b>{{ display(admission.number) }}</b></span
+          ><span><small>STATUS</small><app-status-badge [value]="admission.status" /></span>
+          <span
+            ><small>PATIENT</small><b>{{ display(admission.patientName) }}</b></span
+          ><span
+            ><small>ADMITTED</small><b>{{ format(admission.admittedAt) }}</b></span
+          >
+          <span
+            ><small>DEPARTMENT</small><b>{{ display(admission.department) }}</b></span
+          ><span
+            ><small>ATTENDING DOCTOR</small><b>{{ display(admission.attendingDoctor) }}</b></span
+          >
+          <span
+            ><small>TYPE</small><b>{{ display(admission.type) }}</b></span
+          ><span
+            ><small>LOCATION</small
+            ><b>
+              @if (activeAllocation(); as location) {
+                {{ display(location.ward) }} / {{ display(location.room) }} /
+                {{ display(location.bedName) }}
+              } @else {
+                Not available
+              }
+            </b></span
+          >
+          <span class="full"
+            ><small>INITIAL DIAGNOSIS</small><b>{{ display(admission.initialDiagnosis) }}</b></span
+          ><span class="full"
+            ><small>REASON</small><b>{{ display(admission.reason) }}</b></span
+          >
+          <span
+            ><small>DISCHARGED</small><b>{{ format(admission.dischargedAt) }}</b></span
+          >
+        </div>
+      </section>
+      <aside class="card actions-panel">
+        <h2>Inpatient actions</h2>
+        <label class="field"
+          ><span class="form-label">Transfer to available bed</span
+          ><select [(ngModel)]="targetBed">
+            <option value="">Select bed</option>
+            @for (bed of store.availableBeds(); track bed.id) {
+              <option [value]="bed.id">{{ bed.name }} · {{ bed.ward }} · {{ bed.room }}</option>
+            }
+          </select></label
+        ><button
+          type="button"
+          class="secondary"
+          [disabled]="!targetBed || actionSubmitting()"
+          (click)="transfer()"
+        >
+          {{ actionSubmitting() ? 'Processing…' : 'Transfer patient' }}
+        </button>
+        <hr />
+        <h3>Discharge patient</h3>
+        <label class="field"
+          ><span class="form-label">Final diagnosis</span
+          ><input [(ngModel)]="finalDiagnosis" placeholder="Final diagnosis" /></label
+        ><label class="field"
+          ><span class="form-label">Treatment summary</span
+          ><textarea [(ngModel)]="treatmentSummary"></textarea></label
+        ><label class="field"
+          ><span class="form-label">Condition at discharge</span
+          ><input [(ngModel)]="condition" /></label
+        ><label class="field"
+          ><span class="form-label">Instructions</span
+          ><textarea [(ngModel)]="instructions"></textarea></label
+        ><label class="field"
+          ><span class="form-label">Follow-up</span><input [(ngModel)]="followUp" /></label
+        ><button
+          type="button"
+          class="danger"
+          [disabled]="!finalDiagnosis.trim() || actionSubmitting()"
+          (click)="discharge()"
+        >
+          Complete discharge
+        </button>
+        @if (message()) {
+          <p class="error" role="status">{{ message() }}</p>
+        }
+      </aside>
+    </div>
+  } @else {
+    @if (tabState(activeTab()).loading) {
+      <div class="loading-state loading-state--section" role="status" aria-live="polite">Loading {{ activeTab() }} records…</div>
+    } @else if (tabState(activeTab()).error) {
+      <div class="error-state" role="alert">
+        {{ tabState(activeTab()).error }}
+        <button type="button" class="secondary" (click)="loadTab(activeTab())">Retry</button>
+      </div>
+    } @else if (activeTab() === 'clinical') {
+      @if (clinical().length) {
+        <section class="records-grid">
+          @for (record of clinical(); track record.id) {
+            <article class="card record-card">
+              <div class="section-title">
+                <h2>{{ display(record.chiefComplaint) }}</h2>
+                <span>{{ format(record.createdAt) }}</span>
+              </div>
+              <div class="detail-grid">
+                <span
+                  ><small>SYMPTOMS</small><b>{{ display(record.symptoms) }}</b></span
+                ><span
+                  ><small>EXAMINATION</small><b>{{ display(record.examination) }}</b></span
+                ><span
+                  ><small>TREATMENT PLAN</small><b>{{ display(record.treatmentPlan) }}</b></span
+                ><span
+                  ><small>CLINICAL NOTES</small><b>{{ display(record.notes) }}</b></span
+                >
+              </div>
+              @if (record.diagnoses?.length) {
+                <div class="record-list">
+                  <h3>Diagnoses</h3>
+                  @for (diagnosis of record.diagnoses; track diagnosis.id) {
+                    <p>
+                      {{ diagnosis.description }} · <app-status-badge [value]="diagnosis.status" />
+                    </p>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </section>
+      } @else {
+        <app-empty-state
+          title="No clinical records found"
+          description="No clinical records are associated with this admission period."
+        />
+      }
+    } @else if (activeTab() === 'nursing') {
+      @if (nursing().notes.length || nursing().carePlans.length || nursing().intakeOutputs.length) {
+        <section class="records-grid">
+          @for (note of nursing().notes; track note.id) {
+            <article class="card record-card">
+              <div class="section-title">
+                <h2>Nursing note</h2>
+                <span>{{ format(note.recordedAt) }}</span>
+              </div>
+              <div class="detail-grid">
+                <span
+                  ><small>OBSERVATION</small><b>{{ display(note.observation) }}</b></span
+                ><span
+                  ><small>INTERVENTION</small><b>{{ display(note.intervention) }}</b></span
+                ><span
+                  ><small>NOTES</small><b>{{ display(note.notes) }}</b></span
+                ><span
+                  ><small>RECORDED BY</small><b>{{ display(note.nurse ? (note.nurse.firstName + ' ' + note.nurse.lastName) : note.nurseId) }}</b></span
+                >
+              </div>
+            </article>
+          }
+          @for (plan of nursing().carePlans; track plan.id) {
+            <article class="card record-card">
+              <div class="section-title">
+                <h2>Care plan</h2>
+                <app-status-badge [value]="plan.status" />
+              </div>
+              <div class="detail-grid">
+                <span
+                  ><small>PROBLEM</small><b>{{ display(plan.problem) }}</b></span
+                ><span
+                  ><small>GOAL</small><b>{{ display(plan.goal) }}</b></span
+                ><span
+                  ><small>INTERVENTION</small><b>{{ display(plan.intervention) }}</b></span
+                ><span
+                  ><small>REVIEW</small><b>{{ format(plan.reviewDate) }}</b></span
+                >
+              </div>
+            </article>
+          }
+        </section>
+      } @else {
+        <app-empty-state
+          title="No nursing records found"
+          description="No nursing records are associated with this admission."
+        />
+      }
+    } @else if (activeTab() === 'beds') {
+      @if (bedHistory().length) {
+        <section class="card history-list">
+          @for (allocation of bedHistory(); track allocation.id) {
+            <div class="history">
+              <i></i>
+              <div>
+                <b
+                  >{{
+                    display(allocation.bed?.room?.wardModel?.name || allocation.bed?.room?.ward)
+                  }}
+                  · {{ display(allocation.bed?.room?.name) }} ·
+                  {{ display(allocation.bed?.name) }}</b
+                ><small
+                  >{{ format(allocation.startedAt) }} →
+                  {{ allocation.endedAt ? format(allocation.endedAt) : 'Current' }}</small
+                >
+              </div>
+              <app-status-badge [value]="allocation.endedAt ? 'Transferred' : 'Active'" />
+            </div>
+          }
+        </section>
+      } @else {
+        <app-empty-state
+          title="No bed history found"
+          description="No bed allocations are associated with this admission."
+        />
+      }
+    } @else if (activeTab() === 'medications') {
+      @if (medications().length) {
+        <section class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Medication</th>
+                  <th>Dose</th>
+                  <th>Route</th>
+                  <th>Scheduled</th>
+                  <th>Administered</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (medication of medications(); track medication.id) {
+                  <tr>
+                    <td>
+                      <b>{{ display(medication.medication) }}</b>
+                    </td>
+                    <td>{{ display(medication.dose) }}</td>
+                    <td>{{ display(medication.route) }}</td>
+                    <td>{{ format(medication.scheduledAt) }}</td>
+                    <td>{{ format(medication.administeredAt) }}</td>
+                    <td><app-status-badge [value]="medication.status" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      } @else {
+        <app-empty-state
+          title="No medications found"
+          description="No medication administration records are associated with this admission."
+        />
+      }
+    } @else if (activeTab() === 'investigations') {
+      @if (laboratory().length || radiology().length) {
+        <section class="records-grid">
+          @for (order of laboratory(); track order.id) {
+            <article class="card record-card">
+              <div class="section-title">
+                <h2>Laboratory · {{ display(order.number) }}</h2>
+                <app-status-badge [value]="order.status" />
+              </div>
+              <div class="detail-grid">
+                <span
+                  ><small>TESTS</small
+                  ><b>
+                    @for (test of order.orderTests; track test.id) {
+                      {{ test.testDefinition?.name }}
+                    }
+                  </b></span
+                ><span
+                  ><small>ORDERED</small><b>{{ format(order.createdAt) }}</b></span
+                ><span
+                  ><small>RESULT</small
+                  ><b>{{ order.results?.length ? order.results[0].value : 'Not available' }}</b></span
+                >
+              </div>
+            </article>
+          }
+          @for (order of radiology(); track order.id) {
+            <article class="card record-card">
+              <div class="section-title">
+                <h2>Radiology · {{ display(order.investigation) }}</h2>
+                <app-status-badge [value]="order.status" />
+              </div>
+              <div class="detail-grid">
+                <span
+                  ><small>ORDERED</small><b>{{ format(order.createdAt) }}</b></span
+                ><span
+                  ><small>DOCTOR</small><b>{{ display(order.doctor) }}</b></span
+                ><span
+                  ><small>FINDINGS</small><b>{{ display(order.findings) }}</b></span
+                ><span
+                  ><small>IMPRESSION</small><b>{{ display(order.impression) }}</b></span
+                >
+              </div>
+            </article>
+          }
+        </section>
+      } @else {
+        <app-empty-state
+          title="No investigations found"
+          description="No laboratory or radiology investigations are associated with this admission period."
+        />
+      }
+    }
+  }
+}

@@ -1,0 +1,193 @@
+.auth-shell {
+    display: grid;
+    grid-template-columns: 44% 56%;
+    min-height: 100vh;
+    min-width: 0;
+    overflow-x: clip;
+}
+.auth-shell--register {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.auth-shell--register .auth-panel {
+    min-width: 0;
+}
+.auth-shell--register .register-card {
+    width: min(550px, 100%);
+    max-width: calc(100vw - 24px);
+    margin-inline: auto;
+}
+.auth-brand {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12vh 10%;
+    background: var(--color-navy-900, #123b4a);
+    color: #fff;
+}
+.auth-brand h1 {
+    margin: 20px 0 8px;
+    font-size: 42px;
+}
+.auth-brand p {
+    color: #c9e0e5;
+    font-size: 19px;
+}
+.brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-lg);
+    background: var(--color-primary, #15a68a);
+    color: #fff;
+    font-size: 25px;
+    font-weight: 800;
+}
+.trust {
+    display: grid;
+    gap: 16px;
+    margin-top: 60px;
+    color: #d9ecef;
+}
+.auth-panel {
+    display: grid;
+    place-items: center;
+    padding: 32px;
+    background: var(--color-surface-subtle, #f7fafb);
+}
+.auth-card {
+    width: min(430px, 100%);
+    padding: 42px;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgb(18 59 74 / 5%);
+}
+.auth-shell--register .auth-card {
+    padding: 34px 32px;
+}
+.auth-card h2 {
+    margin: 8px 0;
+    font-size: 28px;
+}
+.auth-card label:not(.check) {
+    display: grid;
+    gap: 8px;
+margin-top: 18px;
+    font-weight: 600;
+}
+.auth-card input:not([type="checkbox"]):not(.password-field__input) {
+    height: 46px;
+    padding: 0 13px;
+    border: 1px solid #cad6da;
+    border-radius: var(--radius-sm);
+    font: inherit;
+}
+.auth-card .form-grid {
+    padding: 12px 0;
+}
+.auth-card .wide {
+    width: 100%;
+    margin-top: 1.25rem;
+}
+.auth-card .alert {
+    margin: 12px 0;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    background: #fff0ee;
+    color: var(--color-danger);
+}
+.eyebrow {
+    color: var(--color-primary, #108873);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+.form-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0;
+    font-size: 14px;
+}
+.check {
+    display: flex;
+    gap: 8px;
+}
+.mobile-brand {
+    display: none;
+    font-weight: 800;
+}
+.auth-switch,
+.auth-secondary-action {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin-top: 1.25rem;
+    cursor: pointer;
+}
+.auth-switch a,
+.auth-secondary-action a {
+    color: var(--color-blue-700);
+    font-weight: 600;
+    text-decoration: none;
+}
+.auth-switch a:hover,
+.auth-secondary-action a:hover {
+    text-decoration: underline;
+}
+.auth-switch a:focus-visible,
+.auth-secondary-action a:focus-visible {
+    outline: 2px solid var(--color-blue-500);
+    outline-offset: 3px;
+}
+@media (max-width: 760px) {
+    .auth-shell {
+        display: block;
+    }
+    .auth-brand {
+        display: none;
+    }
+    .auth-panel {
+        min-height: 100vh;
+        padding: 12px;
+    }
+    .mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+    .mobile-brand .brand-mark {
+        width: 36px;
+        height: 36px;
+    }
+    .auth-card {
+        padding: 24px 20px;
+    }
+    .auth-shell--register .auth-card {
+        padding: 24px 20px;
+    }
+    .auth-card .form-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding-top: 8px;
+    }
+    .auth-card label:not(.check) {
+        margin-top: 12px;
+    }
+    .auth-card .field {
+        min-width: 0;
+    }
+}
+@media (max-width: 420px) {
+    .auth-card {
+        padding: 20px 16px;
+    }
+    .auth-card h2 {
+        font-size: 24px;
+    }
+    .auth-card .wide {
+        margin-top: 1rem;
+    }
+}

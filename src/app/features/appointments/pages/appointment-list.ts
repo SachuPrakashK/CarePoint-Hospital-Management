@@ -1,167 +1,192 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { ClinicalStore } from '../../../core/services/clinical.store';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { ApiAppointment, AppointmentApiService, AppointmentOptions } from '../appointment-api.service';
+import { AppointmentInvalidationService } from '../appointment-invalidation.service';
+import { NotificationStore } from '../../../core/notifications/notification.store';
+import { AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { ConfirmationService } from '../../../core/services/confirmation.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { AppointmentForm } from './appointment-form';
+import { AppModal } from '../../../shared/components/modal/app-modal';
+import { SearchField } from '../../../shared/components/search/search-field';
+import { AppActionsMenu } from '../../../shared/components/actions-menu/app-actions-menu';
+import { AppPagination } from '../../../shared/components/pagination/app-pagination';
+import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { AppIcon } from '../../../shared/components/icon/app-icon';
+import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
+import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
+import { ColumnConfig } from '../../../shared/components/column-config/column-config';
+import { TableColumnDefinition, TableSort } from '../../../shared/models/table.models';
+import { TablePreferencesService } from '../../../core/services/table-preferences.service';
+
+const addDays = (key: string, days: number) => {
+  const date = new Date(`${key}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+const sundayOf = (key: string) => {
+  const date = new Date(`${key}T00:00:00Z`);
+  return addDays(key, -date.getUTCDay());
+};
+
 @Component({
-  imports: [RouterLink],
-  template: `<div class="page-head">
-      <div>
-        <div class="breadcrumbs">Appointments</div>
-        <h1>Appointments</h1>
-        <p class="muted">Coordinate bookings, availability, walk-ins and follow-ups.</p>
-      </div>
-      <a class="primary button-link" routerLink="new">+ New appointment</a>
-    </div>
-    <div class="tabs">
-      <button [class.active]="view() === 'list'" (click)="view.set('list')">List</button
-      ><button [class.active]="view() === 'calendar'" (click)="view.set('calendar')">
-        Calendar
-      </button>
-    </div>
-    <section class="card">
-      <div class="toolbar">
-        <label class="search-box"
-          >⌕<input placeholder="Search" #q (input)="search.set(q.value)" /></label
-        ><select aria-label="Status filter" #s (change)="status.set(s.value)">
-          <option value="">All statuses</option>
-          <option>Scheduled</option>
-          <option>Confirmed</option>
-          <option>Waiting</option>
-          <option>Completed</option>
-          <option>Cancelled</option></select
-        ><button class="secondary">Department</button><button class="secondary">Doctor</button>
-      </div>
-      @if (view() === 'list') {
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Appointment</th>
-                <th>Patient</th>
-                <th>Department / Doctor</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (a of filtered(); track a.id) {
-                <tr>
-                  <td>
-                    <b>{{ a.date }}</b
-                    ><br />{{ a.time }}
-                  </td>
-                  <td>{{ a.number }}</td>
-                  <td>
-                    <b>{{ a.patientName }}</b>
-                  </td>
-                  <td>
-                    {{ a.department }}<br /><small>{{ a.doctor }}</small>
-                  </td>
-                  <td>{{ a.type }}</td>
-                  <td>
-                    <span class="status" [class.warn]="a.status === 'Waiting'">{{ a.status }}</span>
-                  </td>
-                  <td class="actions">
-                    <button (click)="checkIn(a.id)">Check in</button
-                    ><button aria-label="More actions">•••</button>
-                  </td>
-                </tr>
-              } @empty {
-                <tr>
-                  <td colspan="7" class="empty">No appointments found.</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      } @else {
-        <div class="calendar">
-          <div class="calendar-head">
-            <button class="secondary">‹</button><b>This week</b><button class="secondary">›</button>
-          </div>
-          <div class="week">
-            @for (day of days; track day) {
-              <div class="day">
-                <b>{{ day }}</b>
-                @for (a of store.appointments(); track a.id) {
-                  <article class="event">
-                    <small>{{ a.time }}</small
-                    ><strong>{{ a.patientName }}</strong
-                    ><span>{{ a.doctor }}</span>
-                  </article>
-                }
-              </div>
-            }
-          </div>
-        </div>
-      }
-    </section>`,
-  styles: [
-    `
-      .calendar {
-        padding: 16px;
-      }
-      .calendar-head {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        margin-bottom: 16px;
-      }
-      .week {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 8px;
-        min-width: 760px;
-      }
-      .calendar {
-        overflow: auto;
-      }
-      .day {
-        border: 1px solid #e0e8ea;
-        border-radius: 7px;
-        min-height: 350px;
-        padding: 10px;
-      }
-      .day > b {
-        display: block;
-        margin-bottom: 12px;
-      }
-      .event {
-        display: grid;
-        gap: 4px;
-        background: #e9f6f3;
-        border-left: 3px solid #15927b;
-        padding: 9px;
-        margin-bottom: 8px;
-        border-radius: 4px;
-      }
-      .event span {
-        font-size: 11px;
-        color: #5d7279;
-      }
-    `,
-  ],
+  imports: [AppointmentForm, AppModal, SearchField, AppActionsMenu, AppPagination, EmptyState, AppIcon, StatusBadge, ClickOutsideDirective, TableSortHeader, ColumnConfig],
+  templateUrl: './appointment-list.html',
+  styleUrl: './appointment-list.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppointmentList {
-  readonly store = inject(ClinicalStore);
+  private readonly api = inject(AppointmentApiService);
+  private readonly invalidation = inject(AppointmentInvalidationService);
+  private readonly notifications = inject(NotificationStore);
+  private readonly confirmation = inject(ConfirmationService);
+  private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
+  private readonly tablePreferences=inject(TablePreferencesService);
+  readonly dates = inject(AppDateTimeService);
+
+  readonly appointments = signal<ApiAppointment[]>([]);
+  readonly calendarAppointments = signal<ApiAppointment[]>([]);
+  readonly options = signal<AppointmentOptions>({ patients: [], departments: [], doctors: [] });
+  readonly loading = signal(true);
+  readonly calendarLoading = signal(false);
+  readonly error = signal('');
+  readonly statusTarget = signal<ApiAppointment | null>(null);
+  readonly newStatus = signal('');
+  readonly statusUpdating = signal(false);
+  readonly exporting = signal(false);
   readonly search = signal('');
+  readonly departmentId = signal('');
+  readonly doctorId = signal('');
   readonly status = signal('');
+  readonly draftDepartmentId = signal('');
+  readonly draftDoctorId = signal('');
+  readonly draftStatus = signal('');
+  readonly filtersOpen = signal(false);
   readonly view = signal<'list' | 'calendar'>('list');
-  readonly days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-  readonly filtered = computed(() =>
-    this.store
-      .appointments()
-      .filter(
-        (a) =>
-          (!this.status() || a.status === this.status()) &&
-          `${a.patientName} ${a.number} ${a.doctor}`
-            .toLowerCase()
-            .includes(this.search().toLowerCase()),
-      ),
-  );
-  checkIn(id: string) {
-    this.store.updateStatus(id, 'Checked In');
+  readonly createOpen = signal(false);
+  readonly editing = signal<ApiAppointment | null>(null);
+  readonly page = signal(1);
+  readonly pageSize = signal(10);
+  readonly total = signal(0);
+  readonly totalPages = signal(0);
+  readonly sort=signal<TableSort|null>(null);
+  readonly columns:readonly TableColumnDefinition[]=[
+    {id:'date',header:'Date & time',visibleByDefault:true,required:true,sortable:true,sortKey:'appointmentAt'},
+    {id:'number',header:'Appointment',visibleByDefault:true,required:true,sortable:true,sortKey:'number'},
+    {id:'patient',header:'Patient',visibleByDefault:true,sortable:true,sortKey:'patient'},
+    {id:'care',header:'Department / Doctor',visibleByDefault:true,sortable:true,sortKey:'department'},
+    {id:'type',header:'Type',visibleByDefault:true,sortable:true,sortKey:'type'},
+    {id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'},
+    {id:'actions',header:'Actions',visibleByDefault:true,required:true},
+  ];
+  readonly visibleColumns=signal(this.tablePreferences.load('appointments',this.columns));
+  readonly weekStart = signal(sundayOf(this.dates.today()));
+  readonly activeFilterCount = computed(() => [this.departmentId(), this.doctorId(), this.status()].filter(Boolean).length);
+  readonly hasCriteria = computed(() => Boolean(this.search().trim()) || this.activeFilterCount() > 0);
+  readonly filteredDoctors = computed(() => this.options().doctors.filter((doctor) => !this.draftDepartmentId() || doctor.departmentId === this.draftDepartmentId()));
+  readonly weekDays = computed(() => Array.from({ length: 7 }, (_, index) => {
+    const key = addDays(this.weekStart(), index);
+    const date = new Date(`${key}T00:00:00Z`);
+    return { key, day: new Intl.DateTimeFormat('en-IN', { weekday: 'short', timeZone: 'UTC' }).format(date), date: new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(date) };
+  }));
+  readonly weekLabel = computed(() => {
+    const start = new Date(`${this.weekStart()}T00:00:00Z`);
+    const end = new Date(`${addDays(this.weekStart(), 6)}T00:00:00Z`);
+    const format = (date: Date) => new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(date);
+    return `${format(start)} – ${format(end)}`;
+  });
+
+  constructor() {
+    void Promise.all([this.load(), this.loadOptions()]);
+    void this.tablePreferences.loadRemote('appointments',this.columns).then(ids=>this.visibleColumns.set(ids));
+    this.invalidation.changed.subscribe((domains) => {
+      if (domains.has('appointment')) void this.refreshVisibleData();
+    });
+  }
+
+  async load() {
+    this.loading.set(true); this.error.set('');
+    try {
+      const response = await firstValueFrom(this.api.list({ page: this.page(), pageSize: this.pageSize(), search: this.search(), departmentId: this.departmentId(), doctorId: this.doctorId(), status: this.status(),sortBy:this.sort()?.field,sortOrder:this.sort()?.direction }));
+      this.appointments.set(response.data); this.total.set(response.pagination.total); this.totalPages.set(response.pagination.total_pages);
+    } catch { this.error.set('Unable to load appointments.'); }
+    finally { this.loading.set(false); }
+  }
+  async loadOptions() {
+    try { this.options.set((await firstValueFrom(this.api.options())).data); }
+    catch { this.error.set('Appointment filters could not be loaded.'); }
+  }
+  async loadCalendar() {
+    this.calendarLoading.set(true); this.error.set('');
+    try {
+      const end = addDays(this.weekStart(), 7);
+      const response = await firstValueFrom(this.api.list({ page: 1, pageSize: 250, startDate: this.dates.formValueToApi(this.weekStart(), '00:00'), endDate: this.dates.formValueToApi(end, '00:00'), sortOrder: 'asc' }));
+      this.calendarAppointments.set(response.data);
+    } catch { this.error.set('Unable to load the appointment calendar.'); }
+    finally { this.calendarLoading.set(false); }
+  }
+  async refreshVisibleData() { await this.load(); if (this.view() === 'calendar') await this.loadCalendar(); }
+  date(item: ApiAppointment) { return this.dates.formatDate(item.appointmentAt); }
+  time(item: ApiAppointment) { return this.dates.formatTime(item.appointmentAt); }
+  appointmentsForDay(key: string) { return this.calendarAppointments().filter((item) => this.dates.dateKey(item.appointmentAt) === key); }
+  viewAppointment(item: ApiAppointment) { void this.router.navigate(['/appointments', item.id]); }
+  async setView(view: 'list' | 'calendar') { this.view.set(view); if (view === 'calendar') await this.loadCalendar(); }
+  onSearch(value: string) { this.search.set(value); this.page.set(1); void this.load(); }
+  departmentChanged(value: string) {
+    this.draftDepartmentId.set(value);
+    const doctor = this.options().doctors.find((item) => item.id === this.draftDoctorId());
+    if (doctor && doctor.departmentId !== value) this.draftDoctorId.set('');
+  }
+  async applyFilters() {
+    this.departmentId.set(this.draftDepartmentId()); this.doctorId.set(this.draftDoctorId()); this.status.set(this.draftStatus());
+    this.page.set(1); this.filtersOpen.set(false); await this.load();
+  }
+  async clearFilters() {
+    this.draftDepartmentId.set(''); this.draftDoctorId.set(''); this.draftStatus.set('');
+    this.departmentId.set(''); this.doctorId.set(''); this.status.set(''); this.page.set(1); this.filtersOpen.set(false); await this.load();
+  }
+  async clearCriteria() { this.search.set(''); await this.clearFilters(); }
+  async changePage(page: number) { this.page.set(page); await this.load(); }
+  async changePageSize(pageSize: number) { this.pageSize.set(pageSize); this.page.set(1); await this.load(); }
+  async changeSort(sort:TableSort|null){this.sort.set(sort);this.page.set(1);await this.load();}
+  ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}
+  columnVisible(id:string){return this.visibleColumns().includes(id);}
+  async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns.some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save('appointments',ids);}
+  async resetColumns(){await this.tablePreferences.reset('appointments');this.visibleColumns.set(this.tablePreferences.load('appointments',this.columns));}
+  async shiftWeek(days: number) { this.weekStart.set(addDays(this.weekStart(), days)); await this.loadCalendar(); }
+  async currentWeek() { this.weekStart.set(sundayOf(this.dates.today())); await this.loadCalendar(); }
+  async saved() { this.createOpen.set(false); this.editing.set(null); this.view.set('list'); await this.refreshVisibleData(); void this.router.navigate(['/appointments']); }
+  async cancel(item: ApiAppointment) {
+    if (!await this.confirmation.confirm({ title: 'Cancel appointment?', message: 'This appointment will be marked as cancelled.', context: `${item.number} · ${item.patientName}`, confirmLabel: 'Cancel appointment', danger: true })) return;
+    try { await firstValueFrom(this.api.status(item.id, 'CANCELLED')); this.toast.success('Appointment cancelled.'); this.invalidation.notify(); void this.notifications.load(); await this.refreshVisibleData(); }
+    catch { this.toast.error('Appointment could not be cancelled.'); }
+  }
+  allowedStatuses(item: ApiAppointment) {
+    const transitions: Record<string, string[]> = { SCHEDULED: ['CONFIRMED', 'CHECKED_IN', 'CANCELLED', 'NO_SHOW'], CONFIRMED: ['CHECKED_IN', 'CANCELLED', 'NO_SHOW'], CHECKED_IN: ['WAITING', 'IN_CONSULTATION', 'CANCELLED'], WAITING: ['IN_CONSULTATION', 'CANCELLED', 'NO_SHOW'], IN_CONSULTATION: ['COMPLETED', 'CANCELLED'], COMPLETED: [], CANCELLED: [], NO_SHOW: [] };
+    return transitions[item.status] ?? [];
+  }
+  openStatus(item: ApiAppointment) { this.statusTarget.set(item); this.newStatus.set(''); }
+  async updateStatus() {
+    const item = this.statusTarget(), status = this.newStatus();
+    if (!item || !status || this.statusUpdating()) return;
+    this.statusUpdating.set(true);
+    try {
+      await firstValueFrom(this.api.status(item.id, status));
+      this.toast.success('Appointment status updated.'); this.statusTarget.set(null);
+      this.invalidation.notify(); void this.notifications.load(); await this.refreshVisibleData();
+    } catch { this.toast.error('Appointment status could not be updated.'); }
+    finally { this.statusUpdating.set(false); }
+  }
+  async export() {
+    if (this.exporting() || this.total() === 0) return;
+    this.exporting.set(true);
+    try {
+    const rows = [['Appointment', 'Patient', 'Department', 'Doctor', 'Date', 'Status'], ...this.appointments().map((item) => [item.number, item.patientName, item.department, item.doctor, this.dates.formatDateTime(item.appointmentAt), item.status])];
+    const blob = new Blob([rows.map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n')], { type: 'text/csv' });
+    const link = document.createElement('a'); const url = URL.createObjectURL(blob); link.href = url; link.download = 'appointments.csv'; link.click(); URL.revokeObjectURL(url);
+    } finally { this.exporting.set(false); }
   }
 }

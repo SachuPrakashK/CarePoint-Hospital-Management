@@ -1,0 +1,80 @@
+import { Router } from 'express';
+import * as c from '../controllers/clinical.controller.js';
+import { authenticate, requirePermissions } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import * as v from '../validators/clinical.validator.js';
+export const clinicalRoutes = Router();
+clinicalRoutes.use(authenticate);
+clinicalRoutes.get('/consultations',requirePermissions('clinical.view'),c.consultations);
+clinicalRoutes.get(
+  '/patients/:id/clinical-summary',
+  requirePermissions('patients.view'),
+  validate(v.patientClinicalSchema),
+  c.summary,
+);
+clinicalRoutes.get(
+  '/patients/:id/timeline',
+  requirePermissions('patients.view'),
+  validate(v.patientClinicalSchema),
+  c.timeline,
+);
+clinicalRoutes.get(
+  '/patients/:id/vitals',
+  requirePermissions('patients.view'),
+  validate(v.patientClinicalSchema),
+  c.vitals,
+);
+clinicalRoutes.get(
+  '/consultations/:id',
+  requirePermissions('clinical.view'),
+  validate(v.consultationIdSchema),
+  c.consultation,
+);
+clinicalRoutes.post(
+  '/consultations',
+  requirePermissions('clinical.edit'),
+  validate(v.consultationCreateSchema),
+  c.createConsultation,
+);
+clinicalRoutes.put(
+  '/consultations/:id',
+  requirePermissions('clinical.edit'),
+  validate(v.consultationUpdateSchema),
+  c.updateConsultation,
+);
+clinicalRoutes.post(
+  '/vitals',
+  requirePermissions('clinical.edit'),
+  validate(v.vitalCreateSchema),
+  c.createVital,
+);
+clinicalRoutes.post(
+  '/diagnoses',
+  requirePermissions('clinical.edit'),
+  validate(v.diagnosisCreateSchema),
+  c.createDiagnosis,
+);
+clinicalRoutes.put(
+  '/diagnoses/:id',
+  requirePermissions('clinical.edit'),
+  validate(v.diagnosisUpdateSchema),
+  c.updateDiagnosis,
+);
+clinicalRoutes.post(
+  '/prescriptions',
+  requirePermissions('clinical.edit'),
+  validate(v.prescriptionCreateSchema),
+  c.createPrescription,
+);
+clinicalRoutes.get(
+  '/prescriptions/:id',
+  requirePermissions('clinical.view'),
+  validate(v.consultationIdSchema),
+  c.prescription,
+);
+clinicalRoutes.put(
+  '/prescriptions/:id',
+  requirePermissions('clinical.edit'),
+  validate(v.prescriptionUpdateSchema),
+  c.updatePrescription,
+);

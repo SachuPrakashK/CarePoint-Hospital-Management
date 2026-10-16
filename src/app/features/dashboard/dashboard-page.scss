@@ -1,0 +1,28 @@
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.chart-card {
+  min-width: 0;
+  padding: 18px;
+}
+.chart-card:first-child {
+  grid-column: 1/-1;
+}
+.chart-state {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  text-align: center;
+}
+@media (max-width: 800px) {
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+  .chart-card:first-child {
+    grid-column: auto;
+  }
+}

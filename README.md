@@ -25,6 +25,7 @@ The Patients module is the reference enhanced CRUD workflow with shared search, 
 
 - Node.js 24 or another version supported by Angular 22
 - npm 12+
+- Docker Desktop (for the isolated development PostgreSQL service)
 
 ## Installation
 
@@ -35,10 +36,12 @@ npm install --include=dev
 ## Development server
 
 ```bash
+cd backend && npm run dev
+# In a second terminal, from the repository root:
 npm start
 ```
 
-Open `http://localhost:4200`. The development login accepts a valid email and any password of at least eight characters.
+Open `http://localhost:4200`. Angular proxies `/api` requests to the backend on `http://localhost:3000`; both processes must be running for login and registration.
 
 ## Build and tests
 
@@ -67,7 +70,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY_REVIEW.md](SECURITY_REVIEW.md)
 
 1. Start Docker Desktop and ensure its Linux/WSL engine is operational.
 2. Run `docker compose up -d postgres`.
-3. Copy `backend/.env.example` to the ignored `backend/.env` and configure `DATABASE_URL`. The Compose development URL is `postgresql://hospital_app:hospital_dev_password@localhost:5432/hospital_management?schema=public`.
+3. Copy `backend/.env.example` to the ignored `backend/.env` and configure `DATABASE_URL`. This repository maps PostgreSQL to host port 5433 to avoid collisions with a local default instance: `postgresql://hospital_app:hospital_dev_password@localhost:5433/hospital_management?schema=public`.
 4. Run `cd backend && npm install --include=dev`.
 5. Run `npm run prisma:generate`.
 6. Run `npm run prisma:deploy` for checked-in migrations, or `npm run prisma:migrate -- --name complete_phase_1_3_domains` while developing a schema change.
@@ -75,6 +78,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY_REVIEW.md](SECURITY_REVIEW.md)
 8. Run `npm run dev`; separately run `npm start` from the repository root for Angular.
 
 Production must use environment-specific credentials and signing secrets. Never reuse the Compose development password.
+
+Check database health with `docker compose ps`. The backend runs on the host during development; a backend container added later should connect to `postgres:5432`, not `localhost:5433`.
 
 ## Theme and icons
 

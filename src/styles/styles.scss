@@ -6,8 +6,17 @@
 @use 'forms';
 @use 'tables';
 @use 'cards';
+@use 'status';
 @use 'modals';
+@use 'actions';
+@use 'toasts';
+@use 'notifications';
+@use 'authentication';
 @use 'breadcrumbs';
 @use 'dashboard';
+@use 'charts';
+@use 'laboratory';
+@use 'pagination';
+@use 'filters';
 @use 'utilities';
 @use 'responsive';

@@ -1,0 +1,36 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Notifications</div>
+    <h1>Notifications</h1>
+    <p class="muted">Account and workflow updates relevant to you.</p>
+  </div>
+  @if (store.unreadCount()) {
+    <button class="secondary" (click)="store.markAllRead()">Mark all as read</button>
+  }
+</div>
+<section class="card notification-page">
+  @if (store.loading()) {
+    <div class="notification-state loading-state loading-state--section" role="status" aria-live="polite">Loading notifications…</div>
+  } @else if (store.error()) {
+    <div class="notification-state error" role="alert">
+      {{ store.error() }} <button class="secondary" (click)="store.load()">Retry</button>
+    </div>
+  } @else if (!store.notifications().length) {
+    <app-empty-state
+      title="No notifications yet"
+      description="New notifications will appear here."
+    />
+  } @else {
+    @for (item of store.notifications(); track item.id) {
+      <button class="notification-row" [class.unread]="!item.isRead" (click)="store.markRead(item)">
+        <span class="notification-dot"></span
+        ><span
+          ><b>{{ item.title }}</b
+          ><small>{{ item.message }}</small
+          ><time>{{ item.createdAt | appDateTime }}</time></span
+        >
+      </button>
+    }
+  }
+  <app-pagination [loading]="store.loading()" [page]="store.pagination().page" [pageSize]="store.pagination().pageSize" [totalItems]="store.pagination().total" [totalPages]="store.pagination().totalPages" itemLabel="notifications" (pageChange)="store.changePage($event)" (pageSizeChange)="store.changePageSize($event)" />
+</section>

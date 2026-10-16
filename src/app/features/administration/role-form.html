@@ -1,0 +1,60 @@
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()">
+  <div class="crud-modal__body role-form-body">
+    <div class="form-grid role-fields">
+      <label class="field"
+        ><span class="form-label">Role name <span class="required-indicator">*</span></span
+        ><input formControlName="name" placeholder="Enter role name" /></label
+      ><label class="field"
+        ><span class="form-label">Status <span class="required-indicator">*</span></span
+        ><select formControlName="status">
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select></label
+      ><label class="field full"
+        ><span>Description</span
+        ><textarea
+          formControlName="description"
+          placeholder="Describe this role's responsibilities"
+        ></textarea>
+      </label>
+    </div>
+    <section class="permission-matrix" tabindex="0" aria-label="Role permissions">
+        <h3>Permissions</h3>
+        @for (group of groups(); track group[0]) {
+          <fieldset>
+            <legend>
+              <span>{{ formatPermissionLabel(group[0]) }}</span
+              ><label
+                ><input
+                  type="checkbox"
+                  [checked]="groupChecked(group[1])"
+                  [indeterminate]="groupIndeterminate(group[1])"
+                  (change)="toggleGroup(group[1], $any($event.target).checked)"
+                />
+                Select all</label
+              >
+            </legend>
+            <div class="permission-options">
+              @for (permission of group[1]; track permission.id) {
+                <label
+                  ><input
+                    type="checkbox"
+                    [checked]="checked(permission.code)"
+                    (change)="toggle(permission.code, $any($event.target).checked)"
+                  />
+                  {{ formatPermissionLabel(permission.action) }}</label
+                >
+              }
+            </div>
+          </fieldset>
+        }
+    </section>
+    @if (error()) { <div class="form-api-error role-form-error">{{ error() }}</div> }
+  </div>
+  <div class="crud-modal__footer">
+    <button type="button" class="secondary" [disabled]="submitting()" (click)="cancelled.emit()">Cancel</button>
+    <button class="primary" [disabled]="form.invalid || submitting()">
+      {{ submitting() ? 'Saving...' : role() ? 'Save Changes' : 'Create Role' }}
+    </button>
+  </div>
+</form>

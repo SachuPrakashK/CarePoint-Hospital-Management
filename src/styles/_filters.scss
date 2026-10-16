@@ -1,0 +1,62 @@
+.filter-anchor {
+    position: relative;
+}
+.filter-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 30;
+    width: min(520px, calc(100vw - 32px));
+    padding: 18px;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dialog);
+}
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+.filter-grid > *,
+.filter-grid .field,
+.filter-grid app-select,
+.filter-grid app-dropdown,
+.filter-grid app-autocomplete,
+.filter-grid app-calendar {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.filter-grid input,
+.filter-grid select,
+.filter-grid textarea,
+.filter-grid [role='combobox'],
+.filter-grid .dropdown-trigger {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.filter-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-border);
+}
+@media (max-width: 650px) {
+    .filter-panel {
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        top: 96px;
+        width: auto;
+    }
+    .filter-grid {
+        grid-template-columns: 1fr;
+        max-height: 60vh;
+        overflow: auto;
+    }
+}

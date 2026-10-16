@@ -1,0 +1,22 @@
+<a class="back-link" routerLink="/radiology"><app-icon name="back" [size]="15" /> Radiology</a>
+@if (loading()) {
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading radiology order...</div>
+} @else if (notFound()) {
+  <section class="card error-state"><h1>Radiology order not found</h1><p>The requested record does not exist or is no longer available.</p></section>
+} @else if (error()) {
+  <section class="card error-state">{{ error() }} <button type="button" (click)="load()">Retry</button></section>
+} @else if (item(); as order) {
+  <div class="page-head"><div><div class="breadcrumbs">Radiology / Order details</div><h1>{{ order.number }}</h1><p class="muted">Created {{ dates.formatDateTime(order.createdAt) }}</p></div><app-status-badge [value]="order.status" /></div>
+  <section class="card details-grid">
+    <div><span>Patient</span><strong>{{ (order.patient?.firstName + ' ' + order.patient?.lastName) | displayValue }}</strong></div>
+    <div><span>MRN</span><strong>{{ order.patient?.mrn | displayValue }}</strong></div>
+    <div><span>Investigation</span><strong>{{ order.investigation | displayValue }}</strong></div>
+    <div><span>Ordering doctor</span><strong>{{ order.doctor | displayValue }}</strong></div>
+    <div><span>Scheduled date/time</span><strong>{{ order.scheduledAt ? dates.formatDateTime(order.scheduledAt) : 'Not available' }}</strong></div>
+    <div><span>Reported by</span><strong>{{ order.reportedBy | displayValue }}</strong></div>
+    <div><span>Verified by</span><strong>{{ order.verifiedBy | displayValue }}</strong></div>
+    <div><span>Updated</span><strong>{{ order.updatedAt ? dates.formatDateTime(order.updatedAt) : 'Not available' }}</strong></div>
+    <div class="full"><span>Findings</span><strong>{{ order.findings | displayValue }}</strong></div>
+    <div class="full"><span>Impression</span><strong>{{ order.impression | displayValue }}</strong></div>
+  </section>
+}

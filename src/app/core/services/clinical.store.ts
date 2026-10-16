@@ -1,187 +1,71 @@
-import { computed, Injectable, signal } from '@angular/core';
-import {
-  Appointment,
-  AppointmentStatus,
-  Consultation,
-  Patient,
-} from '../../shared/models/clinical.models';
-const today = new Date().toISOString().slice(0, 10);
+import { HttpClient } from '@angular/common/http';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { Appointment, AppointmentStatus, Consultation } from '../../shared/models/clinical.models';
+import { AppointmentApiService, ApiAppointment } from '../../features/appointments/appointment-api.service';
+import { PatientStore } from '../../features/patients/patient.store';
+import { AppDateTimeService } from './app-date-time.service';
+
+const statusToApi: Record<AppointmentStatus, string> = {
+  Scheduled: 'SCHEDULED', Confirmed: 'CONFIRMED', 'Checked In': 'CHECKED_IN',
+  Waiting: 'WAITING', 'In Consultation': 'IN_CONSULTATION', Completed: 'COMPLETED',
+  Cancelled: 'CANCELLED', 'No Show': 'NO_SHOW',
+};
+const apiToStatus = (value: string) => value.toLowerCase().replace(/(^|_)(\w)/g, (_, s, c) => `${s ? ' ' : ''}${c.toUpperCase()}`) as AppointmentStatus;
+
 @Injectable({ providedIn: 'root' })
 export class ClinicalStore {
-  private readonly patientsState = signal<Patient[]>([
-    {
-      id: 'p1',
-      mrn: 'CP-2026-00128',
-      firstName: 'Meera',
-      lastName: 'Iyer',
-      dob: '1989-04-18',
-      gender: 'Female',
-      bloodGroup: 'B+',
-      phone: '+91 98765 10234',
-      email: 'meera@example.com',
-      city: 'Bengaluru',
-      emergencyContact: 'Arun Iyer',
-      allergies: ['Penicillin'],
-      status: 'Active',
-      createdAt: '2026-09-24',
-    },
-    {
-      id: 'p2',
-      mrn: 'CP-2026-00127',
-      firstName: 'Rohan',
-      lastName: 'Kapoor',
-      dob: '1974-11-02',
-      gender: 'Male',
-      bloodGroup: 'O+',
-      phone: '+91 98204 73561',
-      city: 'Mumbai',
-      allergies: [],
-      status: 'Active',
-      createdAt: '2026-09-23',
-    },
-    {
-      id: 'p3',
-      mrn: 'CP-2026-00126',
-      firstName: 'Fatima',
-      lastName: 'Khan',
-      dob: '2001-01-12',
-      gender: 'Female',
-      bloodGroup: 'A-',
-      phone: '+91 99588 42110',
-      city: 'Delhi',
-      allergies: ['Latex'],
-      status: 'Active',
-      createdAt: '2026-09-22',
-    },
-  ]);
-  private readonly appointmentsState = signal<Appointment[]>([
-    {
-      id: 'a1',
-      number: 'APT-260927-018',
-      patientId: 'p1',
-      patientName: 'Meera Iyer',
-      department: 'Cardiology',
-      doctor: 'Dr. Vikram Rao',
-      date: today,
-      time: '09:30',
-      type: 'Consultation',
-      consultationType: 'In person',
-      reason: 'Chest discomfort',
-      fee: 900,
-      status: 'Waiting',
-      token: 12,
-    },
-    {
-      id: 'a2',
-      number: 'APT-260927-019',
-      patientId: 'p2',
-      patientName: 'Rohan Kapoor',
-      department: 'General Medicine',
-      doctor: 'Dr. Ananya Sen',
-      date: today,
-      time: '10:00',
-      type: 'Follow-up',
-      consultationType: 'In person',
-      reason: 'Diabetes review',
-      fee: 650,
-      status: 'Confirmed',
-    },
-    {
-      id: 'a3',
-      number: 'APT-260927-020',
-      patientId: 'p3',
-      patientName: 'Fatima Khan',
-      department: 'Dermatology',
-      doctor: 'Dr. Nisha Das',
-      date: today,
-      time: '10:15',
-      type: 'Consultation',
-      consultationType: 'In person',
-      reason: 'Skin rash',
-      fee: 700,
-      status: 'Checked In',
-      token: 13,
-    },
-  ]);
+  private readonly http = inject(HttpClient);
+  private readonly appointmentApi = inject(AppointmentApiService);
+  private readonly patientStore = inject(PatientStore);
+  private readonly dates = inject(AppDateTimeService);
+  private readonly appointmentsState = signal<Appointment[]>([]);
   private readonly consultationsState = signal<Consultation[]>([]);
-  readonly patients = this.patientsState.asReadonly();
+  readonly patients = this.patientStore.patients;
   readonly appointments = this.appointmentsState.asReadonly();
   readonly consultations = this.consultationsState.asReadonly();
-  readonly todaysAppointments = computed(() =>
-    this.appointmentsState().filter((a) => a.date === today),
-  );
-  readonly queue = computed(() =>
-    this.todaysAppointments()
-      .filter((a) => ['Checked In', 'Waiting', 'In Consultation'].includes(a.status))
-      .sort((a, b) => (a.token ?? 999) - (b.token ?? 999)),
-  );
-  addPatient(input: Omit<Patient, 'id' | 'mrn' | 'createdAt'>) {
-    const next = this.patientsState().length + 126;
-    this.patientsState.update((v) => [
-      {
-        ...input,
-        id: crypto.randomUUID(),
-        mrn: `CP-2026-${String(next).padStart(5, '0')}`,
-        createdAt: today,
-      },
-      ...v,
-    ]);
+  readonly loading = signal(false);
+  readonly error = signal('');
+  readonly todaysAppointments = computed(() => this.appointments().filter((item) => item.date === this.dates.today()));
+  readonly queue = computed(() => this.todaysAppointments().filter((item) => ['Checked In', 'Waiting', 'In Consultation'].includes(item.status)).sort((a, b) => (a.token ?? 999) - (b.token ?? 999)));
+
+  constructor() { void this.load(); }
+  async load() {
+    this.loading.set(true); this.error.set('');
+    try {
+      await this.patientStore.load();
+      const [appointments, consultations] = await Promise.all([
+        firstValueFrom(this.appointmentApi.list()),
+        firstValueFrom(this.http.get<{ data: any[] }>('/api/v1/consultations')),
+      ]);
+      this.appointmentsState.set(appointments.data.map((item) => this.mapAppointment(item)));
+      this.consultationsState.set(consultations.data.map((item) => this.mapConsultation(item)));
+    } catch { this.error.set('Clinical data could not be loaded.'); }
+    finally { this.loading.set(false); }
   }
-  updatePatient(id: string, changes: Partial<Omit<Patient, 'id' | 'mrn' | 'createdAt'>>) {
-    if (!this.patientsState().some((patient) => patient.id === id)) throw new Error('Patient not found.');
-    this.patientsState.update((patients) =>
-      patients.map((patient) => (patient.id === id ? { ...patient, ...changes } : patient)),
-    );
+  async updateStatus(id: string, status: AppointmentStatus) {
+    if (!id) return;
+    const response = await firstValueFrom(this.appointmentApi.status(id, statusToApi[status]));
+    this.appointmentsState.update((items) => items.map((item) => item.id === id ? this.mapAppointment(response.data) : item));
   }
-  deactivatePatient(id: string) {
-    if (this.appointmentsState().some((appointment) => appointment.patientId === id && !['Completed', 'Cancelled', 'No Show'].includes(appointment.status))) {
-      throw new Error('A patient with an active appointment cannot be deactivated.');
-    }
-    this.updatePatient(id, { status: 'Inactive' });
+  async saveConsultation(value: Consultation) {
+    const response = await firstValueFrom(this.http.post<{ data: any }>('/api/v1/consultations', {
+      ...value,
+      vitals: value.vitals.map(({ id: _id, recordedAt: _at, recordedBy: _by, ...vital }) => vital),
+      followUpDate: value.followUpDate ? this.dates.formValueToApi(value.followUpDate, '12:00') : undefined,
+    }));
+    this.consultationsState.update((items) => [this.mapConsultation(response.data), ...items.filter((item) => item.appointmentId !== value.appointmentId)]);
+    await this.loadAppointments();
+    return response.data;
   }
-  addAppointment(input: Omit<Appointment, 'id' | 'number' | 'status'>) {
-    if (
-      this.appointmentsState().some(
-        (a) =>
-          a.doctor === input.doctor &&
-          a.date === input.date &&
-          a.time === input.time &&
-          a.status !== 'Cancelled',
-      )
-    )
-      throw new Error('This doctor already has an appointment in the selected slot.');
-    this.appointmentsState.update((v) => [
-      {
-        ...input,
-        id: crypto.randomUUID(),
-        number: `APT-${Date.now().toString().slice(-8)}`,
-        status: 'Scheduled',
-      },
-      ...v,
-    ]);
+  private async loadAppointments() { const response = await firstValueFrom(this.appointmentApi.list()); this.appointmentsState.set(response.data.map((item) => this.mapAppointment(item))); }
+  private mapAppointment(item: ApiAppointment): Appointment {
+    return { id: item.id, number: item.number, patientId: item.patientId, patientName: item.patientName, department: item.department, doctor: item.doctor, date: this.isoDate(item.appointmentAt), time: this.isoTime(item.appointmentAt), type: item.type, consultationType: item.consultationType, reason: item.reason, fee: Number(item.fee), status: apiToStatus(item.status) };
   }
-  updateStatus(id: string, status: AppointmentStatus) {
-    this.appointmentsState.update((v) =>
-      v.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status,
-              token:
-                a.token ??
-                (status === 'Checked In'
-                  ? Math.max(0, ...v.map((x) => x.token ?? 0)) + 1
-                  : a.token),
-            }
-          : a,
-      ),
-    );
+  private mapConsultation(item: any): Consultation {
+    const diagnoses = item.diagnoses ?? [];
+    return { appointmentId: item.appointmentId, chiefComplaint: item.chiefComplaint, symptoms: item.symptoms ?? '', examination: item.examination ?? '', notes: item.notes ?? '', treatmentPlan: item.treatmentPlan ?? '', primaryDiagnosis: diagnoses.find((x: any) => x.type === 'Primary')?.description ?? '', secondaryDiagnoses: diagnoses.filter((x: any) => x.type !== 'Primary').map((x: any) => x.description), vitals: item.vitals ?? [], prescription: item.prescriptions?.flatMap((x: any) => x.items ?? []) ?? [] };
   }
-  saveConsultation(value: Consultation) {
-    this.consultationsState.update((v) => [
-      ...v.filter((x) => x.appointmentId !== value.appointmentId),
-      value,
-    ]);
-    this.updateStatus(value.appointmentId, 'Completed');
-  }
+  private isoDate(value: string) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value)); }
+  private isoTime(value: string) { return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(value)); }
 }

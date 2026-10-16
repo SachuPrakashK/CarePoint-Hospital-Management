@@ -33,7 +33,7 @@ Validation failures use HTTP 422 with `{ "errors": { "field": ["Message"] } }`. 
 
 ## CRUD resources
 
-Patients, doctors, employees, departments, specializations, users, super-admins, roles, permissions and master data follow:
+Patients, doctors, employees, departments, specializations, users, roles, permissions and master data follow:
 
 - `GET /api/{resource}`
 - `POST /api/{resource}`

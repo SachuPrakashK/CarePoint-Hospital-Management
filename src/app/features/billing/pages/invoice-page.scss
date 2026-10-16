@@ -1,0 +1,58 @@
+.print-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.document {
+  background: white;
+  max-width: 950px;
+  margin: auto;
+  padding: 42px;
+  border: 1px solid #dce6e8;
+}
+.document header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 2px solid #168f78;
+}
+.document header > div:last-child {
+  text-align: right;
+}
+.bill-to {
+  margin: 25px 0;
+}
+.bill-to small {
+  color: #667a80;
+}
+.totals {
+  width: 330px;
+  margin: 24px 0 24px auto;
+  display: grid;
+  gap: 10px;
+}
+.totals span {
+  display: flex;
+  justify-content: space-between;
+}
+.totals .total,
+.totals .balance {
+  font-size: 18px;
+  border-top: 1px solid #d9e4e6;
+  padding-top: 10px;
+}
+.document footer {
+  text-align: center;
+  color: #6d7e84;
+  border-top: 1px solid #e1e8ea;
+  padding-top: 20px;
+}
+@media print {
+  .print-actions {
+    display: none;
+  }
+  .document {
+    border: 0;
+    padding: 0;
+  }
+}

@@ -1,0 +1,69 @@
+@if (invoice(); as i) {
+  <div class="print-actions">
+    <button class="secondary" (click)="back()">Back</button
+    ><button class="primary" (click)="print()">Print invoice</button>
+  </div>
+  <article class="document">
+    <header>
+      <div>
+        <h1>CarePoint Hospital</h1>
+        <p>Tax Invoice</p>
+      </div>
+      <div>
+        <b>{{ i.number }}</b>
+        <p>{{ format(i.createdAt) }}</p>
+      </div>
+    </header>
+    <div class="bill-to">
+      <small>BILL TO</small>
+      <h2>{{ i.patientName }}</h2>
+      <p>Patient ID: {{ i.patientId }} · Encounter: {{ i.encounterRef || '—' }}</p>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Source</th>
+          <th>Qty</th>
+          <th>Unit price</th>
+          <th>Discount</th>
+          <th>Tax</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (x of i.items; track x.id) {
+          <tr>
+            <td>{{ x.description }}</td>
+            <td>{{ x.source }}</td>
+            <td>{{ x.quantity }}</td>
+            <td>₹{{ x.unitPrice }}</td>
+            <td>₹{{ x.discount }}</td>
+            <td>{{ x.taxRate }}%</td>
+            <td>₹{{ x.quantity * x.unitPrice - x.discount }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <div class="totals">
+      <span
+        >Subtotal <b>₹{{ totals().subtotal }}</b></span
+      ><span
+        >Discount <b>₹{{ totals().discount }}</b></span
+      ><span
+        >Tax <b>₹{{ totals().tax }}</b></span
+      ><span
+        >Insurance <b>− ₹{{ i.insuranceAmount }}</b></span
+      ><span class="total"
+        >Total <b>₹{{ totals().total }}</b></span
+      ><span
+        >Paid <b>₹{{ totals().paid }}</b></span
+      ><span class="balance"
+        >Patient payable <b>₹{{ totals().balance }}</b></span
+      >
+    </div>
+    <footer>This is a system-generated invoice. Payment receipts are issued separately.</footer>
+  </article>
+} @else {
+  <div class="empty">Invoice not found.</div>
+}

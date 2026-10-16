@@ -1,0 +1,50 @@
+:host {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.crud-modal__form {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.staff-form-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.staff-form-section {
+  padding: 20px 22px 0;
+}
+
+.staff-form-section:last-of-type {
+  padding-bottom: 20px;
+}
+
+.staff-form-section h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+
+.staff-form-section .form-grid {
+  padding: 0;
+}
+
+.field-error {
+  margin: 0 22px 18px;
+}
+
+@media (max-width: 650px) {
+  .staff-form-section {
+    padding: 18px 18px 0;
+  }
+
+  .staff-form-section .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

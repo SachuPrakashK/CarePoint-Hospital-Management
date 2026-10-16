@@ -1,0 +1,114 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Clinical / Radiology</div>
+    <h1>Radiology worklist</h1>
+    <p class="muted">Scheduling, imaging, reporting and verification.</p>
+  </div>
+  <button class="primary" (click)="open()">+ New radiology order</button>
+</div>
+<section class="card">
+  <div class="toolbar">
+    <app-search-field placeholder="Search radiology orders" (valueChange)="searchChanged($event)" />
+    <div class="toolbar-actions">
+      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+      <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
+        <button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())"><app-icon name="filter" [size]="17" /> Filters @if (status() || investigation()) { ({{ (status() ? 1 : 0) + (investigation() ? 1 : 0) }}) }</button>
+        @if (filtersOpen()) {
+          <div class="filter-panel"><div class="filter-grid">
+            <label class="field"><span>Status</span><select aria-label="Status filter" [value]="draftStatus()" (change)="draftStatus.set($any($event.target).value)"><option value="">All statuses</option>@for (s of ['Ordered','Scheduled','Performed','Reporting','Verified','Completed','Cancelled']; track s) { <option [value]="s">{{ s }}</option> }</select></label>
+            <label class="field"><span>Investigation</span><input placeholder="Search investigation" [value]="draftInvestigation()" (input)="draftInvestigation.set($any($event.target).value)" /></label>
+          </div><div class="filter-actions"><button type="button" class="secondary" (click)="clearFilters()">Clear all</button><button type="button" class="primary" (click)="applyFilters()">Apply filters</button></div></div>
+        }
+      </div>
+      <button type="button" class="secondary" [disabled]="!items().length || exporting()" (click)="exportOrders()"><app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}</button>
+    </div>
+  </div>
+  @if (loading()) {
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading...</div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
+  } @else if (!items().length) {
+    <app-empty-state
+      title="No radiology orders found"
+      description="Try changing the search or status filter."
+    />
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            @if(columnVisible('order')){<th [attr.aria-sort]="ariaSort('number')"><app-table-sort-header label="Order" field="number" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('patient')"><app-table-sort-header label="Patient" field="patient" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('investigation')){<th [attr.aria-sort]="ariaSort('investigation')"><app-table-sort-header label="Investigation" field="investigation" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('doctor')){<th [attr.aria-sort]="ariaSort('doctor')"><app-table-sort-header label="Requested by" field="doctor" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('schedule')){<th [attr.aria-sort]="ariaSort('scheduledAt')"><app-table-sort-header label="Schedule" field="scheduledAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if(columnVisible('action')){<th>Action</th>}
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of items(); track o.id) {
+            <tr class="clickable-row" tabindex="0" (click)="view(o)" (keydown)="rowKey($event, o)">
+              @if(columnVisible('order')){<td>{{ o.number }}</td>}
+              @if(columnVisible('patient')){<td>
+                <b>{{ o.patientName }}</b>
+              </td>}
+              @if(columnVisible('investigation')){<td>{{ o.investigation }}</td>}
+              @if(columnVisible('doctor')){<td>{{ o.doctor }}</td>}
+              @if(columnVisible('schedule')){<td>{{ o.scheduledAt ? format(o.scheduledAt) : 'Not scheduled' }}</td>}
+              @if(columnVisible('status')){<td>
+                <app-status-badge [value]="o.status" />
+              </td>}
+              @if(columnVisible('action')){<td>
+                <app-actions-menu
+                  [id]="o.id"
+                  label="Radiology order actions"
+                  [canView]="true"
+                  [canEdit]="o.status !== 'Verified' && o.status !== 'Completed' && o.status !== 'Cancelled'"
+                  [canDelete]="o.status !== 'Verified' && o.status !== 'Completed' && o.status !== 'Cancelled'"
+                  (view)="view(o)"
+                  (edit)="open(o)"
+                  (delete)="remove(o)"
+                />
+              </td>}
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [loading]="loading()"
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [totalItems]="total()"
+      [totalPages]="totalPages()"
+      itemLabel="orders"
+      (pageChange)="go($event)"
+      (pageSizeChange)="resize($event)"
+    />
+  }
+</section>
+@if (message()) {
+  <div class="toast" role="status">{{ message() }}</div>
+}
+@if (modal()) {
+  <app-modal
+    [title]="editing() ? 'Edit radiology order' : 'Create radiology order'"
+    size="xl"
+    [dirty]="dirty()"
+    (closed)="close()"
+    ><app-radiology-form
+      [entity]="editing()"
+      (dirtyChanged)="dirty.set($event)"
+      (saved)="refreshSaved()"
+  /></app-modal>
+}
+<section class="card masters">
+  <div class="section-title">
+    <h2>Investigation masters</h2>
+    <a class="secondary button-link" routerLink="/radiology-investigations">Manage</a>
+  </div>
+  <div class="modalities">
+    <span>Managed in Administration</span>
+  </div>
+</section>

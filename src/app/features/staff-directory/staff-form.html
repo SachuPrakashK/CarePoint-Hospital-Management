@@ -1,0 +1,123 @@
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="crud-modal__body staff-form-body" tabindex="0">
+    <section class="staff-form-section">
+    <h3>Personal information</h3>
+    <div class="form-grid">
+      <label class="field"
+        ><span class="form-label">First name <span class="required-indicator">*</span></span
+        ><input formControlName="firstName" placeholder="Enter first name" /></label
+      ><label class="field"
+        ><span class="form-label">Last name <span class="required-indicator">*</span></span
+        ><input formControlName="lastName" placeholder="Enter last name" /></label
+      ><label class="field"
+        ><span class="form-label">Gender <span class="required-indicator">*</span></span
+        ><select formControlName="gender">
+          <option value="">Select gender</option>
+          <option value="MALE">Male</option>
+          <option value="FEMALE">Female</option>
+          <option value="OTHER">Other</option>
+        </select></label
+      ><label class="field"
+        ><span>Date of birth</span><input type="date" formControlName="dateOfBirth" /></label
+      ><label class="field"
+        ><span class="form-label">Phone <span class="required-indicator">*</span></span
+        ><input type="tel" formControlName="phone" placeholder="Enter phone number" /></label
+      ><label class="field"
+        ><span class="form-label">Email <span class="required-indicator">*</span></span
+        ><input type="email" formControlName="email" placeholder="Enter email address" /></label
+      ><label class="field full"
+        ><span>Address</span
+        ><textarea formControlName="address" placeholder="Enter address"></textarea>
+      </label>
+    </div>
+    </section>
+    <section class="staff-form-section">
+    <h3>{{ kind() === 'doctors' ? 'Professional' : 'Employment' }} information</h3>
+    <div class="form-grid">
+      <label class="field"
+        ><span class="form-label"
+          >{{ kind() === 'doctors' ? 'Doctor' : 'Employee' }} ID
+          <span class="required-indicator">*</span></span
+        ><input
+          formControlName="employeeCode"
+          [placeholder]="kind() === 'doctors' ? 'Enter doctor ID' : 'Enter employee ID'" /></label
+      ><label class="field"
+        ><span class="form-label">Department <span class="required-indicator">*</span></span
+        ><select formControlName="departmentId" (change)="departmentChanged()">
+          <option value="">Select department</option>
+          @for (item of options().departments; track item.id) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select></label
+      >
+      @if (kind() === 'doctors') {
+        <label class="field"
+          ><span class="form-label">Specialization <span class="required-indicator">*</span></span
+          ><select formControlName="specializationId">
+            <option value="">Select specialization</option>
+            @for (item of specializations(); track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select></label
+        ><label class="field"
+          ><span class="form-label"
+            >Registration number <span class="required-indicator">*</span></span
+          ><input
+            formControlName="medicalRegistration"
+            placeholder="Enter medical registration number" /></label
+        ><label class="field"
+          ><span>Qualification</span
+          ><input formControlName="qualification" placeholder="Enter qualification" /></label
+        ><label class="field"
+          ><span>Experience (years)</span
+          ><input type="number" formControlName="yearsOfExperience" /></label
+        ><label class="field"
+          ><span>Consultation fee</span><input type="number" formControlName="consultationFee"
+        /></label>
+      } @else {
+        <label class="field"
+          ><span class="form-label">Designation <span class="required-indicator">*</span></span
+          ><input formControlName="designation" placeholder="Enter designation" /></label
+        ><label class="field"
+          ><span class="form-label">Joining date <span class="required-indicator">*</span></span
+          ><input type="date" formControlName="joiningDate" /></label
+        ><label class="field"
+          ><span>Employment type</span
+          ><select formControlName="employmentType">
+            <option value="FULL_TIME">Full time</option>
+            <option value="PART_TIME">Part time</option>
+            <option value="CONTRACT">Contract</option>
+            <option value="TEMPORARY">Temporary</option>
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Application role <span class="required-indicator">*</span></span
+          ><select formControlName="roleCode">
+            <option value="">Select role</option>
+            @for (item of options().roles; track item.id) {
+              <option [value]="item.code">{{ item.name }}</option>
+            }
+          </select></label
+        >
+      }
+      <label class="field"
+        ><span>Status</span
+        ><select formControlName="status">
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select></label
+      >
+    </div>
+    </section>
+    @if (error()) {
+      <p class="field-error">{{ error() }}</p>
+    }
+  </div>
+  <div class="crud-modal__footer">
+    <button type="button" class="secondary" [disabled]="submitting()" (click)="cancelled.emit()">Cancel</button>
+    <button class="primary" [disabled]="form.invalid || submitting()">
+      {{
+        submitting() ? (record() ? 'Saving...' : 'Creating...') : record() ? 'Save Changes' : 'Create'
+      }}
+    </button>
+  </div>
+</form>

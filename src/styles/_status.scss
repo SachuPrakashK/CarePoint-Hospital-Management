@@ -1,0 +1,17 @@
+.status-badge {
+  display: inline-flex; align-items: center; width: fit-content; padding: 5px 10px;
+  border: 1px solid transparent; border-radius: 999px; font-size: 11px; font-weight: 650;
+  line-height: 1.1; letter-spacing: .025em; white-space: nowrap;
+}
+.status-badge--success { color: #176b4d; background: #e5f6ee; border-color: #bce7d2; }
+.status-badge--warning { color: #8a5b08; background: #fff5d9; border-color: #f1dda4; }
+.status-badge--danger { color: #a63b32; background: #ffedeb; border-color: #f4c7c2; }
+.status-badge--info { color: #215f91; background: #e9f2fb; border-color: #c7dff2; }
+.status-badge--purple { color: #68439a; background: #f1eafa; border-color: #dac9ef; }
+.status-badge--teal { color: #116c6b; background: #e2f5f3; border-color: #b8e3df; }
+.status-badge--neutral { color: #53656d; background: #eef2f4; border-color: #d8e0e4; }
+.status-badge--admitted { color:#176b4d; background:#e5f6ee; border-color:#bce7d2; }
+.status-badge--transferred { color:#58428c; background:#eee8f8; border-color:#d5c8eb; }
+.status-badge--discharge-planned { color:#8a5b08; background:#fff5d9; border-color:#f1dda4; }
+.status-badge--discharged { color:#215f91; background:#e9f2fb; border-color:#c7dff2; }
+.status-badge--cancelled { color:#a63b32; background:#ffedeb; border-color:#f4c7c2; }

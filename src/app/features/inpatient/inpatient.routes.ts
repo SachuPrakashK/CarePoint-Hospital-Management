@@ -15,10 +15,14 @@ export const INPATIENT_ROUTES: Routes = [
   },
   {
     path: 'discharge/:id',
+    canActivate: [permissionGuard],
+    data: { permission: 'admissions.discharge' },
     loadComponent: () => import('./pages/discharge-summary').then((m) => m.DischargeSummaryPage),
   },
   {
     path: ':id',
+    canActivate: [permissionGuard],
+    data: { permission: 'admissions.view' },
     loadComponent: () => import('./pages/admission-details').then((m) => m.AdmissionDetails),
   },
 ];

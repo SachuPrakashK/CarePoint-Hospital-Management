@@ -1,2 +1,138 @@
-import { Component, computed, inject, input, signal } from '@angular/core'; import { RouterLink } from '@angular/router'; import { ClinicalStore } from '../../../core/services/clinical.store'; import { InpatientStore } from '../../../core/services/inpatient.store';
-@Component({imports:[RouterLink],template:`@if(patient();as p){<div class="page-head"><div><div class="breadcrumbs">Patients / {{p.mrn}} / Medical record</div><h1>{{p.firstName}} {{p.lastName}}</h1><p class="muted">Longitudinal electronic medical record · {{p.gender}} · {{p.bloodGroup}}</p></div><a class="secondary button-link" [routerLink]="['/patients',p.id]">Patient profile</a></div><div class="tabs"><button [class.active]="tab()==='summary'" (click)="tab.set('summary')">Medical record</button><button [class.active]="tab()==='timeline'" (click)="tab.set('timeline')">Timeline</button><button [class.active]="tab()==='labs'" (click)="tab.set('labs')">Laboratory</button><button [class.active]="tab()==='radiology'" (click)="tab.set('radiology')">Radiology</button><button [class.active]="tab()==='admissions'" (click)="tab.set('admissions')">Admissions</button><button [class.active]="tab()==='procedures'" (click)="tab.set('procedures')">Procedures</button></div>@if(tab()==='summary'){<div class="grid-2"><section class="card"><div class="section-title"><h2>Clinical summary</h2></div><div class="record"><h3>Allergies</h3><p>@for(a of p.allergies;track a){<span class="status danger">{{a}}</span>}@empty{No known allergies}</p><h3>Consultations & diagnoses</h3>@for(c of consultations();track c.appointmentId){<article><b>{{c.primaryDiagnosis}}</b><p>{{c.chiefComplaint}} · {{c.treatmentPlan}}</p></article>}@empty{<p class="muted">No consultation records.</p>}<h3>Medical, surgical & family history</h3><p class="muted">No structured history has been recorded.</p></div></section><section class="card"><div class="section-title"><h2>Active clinical activity</h2></div><div class="record"><h3>Admission</h3>@for(a of admissions();track a.id){<p><b>{{a.number}}</b> · {{a.initialDiagnosis}} <span class="status">{{a.status}}</span></p>}@empty{<p class="muted">No admission history.</p>}<h3>Medications</h3>@for(m of medications();track m.id){<p>{{m.medication}} {{m.dose}} · <span class="status">{{m.status}}</span></p>}</div></section></div>}@else if(tab()==='timeline'){<section class="card timeline-tools"><div class="toolbar"><select #type (change)="filter.set(type.value)"><option value="">All event types</option>@for(t of eventTypes;track t){<option>{{t}}</option>}</select><input type="date" aria-label="Timeline start date"></div><div class="timeline">@for(e of timeline();track e.id){@if(!filter()||filter()===e.type){<article><i></i><div><span class="status info">{{e.type}}</span><h3>{{e.title}}</h3><p>{{e.description}}</p><small>{{format(e.occurredAt)}} · {{e.actor}}</small></div></article>}}</div></section>}@else if(tab()==='labs'){<section class="card"><div class="section-title"><h2>Laboratory</h2></div>@for(o of labs();track o.id){<div class="row"><div><b>{{o.tests.join(', ')}}</b><small>{{o.number}} · {{o.doctor}}</small></div><span class="status">{{o.status}}</span></div>}@empty{<div class="empty">No laboratory records.</div>}</section>}@else if(tab()==='radiology'){<section class="card">@for(o of radiology();track o.id){<div class="row"><div><b>{{o.investigation}}</b><small>{{o.number}} · {{o.impression||'Report pending'}}</small></div><span class="status">{{o.status}}</span></div>}@empty{<div class="empty">No radiology records.</div>}</section>}@else if(tab()==='admissions'){<section class="card">@for(a of admissions();track a.id){<div class="row"><div><b>{{a.number}} · {{a.department}}</b><small>{{a.initialDiagnosis}} · {{format(a.admittedAt)}}</small></div><span class="status">{{a.status}}</span></div>}@empty{<div class="empty">No admissions.</div>}</section>}@else{<section class="card">@for(x of procedures();track x.id){<div class="row"><div><b>{{x.name}}</b><small>{{x.doctor}} · {{format(x.scheduledAt)}}</small></div><span class="status">{{x.status}}</span></div>}@empty{<div class="empty">No procedures.</div>}</section>}}@else{<section class="card"><div class="section-title"><h2>Select a patient</h2></div>@for(p of clinical.patients();track p.id){<a class="row" [routerLink]="['/clinical',p.id]"><div><b>{{p.firstName}} {{p.lastName}}</b><small>{{p.mrn}}</small></div><span>Open record →</span></a>}</section>}`,styles:[`.record{padding:20px}.record h3{font-size:13px;text-transform:uppercase;color:#64777d;margin-top:22px}.row{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid #e5ecee;color:inherit;text-decoration:none}.row small{display:block;color:#6c7e84;margin-top:5px}.timeline{padding:20px}.timeline article{display:grid;grid-template-columns:18px 1fr;gap:12px;border-left:2px solid #cfe3df;padding:0 0 24px 18px;margin-left:5px}.timeline article i{width:12px;height:12px;background:#14947c;border-radius:50%;margin-left:-25px}.timeline h3{margin:9px 0 4px}.timeline p{margin-bottom:5px}.timeline small{color:#6d7e84}`]})export class EmrPage{id=input('');readonly clinical=inject(ClinicalStore);readonly inpatient=inject(InpatientStore);readonly tab=signal('summary');readonly filter=signal('');readonly eventTypes=['Admission','Bed Transfer','Lab Order','Lab Result','Radiology Order','Procedure','Medication','Discharge'];readonly patient=computed(()=>this.clinical.patients().find(p=>p.id===this.id())??(!this.id()?undefined:this.clinical.patients()[0]));readonly consultations=computed(()=>this.clinical.consultations().filter(c=>this.clinical.appointments().find(a=>a.id===c.appointmentId)?.patientId===this.patient()?.id));readonly admissions=computed(()=>this.inpatient.admissions().filter(a=>a.patientId===this.patient()?.id));readonly labs=computed(()=>this.inpatient.labOrders().filter(o=>o.patientId===this.patient()?.id));readonly radiology=computed(()=>this.inpatient.radiologyOrders().filter(o=>o.patientId===this.patient()?.id));readonly procedures=computed(()=>this.inpatient.procedures().filter(o=>o.patientId===this.patient()?.id));readonly medications=computed(()=>this.inpatient.medications().filter(o=>o.patientId===this.patient()?.id));timeline(){return this.patient()?this.inpatient.timeline(this.patient()!.id)():[]}format(v:string){return new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}}
+import { Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { ClinicalStore } from '../../../core/services/clinical.store';
+import { InpatientStore } from '../../../core/services/inpatient.store';
+import { AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { InpatientApiService } from '../../../core/services/inpatient-api.service';
+import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
+import { DisplayValuePipe } from '../../../shared/pipes/display-value.pipe';
+import { TimelineEvent } from '../../../shared/models/inpatient.models';
+import { DashboardInvalidationService } from '../../../core/services/dashboard-invalidation.service';
+import { AppCalendar } from '../../../shared/components/calendar/app-calendar';
+import { AppIcon } from '../../../shared/components/icon/app-icon';
+import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+@Component({ imports: [RouterLink, EmptyState, StatusBadge, DisplayValuePipe, AppCalendar, AppIcon, ClickOutsideDirective], templateUrl: './emr-page.html', styleUrl: './emr-page.scss' })
+export class EmrPage {
+  id = input('');
+  readonly clinical = inject(ClinicalStore);
+  readonly inpatient = inject(InpatientStore);
+  private readonly dates = inject(AppDateTimeService);
+  private readonly inpatientApi = inject(InpatientApiService);
+  private readonly invalidation = inject(DashboardInvalidationService);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly tab = signal('summary');
+  readonly filter = signal('');
+  readonly selectedDate = signal('');
+  readonly timelineItems = signal<TimelineEvent[]>([]);
+  readonly timelineLoading = signal(false);
+  readonly timelineError = signal('');
+  readonly summary = signal<any | null>(null);
+  readonly summaryLoading = signal(false);
+  readonly summaryError = signal('');
+  readonly detailsNotFound = signal(false);
+  readonly filtersOpen = signal(false);
+  readonly eventTypes = [
+    'Admission',
+    'Consultation',
+    'Diagnosis',
+    'Lab Result',
+    'Radiology Order',
+    'Procedure',
+    'Medication',
+    'Discharge',
+  ];
+  readonly patient = computed(
+    () => this.summary() ?? this.clinical.patients().find((p) => p.id === this.id()),
+  );
+  readonly consultations = computed(() =>
+    this.clinical
+      .consultations()
+      .filter(
+        (c) =>
+          this.clinical.appointments().find((a) => a.id === c.appointmentId)?.patientId ===
+          this.patient()?.id,
+      ),
+  );
+  readonly admissions = computed(() =>
+    this.inpatient.admissions().filter((a) => a.patientId === this.patient()?.id),
+  );
+  readonly labs = computed(() =>
+    this.inpatient.labOrders().filter((o) => o.patientId === this.patient()?.id),
+  );
+  readonly radiology = computed(() =>
+    this.inpatient.radiologyOrders().filter((o) => o.patientId === this.patient()?.id),
+  );
+  readonly procedures = computed(() =>
+    this.inpatient.procedures().filter((o) => o.patientId === this.patient()?.id),
+  );
+  readonly medications = computed(() =>
+    this.inpatient.medications().filter((o) => o.patientId === this.patient()?.id),
+  );
+  constructor() {
+    effect(() => {
+      const patientId = this.id();
+      if (patientId) untracked(() => { void this.loadTimeline(patientId); void this.loadSummary(patientId); });
+    });
+    this.invalidation.changed
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((domains) => {
+        if (domains.has('laboratory')) void this.loadTimeline();
+      });
+  }
+  async loadSummary(patientId = this.patient()?.id) {
+    if (!patientId || this.summaryLoading()) return;
+    this.summaryLoading.set(true); this.summaryError.set(''); this.detailsNotFound.set(false); this.summary.set(null);
+    try { this.summary.set((await firstValueFrom(this.inpatientApi.clinicalSummary(patientId))).data); }
+    catch (error: any) {
+      if (error?.status === 404) this.detailsNotFound.set(true);
+      else this.summaryError.set('Unable to load the clinical record.');
+    }
+    finally { this.summaryLoading.set(false); }
+  }
+  histories(type: string) { return this.summary()?.histories?.filter((item: any) => item.type === type) ?? []; }
+  async loadTimeline(patientId = this.patient()?.id) {
+    if (!patientId || this.timelineLoading()) return;
+    this.timelineLoading.set(true);
+    this.timelineError.set('');
+    try {
+      const date = this.selectedDate();
+      const response = await firstValueFrom(
+        this.inpatientApi.timeline(patientId, {
+          type: this.filter() || undefined,
+          from: date || undefined,
+          to: date || undefined,
+        }),
+      );
+      this.timelineItems.set(
+        response.data.map((item) => ({ ...item, patientId, actor: item.actor ?? 'System' })),
+      );
+    } catch {
+      this.timelineError.set('Clinical timeline could not be loaded.');
+    } finally {
+      this.timelineLoading.set(false);
+    }
+  }
+  applyTimelineFilters() {
+    this.filtersOpen.set(false);
+    void this.loadTimeline();
+  }
+  clearTimelineFilters() {
+    this.filter.set('');
+    this.selectedDate.set('');
+    this.filtersOpen.set(false);
+    void this.loadTimeline();
+  }
+  shiftDate(days: number) {
+    const base = this.selectedDate() || this.dates.today();
+    const [year, month, day] = base.split('-').map(Number);
+    const next = new Date(Date.UTC(year, month - 1, day + days));
+    this.selectedDate.set(next.toISOString().slice(0, 10));
+    void this.loadTimeline();
+  }
+  format(v: string) {
+    return this.dates.formatDateTime(v);
+  }
+}

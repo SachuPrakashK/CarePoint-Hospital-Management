@@ -1,2 +1,82 @@
-import { Component, inject, signal } from '@angular/core'; import { FormsModule } from '@angular/forms'; import { OperationsStore } from '../../../core/services/operations.store'; import { ClinicalStore } from '../../../core/services/clinical.store';
-@Component({imports:[FormsModule],template:`<div class="page-head"><div><div class="breadcrumbs">Operations / Inventory</div><h1>Inventory & operations</h1><p class="muted">Hospital supplies, procurement, suppliers and ambulance fleet.</p></div></div><div class="tabs"><button [class.active]="tab()==='inventory'" (click)="tab.set('inventory')">General inventory</button><button [class.active]="tab()==='procurement'" (click)="tab.set('procurement')">Procurement</button><button [class.active]="tab()==='suppliers'" (click)="tab.set('suppliers')">Suppliers</button><button [class.active]="tab()==='ambulance'" (click)="tab.set('ambulance')">Ambulance</button><button [class.active]="tab()==='notifications'" (click)="tab.set('notifications')">Notifications ({{store.unreadNotifications()}})</button></div>@if(tab()==='inventory'){<section class="card"><div class="toolbar"><label class="search-box">⌕<input placeholder="Search"></label><button class="primary">+ Add item</button><button class="secondary">Stock issue</button><button class="secondary">Transfer</button></div><div class="table-wrap"><table><thead><tr><th>Item</th><th>Category</th><th>Store</th><th>Unit</th><th>Stock</th><th>Reorder</th><th>Alert</th></tr></thead><tbody>@for(i of store.inventory();track i.id){<tr><td><b>{{i.name}}</b></td><td>{{i.category}}</td><td>{{i.store}}</td><td>{{i.unit}}</td><td>{{i.openingQuantity}}</td><td>{{i.reorderLevel}}</td><td>@if(i.openingQuantity<=i.reorderLevel){<span class="status danger">Low stock</span>}@else{<span class="status">Healthy</span>}</td></tr>}</tbody></table></div></section>}@else if(tab()==='procurement'){<section class="card"><div class="section-title"><h2>Purchase orders & goods receipt</h2><button class="primary">+ Purchase request</button></div><div class="table-wrap"><table><thead><tr><th>PO</th><th>Supplier</th><th>Item</th><th>Ordered</th><th>Received</th><th>Value</th><th>Status</th><th></th></tr></thead><tbody>@for(po of store.purchaseOrders();track po.id){<tr><td>{{po.number}}</td><td>{{supplier(po.supplierId)}}</td><td>{{item(po.itemId)}}</td><td>{{po.quantity}}</td><td>{{po.receivedQuantity}}</td><td>₹{{po.quantity*po.unitPrice}}</td><td><span class="status info">{{po.status}}</span></td><td>@if(po.status==='Ordered'){<button class="primary" (click)="receive(po.id,po.quantity-po.receivedQuantity)">Receive goods</button>}</td></tr>}</tbody></table></div></section>}@else if(tab()==='suppliers'){<section class="card"><div class="section-title"><h2>Suppliers</h2><button class="primary">+ Add supplier</button></div><div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Contact person</th><th>Phone</th><th>Email</th><th>Tax number</th><th>Status</th></tr></thead><tbody>@for(s of store.suppliers();track s.id){<tr><td><b>{{s.name}}</b></td><td>{{s.contactPerson}}</td><td>{{s.phone}}</td><td>{{s.email}}</td><td>{{s.taxNumber}}</td><td><span class="status">{{s.status}}</span></td></tr>}</tbody></table></div></section>}@else if(tab()==='ambulance'){<section class="stats">@for(a of store.ambulances();track a.id){<article class="card stat"><span class="muted">{{a.vehicleType}}</span><div class="value vehicle">{{a.number}}</div><p>{{a.registration}} · {{a.driver}}</p><span class="status" [class.warn]="a.status!=='Available'">{{a.status}}</span></article>}</section><section class="card booking"><div class="section-title"><h2>New ambulance booking</h2></div><div class="form-grid"><label class="field">Patient<select [(ngModel)]="patientId"><option value="">Select patient</option>@for(p of clinical.patients();track p.id){<option [value]="p.id">{{p.firstName}} {{p.lastName}}</option>}</select></label><label class="field">Available vehicle<select [(ngModel)]="ambulanceId"><option value="">Assign later</option>@for(a of store.ambulances();track a.id){@if(a.status==='Available'){<option [value]="a.id">{{a.number}} · {{a.vehicleType}}</option>}}</select></label><label class="field">Pickup<input [(ngModel)]="pickup"></label><label class="field">Destination<input [(ngModel)]="destination"></label><label class="field">Charges<input type="number" [(ngModel)]="charges"></label></div><div class="form-actions"><button class="primary" (click)="book()">Book ambulance</button></div></section>}@else{<section class="card"><div class="section-title"><h2>Notification center</h2><button class="secondary">Configure channels</button></div>@for(n of store.notifications();track n.id){<article class="notification" [class.unread]="!n.readAt" (click)="store.markNotification(n.id)"><span class="notice-icon">!</span><div><b>{{n.title}}</b><p>{{n.message}}</p><small>{{format(n.createdAt)}} · {{n.channels.join(', ')}}</small></div></article>}</section>}@if(message()){<div class="toast">{{message()}}</div>}`,styles:[`.vehicle{font-size:20px!important}.booking{margin-top:18px}.notification{display:grid;grid-template-columns:35px 1fr;gap:12px;padding:15px 18px;border-bottom:1px solid #e4ebed;cursor:pointer}.notification.unread{background:#f0faf7}.notification p{margin:4px 0}.notification small{color:#6c7e84}.notice-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#ffe8c2;color:#855700}.toast{position:fixed;right:24px;bottom:24px;background:#173e49;color:white;padding:13px;border-radius:8px}`]})export class OperationsPage{readonly store=inject(OperationsStore);readonly clinical=inject(ClinicalStore);readonly tab=signal<'inventory'|'procurement'|'suppliers'|'ambulance'|'notifications'>('inventory');readonly message=signal('');patientId='';ambulanceId='';pickup='';destination='';charges=0;supplier(id:string){return this.store.suppliers().find(s=>s.id===id)?.name??id}item(id:string){return this.store.medicines().find(m=>m.id===id)?.name??this.store.inventory().find(i=>i.id===id)?.name??id}receive(id:string,qty:number){const po=this.store.purchaseOrders().find(x=>x.id===id)!;const batch=this.store.batches().find(b=>b.medicineId===po.itemId);try{this.store.receivePurchaseOrder(id,qty,batch?.id);this.message.set('Goods receipt posted to the stock ledger.')}catch(e){this.message.set((e as Error).message)}}book(){const a=this.store.ambulances().find(x=>x.id===this.ambulanceId);try{this.store.bookAmbulance({patientId:this.patientId,pickup:this.pickup,destination:this.destination,requestedAt:new Date().toISOString(),ambulanceId:this.ambulanceId||undefined,driver:a?.driver,charges:this.charges});this.message.set('Ambulance booking created.')}catch(e){this.message.set((e as Error).message)}}format(v:string){return new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}}
+import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Phase23Store } from '../../../core/services/phase23.store';
+import { PharmacyStore } from '../../../core/services/pharmacy.store';
+import { PatientStore } from '../../patients/patient.store';
+import { NotificationStore } from '../../../core/notifications/notification.store';
+import { AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { AppModal } from '../../../shared/components/modal/app-modal';
+import { OperationsForm, OperationsFormKind } from './operations-form';
+import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
+import { firstValueFrom } from 'rxjs';import{Phase23ApiService}from'../../../core/services/phase23-api.service';import{SearchField}from'../../../shared/components/search/search-field';import{AppPagination}from'../../../shared/components/pagination/app-pagination';import{TableSortHeader}from'../../../shared/components/table-sort-header/table-sort-header';import{ColumnConfig}from'../../../shared/components/column-config/column-config';import{TableColumnDefinition,TableSort}from'../../../shared/models/table.models';import{TablePreferencesService}from'../../../core/services/table-preferences.service';
+@Component({
+  imports: [FormsModule,AppModal,OperationsForm,StatusBadge,SearchField,AppPagination,TableSortHeader,ColumnConfig],
+  templateUrl: './operations-page.html',
+  styleUrl: './operations-page.scss',
+})
+export class OperationsPage {
+  readonly store = inject(Phase23Store);
+  readonly pharmacy = inject(PharmacyStore);
+  readonly patients = inject(PatientStore);
+  readonly notifications = inject(NotificationStore);
+  private dates = inject(AppDateTimeService);
+  private api=inject(Phase23ApiService);private preferences=inject(TablePreferencesService);
+  readonly tab = signal<'inventory' | 'procurement' | 'suppliers' | 'ambulance' | 'notifications'>(
+    'inventory',
+  );
+  readonly message = signal('');
+  readonly formKind=signal<OperationsFormKind|null>(null);readonly editing=signal<any|null>(null);
+  readonly formDirty=signal(false);
+  patientId = '';
+  ambulanceId = '';
+  pickup = '';
+  destination = '';
+  charges = 0;
+  readonly rows=signal<any[]>([]);readonly tableLoading=signal(false);readonly tableError=signal('');readonly search=signal('');readonly page=signal(1);readonly pageSize=signal(10);readonly total=signal(0);readonly totalPages=signal(0);readonly sort=signal<TableSort|null>(null);
+  readonly tableColumns:Record<string,readonly TableColumnDefinition[]>={inventory:[{id:'item',header:'Item',visibleByDefault:true,required:true,sortable:true,sortKey:'name'},{id:'category',header:'Category',visibleByDefault:true,sortable:true,sortKey:'category'},{id:'store',header:'Store',visibleByDefault:true},{id:'unit',header:'Unit',visibleByDefault:true,sortable:true,sortKey:'unit'},{id:'stock',header:'Stock',visibleByDefault:true,sortable:true,sortKey:'quantity'},{id:'reorder',header:'Reorder',visibleByDefault:true,sortable:true,sortKey:'reorderLevel'},{id:'alert',header:'Alert',visibleByDefault:true}],procurement:[{id:'po',header:'PO',visibleByDefault:true,required:true,sortable:true,sortKey:'number'},{id:'supplier',header:'Supplier',visibleByDefault:true,sortable:true,sortKey:'supplier'},{id:'item',header:'Item',visibleByDefault:true,sortable:true,sortKey:'item'},{id:'ordered',header:'Ordered',visibleByDefault:true,sortable:true,sortKey:'quantity'},{id:'received',header:'Received',visibleByDefault:true,sortable:true,sortKey:'receivedQuantity'},{id:'value',header:'Value',visibleByDefault:true,sortable:true,sortKey:'unitPrice'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'},{id:'actions',header:'Actions',visibleByDefault:true,required:true}],suppliers:[{id:'supplier',header:'Supplier',visibleByDefault:true,required:true,sortable:true,sortKey:'name'},{id:'contact',header:'Contact person',visibleByDefault:true,sortable:true,sortKey:'contactPerson'},{id:'phone',header:'Phone',visibleByDefault:true,sortable:true,sortKey:'phone'},{id:'email',header:'Email',visibleByDefault:true,sortable:true,sortKey:'email'},{id:'tax',header:'Tax number',visibleByDefault:true,sortable:true,sortKey:'taxNumber'},{id:'status',header:'Status',visibleByDefault:true}]};readonly visibleColumns=signal<string[]>(this.preferences.load('operations-inventory',this.tableColumns['inventory']));
+  constructor(){void this.patients.load();void this.notifications.load();void this.loadTable();void this.preferences.loadRemote('operations-inventory',this.columns()).then(ids=>this.visibleColumns.set(ids));}
+  tableTab(){return ['inventory','procurement','suppliers'].includes(this.tab());}columns(){return this.tableColumns[this.tab()]??[];}tableId(){return`operations-${this.tab()}`;}columnVisible(id:string){return this.visibleColumns().includes(id);}async selectTab(value:'inventory'|'procurement'|'suppliers'|'ambulance'|'notifications'){this.tab.set(value);if(!this.tableTab())return;this.page.set(1);this.search.set('');this.sort.set(null);this.visibleColumns.set(this.preferences.load(this.tableId(),this.columns()));this.visibleColumns.set(await this.preferences.loadRemote(this.tableId(),this.columns()));await this.loadTable();}async loadTable(){if(!this.tableTab())return;this.tableLoading.set(true);this.tableError.set('');try{const q={page:this.page(),page_size:this.pageSize(),search:this.search(),sort_by:this.sort()?.field,sort_order:this.sort()?.direction};const request=this.tab()==='inventory'?this.api.inventory(q):this.tab()==='procurement'?this.api.purchaseOrders(q):this.api.suppliers(q);const r=await firstValueFrom(request);this.rows.set(r.data.map((x:any)=>this.tab()==='inventory'?{...x,category:x.category?.name,openingQuantity:x.quantity}:x));this.total.set(r.pagination.total);this.totalPages.set(r.pagination.total_pages);}catch{this.tableError.set('Operations records could not be loaded.');}finally{this.tableLoading.set(false);}}query(value:string){this.search.set(value);this.page.set(1);void this.loadTable();}go(value:number){this.page.set(value);void this.loadTable();}resize(value:number){this.pageSize.set(value);this.page.set(1);void this.loadTable();}changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);void this.loadTable();}ariaSort(field:string):'ascending'|'descending'|'none'{const value=this.sort();return value?.field===field?(value.direction==='asc'?'ascending':'descending'):'none';}async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns().some(x=>ids.includes(x.id)&&x.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.preferences.save(this.tableId(),ids);}async resetColumns(){await this.preferences.reset(this.tableId());this.visibleColumns.set(this.preferences.load(this.tableId(),this.columns()));}
+  open(kind:OperationsFormKind,item:any=null){this.formKind.set(kind);this.editing.set(item);this.formDirty.set(false);}
+  close(){this.formKind.set(null);this.editing.set(null);this.formDirty.set(false);}
+  saved(){this.message.set(this.editing()?'Record updated.':'Record created.');}
+  title(){const labels={inventory:'Inventory item',supplier:'Supplier',ambulance:'Ambulance',purchase:'Purchase order'};return `${this.editing()?'Edit':'Create'} ${labels[this.formKind()!]}`;}
+  supplier(id: string) {
+    return this.store.suppliers().find((s) => s.id === id)?.name ?? id;
+  }
+  item(id: string) {
+    return (
+      this.pharmacy.medicines().find((m) => m.id === id)?.name ??
+      this.store.inventory().find((i) => i.id === id)?.name ??
+      id
+    );
+  }
+  async receive(id: string, qty: number) {
+    const po = this.store.purchaseOrders().find((x) => x.id === id)!;
+    const batch = this.pharmacy.batches().find((b) => b.medicineId === po.itemId);
+    try {
+      await this.store.receivePurchaseOrder(id, qty, batch?.id);
+      this.message.set('Goods receipt posted to the stock ledger.');
+      await this.loadTable();
+    } catch (e) {
+      this.message.set((e as Error).message);
+    }
+  }
+  async book() {
+    const a = this.store.ambulances().find((x) => x.id === this.ambulanceId);
+    try {
+      await this.store.bookAmbulance({
+        patientId: this.patientId,
+        pickup: this.pickup,
+        destination: this.destination,
+        ambulanceId: this.ambulanceId || undefined,
+        charges: this.charges,
+      });
+      this.message.set('Ambulance booking created.');
+    } catch (e) {
+      this.message.set((e as Error).message);
+    }
+  }
+  format(v: string) {
+    return this.dates.formatDateTime(v);
+  }
+}

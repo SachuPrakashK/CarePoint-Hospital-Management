@@ -1,1 +1,16 @@
-import { Routes } from '@angular/router'; import { permissionGuard } from '../../core/guards/permission.guard'; export const PROCEDURE_ROUTES:Routes=[{path:'',canActivate:[permissionGuard],data:{permission:'procedures.view'},loadComponent:()=>import('./pages/procedure-page').then(m=>m.ProcedurePage)}];
+import { Routes } from '@angular/router';
+import { permissionGuard } from '../../core/guards/permission.guard';
+export const PROCEDURE_ROUTES: Routes = [
+  {
+    path: '',
+    canActivate: [permissionGuard],
+    data: { permission: 'procedures.view' },
+    loadComponent: () => import('./pages/procedure-page').then((m) => m.ProcedurePage),
+  },
+  {
+    path: ':id',
+    canActivate: [permissionGuard],
+    data: { permission: 'procedures.view' },
+    loadComponent: () => import('./pages/procedure-details').then((m) => m.ProcedureDetailsPage),
+  },
+];

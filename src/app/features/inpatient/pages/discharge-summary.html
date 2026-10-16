@@ -1,0 +1,55 @@
+@if (summary(); as s) {
+  <div class="print-actions">
+    <button class="secondary" (click)="back()">Back</button
+    ><button class="primary" (click)="print()">Print discharge summary</button>
+  </div>
+  <article class="summary">
+    <header>
+      <div class="mark">✚</div>
+      <div>
+        <h1>CarePoint Hospital</h1>
+        <p>Discharge Summary</p>
+      </div>
+    </header>
+    <section class="identity">
+      <div>
+        <small>PATIENT</small><b>{{ patientName() }}</b>
+      </div>
+      <div>
+        <small>MRN</small><b>{{ patient()?.mrn }}</b>
+      </div>
+      <div>
+        <small>ADMISSION</small><b>{{ admission()?.number }}</b>
+      </div>
+      <div>
+        <small>DISCHARGED</small><b>{{ format(s.dischargedAt) }}</b>
+      </div>
+    </section>
+    <section>
+      <h2>Final diagnosis</h2>
+      <p>{{ s.finalDiagnosis }}</p>
+      <h2>Clinical and treatment summary</h2>
+      <p>{{ s.treatmentSummary }}</p>
+      <h2>Investigations</h2>
+      <p>{{ s.investigationSummary }}</p>
+      <h2>Procedures</h2>
+      <p>{{ s.procedures }}</p>
+      <h2>Condition at discharge</h2>
+      <p>{{ s.conditionAtDischarge }}</p>
+      <h2>Discharge medications</h2>
+      <p>{{ s.medications }}</p>
+      <h2>Instructions</h2>
+      <p>{{ s.instructions }}</p>
+      <h2>Follow-up</h2>
+      <p>{{ s.followUp }}</p>
+    </section>
+    <footer>
+      <div>
+        <span>Attending doctor</span><b>{{ s.attendingDoctor }}</b>
+      </div>
+      <div><span>Authorized signature</span><b>____________________</b></div>
+    </footer>
+  </article>
+} @else {
+  <div class="empty">Discharge summary not found.</div>
+}

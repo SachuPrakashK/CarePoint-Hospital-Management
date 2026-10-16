@@ -1,0 +1,103 @@
+<div class="page-head">
+  <div><div class="breadcrumbs">Clinical / Nursing</div><h1>Nursing workspace</h1><p class="muted">Assigned patients, nursing notes, medication administration and handover.</p></div>
+  @if (canEdit()) { <button class="secondary" type="button" [disabled]="!selected()" (click)="openHandover()">Shift handover</button> }
+</div>
+
+<section class="stats">
+  <article class="card stat metric-card metric-card--blue"><span class="muted">Assigned patients</span><div class="value">{{ store.assignedPatients().length }}</div></article>
+  <article class="card stat metric-card metric-card--amber"><span class="muted">Medication tasks</span><div class="value">{{ pendingMeds() }}</div></article>
+  <article class="card stat metric-card metric-card--purple"><span class="muted">Recorded notes</span><div class="value">{{ store.nursingNotes().length }}</div></article>
+  <article class="card stat metric-card metric-card--green"><span class="muted">Handovers</span><div class="value">{{ store.handovers().length }}</div></article>
+</section>
+
+@if (store.nursingError()) { <p class="data-error" role="alert">{{ store.nursingError() }}</p> }
+
+<section class="card context-card">
+  <label class="field patient-context"><span class="form-label">Patient context</span>
+    <select [value]="selected()" (change)="selectAdmission($any($event.target).value)">
+      <option value="">Select an assigned patient</option>
+      @for (assignment of patientContexts(); track assignment.id) { <option [value]="assignment.admission.id">{{ assignment.patientName }} · {{ assignment.admission.number }}</option> }
+    </select>
+  </label>
+</section>
+
+<section class="card section-card">
+  <div class="section-title"><h2>Assigned patients</h2><app-column-config [columns]="assignedColumns" [visible]="assignedVisible()" (apply)="applyColumns('assigned',$event)" (reset)="resetColumns('assigned')"/></div>
+  @if (store.nursingLoading()) { <p class="state-message loading-state loading-state--table" role="status" aria-live="polite">Loading assigned patients…</p> }
+  @else if (store.assignedPatients().length) {
+    <div class="table-wrap"><table><thead><tr>@if(visible('assigned','patient')){<th [attr.aria-sort]="ariaSort('assigned','patient')"><app-table-sort-header label="Patient" field="patient" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','admission')){<th [attr.aria-sort]="ariaSort('assigned','admission')"><app-table-sort-header label="Admission" field="admission" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','location')){<th [attr.aria-sort]="ariaSort('assigned','location')"><app-table-sort-header label="Location" field="location" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','doctor')){<th [attr.aria-sort]="ariaSort('assigned','doctor')"><app-table-sort-header label="Doctor" field="doctor" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','shift')){<th [attr.aria-sort]="ariaSort('assigned','shift')"><app-table-sort-header label="Shift" field="shift" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}@if(visible('assigned','status')){<th [attr.aria-sort]="ariaSort('assigned','status')"><app-table-sort-header label="Status" field="status" [sort]="assignedSort()" (sortChange)="changeSort('assigned',$event)"/></th>}</tr></thead><tbody>
+      @for (assignment of assignedRows(); track assignment.id) {
+        <tr tabindex="0" class="clickable-row" (click)="openAdmission(assignment.admission.id)" (keydown.enter)="openAdmission(assignment.admission.id)">
+          @if(visible('assigned','patient')){<td><b>{{ assignment.patientName }}</b><small>{{ assignment.mrn }}</small></td>}@if(visible('assigned','admission')){<td>{{ assignment.admission.number }}<small>{{ formatDateTime(assignment.admission.admittedAt) }}</small></td>}@if(visible('assigned','location')){<td>{{ assignment.admission.allocations[0]?.ward || 'Not available' }}<small>{{ assignment.admission.allocations[0]?.room || 'Not available' }} / {{ assignment.admission.allocations[0]?.bedName || 'Not available' }}</small></td>}@if(visible('assigned','doctor')){<td>{{ assignment.admission.attendingDoctor || 'Not available' }}</td>}@if(visible('assigned','shift')){<td>{{ assignment.shift }}</td>}@if(visible('assigned','status')){<td><app-status-badge [value]="assignment.admission.status" /></td>}
+        </tr>
+      }
+    </tbody></table></div>
+  } @else { <app-empty-state title="No assigned patients found" description="There are no active patient assignments for this shift." /> }
+</section>
+
+<div class="grid-2 nursing-grid">
+  <section class="card section-card">
+    <div class="section-title"><h2>Medication administration record</h2></div>
+    @if (!selected()) { <app-empty-state title="Select a patient" description="Choose an assigned patient to view medication orders." /> }
+    @else if (store.nursingLoading()) { <p class="state-message loading-state loading-state--section" role="status" aria-live="polite">Loading medication records…</p> }
+    @else if (selectedMedications().length) {
+      @for (item of selectedMedications(); track item.id) {
+        <article class="med"><div><b>{{ item.medication }} · {{ item.dose }}</b><small>{{ item.route }} · {{ item.frequency || 'Frequency not available' }}</small><small>Scheduled {{ formatDateTime(item.scheduledAt) }}<br />Ordered by {{ item.orderedBy || 'Not available' }}</small></div><app-status-badge [value]="item.status" />
+          @if (item.status === 'Scheduled' && canEdit()) { <div class="inline-actions"><button class="primary" type="button" (click)="openMedication(item)">Administer</button><button class="secondary" type="button" (click)="openMedication(item, 'Held')">Exception</button></div> }
+          @else if (item.administeredAt) { <small>{{ formatDateTime(item.administeredAt) }}<br />{{ item.administeredBy || 'Not available' }}</small> }
+        </article>
+      }
+    } @else { <app-empty-state title="No active medication orders found" description="No medication administration records are associated with this admission." /> }
+  </section>
+  <section class="card section-card">
+    <div class="section-title"><h2>Nursing notes</h2></div>
+    @if (!selected()) { <app-empty-state title="Select a patient" description="Choose an assigned patient to view nursing notes." /> }
+    @else if (selectedNotes().length) { <div class="history-list">@for (note of selectedNotes(); track note.id) { <article><b>{{ note.observation }}</b><p>{{ note.intervention }}</p>@if (note.notes) { <p>{{ note.notes }}</p> }<small>{{ note.nurse }} · {{ formatDateTime(note.recordedAt) }}</small></article> }</div> }
+    @else { <app-empty-state title="No nursing notes found" description="No notes are associated with this admission." /> }
+  </section>
+</div>
+
+@if (canEdit()) {
+  <section class="card note-card"><div class="section-title"><h2>New nursing note</h2></div>
+    <form [formGroup]="noteForm" (ngSubmit)="saveNote()"><div class="form-grid">
+      <label class="field"><span class="form-label">Observation <span class="required-indicator">*</span></span><textarea formControlName="observation" placeholder="Patient observation"></textarea></label>
+      <label class="field"><span class="form-label">Intervention <span class="required-indicator">*</span></span><textarea formControlName="intervention" placeholder="Nursing intervention"></textarea></label>
+      <label class="field full"><span class="form-label">Additional notes</span><textarea formControlName="notes" placeholder="Additional clinical information"></textarea></label>
+    </div>@if (noteError()) { <p class="field-error" role="alert">{{ noteError() }}</p> }<div class="form-actions"><button class="primary" type="submit" [disabled]="!selected() || noteForm.invalid || savingNote()">{{ savingNote() ? 'Recording…' : 'Record note' }}</button></div></form>
+  </section>
+}
+
+<section class="card section-card handover-history"><div class="section-title"><h2>Shift handover history</h2><app-column-config [columns]="handoverColumns" [visible]="handoverVisible()" (apply)="applyColumns('handover',$event)" (reset)="resetColumns('handover')"/></div>
+  @if (store.handovers().length) { <div class="table-wrap"><table><thead><tr>@if(visible('handover','date')){<th [attr.aria-sort]="ariaSort('handover','createdAt')"><app-table-sort-header label="Date/time" field="createdAt" [sort]="handoverSort()" (sortChange)="changeSort('handover',$event)"/></th>}@if(visible('handover','patient')){<th [attr.aria-sort]="ariaSort('handover','patient')"><app-table-sort-header label="Patient" field="patient" [sort]="handoverSort()" (sortChange)="changeSort('handover',$event)"/></th>}@if(visible('handover','shift')){<th [attr.aria-sort]="ariaSort('handover','shift')"><app-table-sort-header label="Shift" field="shift" [sort]="handoverSort()" (sortChange)="changeSort('handover',$event)"/></th>}@if(visible('handover','from')){<th [attr.aria-sort]="ariaSort('handover','from')"><app-table-sort-header label="Handed over by" field="from" [sort]="handoverSort()" (sortChange)="changeSort('handover',$event)"/></th>}@if(visible('handover','to')){<th [attr.aria-sort]="ariaSort('handover','to')"><app-table-sort-header label="Received by" field="to" [sort]="handoverSort()" (sortChange)="changeSort('handover',$event)"/></th>}@if(visible('handover','status')){<th [attr.aria-sort]="ariaSort('handover','status')"><app-table-sort-header label="Status" field="status" [sort]="handoverSort()" (sortChange)="changeSort('handover',$event)"/></th>}@if(visible('handover','actions')){<th>Action</th>}</tr></thead><tbody>
+    @for (handover of handoverRows(); track handover.id) { <tr>@if(visible('handover','date')){<td>{{ formatDateTime(handover.createdAt) }}</td>}@if(visible('handover','patient')){<td>{{ handover.admission?.patient?.firstName }} {{ handover.admission?.patient?.lastName }}</td>}@if(visible('handover','shift')){<td>{{ handover.fromShift }} → {{ handover.toShift }}</td>}@if(visible('handover','from')){<td>{{ handover.handedOverBy?.firstName }} {{ handover.handedOverBy?.lastName }}</td>}@if(visible('handover','to')){<td>{{ handover.handedOverTo?.firstName || 'Not assigned' }} {{ handover.handedOverTo?.lastName }}</td>}@if(visible('handover','status')){<td><app-status-badge [value]="handover.status" /></td>}@if(visible('handover','actions')){<td>@if (handover.status === 'PENDING' && canEdit()) { <button class="secondary" type="button" (click)="acknowledge(handover.id)">Acknowledge</button> }</td>}</tr> }
+  </tbody></table></div> } @else { <app-empty-state title="No handover records found" description="No shift handovers have been recorded." /> }
+</section>
+
+@if (medicationDialog(); as item) {
+  <div class="modal-overlay"><section class="crud-modal crud-modal--sm" role="dialog" aria-modal="true" aria-labelledby="mar-title">
+    <header class="crud-modal__header"><div><h2 id="mar-title">Record medication administration</h2><p class="muted">{{ item.medication }} · {{ item.dose }} · {{ item.route }}</p></div><button type="button" aria-label="Close" (click)="closeMedication()">×</button></header>
+    <form class="crud-modal__form" [formGroup]="medicationForm" (ngSubmit)="recordMedication()"><div class="crud-modal__body form-grid">
+      <label class="field full"><span class="form-label">Status</span><select formControlName="status"><option value="Administered">Administered</option><option value="Held">Held</option><option value="Missed">Missed</option><option value="Refused">Refused</option></select></label>
+      <label class="field full"><span class="form-label">Notes</span><textarea formControlName="notes" placeholder="Clinical notes or reason"></textarea></label>
+      @if (medicationError()) { <p class="field-error full" role="alert">{{ medicationError() }}</p> }
+    </div><footer class="crud-modal__footer"><button class="primary" type="submit" [disabled]="medicationForm.invalid || medicationSubmitting()">{{ medicationSubmitting() ? 'Recording…' : 'Record administration' }}</button></footer></form>
+  </section></div>
+}
+
+@if (handoverDialog()) {
+  <div class="modal-overlay"><section class="crud-modal crud-modal--lg" role="dialog" aria-modal="true" aria-labelledby="handover-title">
+    <header class="crud-modal__header"><div><h2 id="handover-title">Shift handover</h2><p class="muted">Record a patient-specific handover for the incoming shift.</p></div><button type="button" aria-label="Close" (click)="closeHandover()">×</button></header>
+    <form class="crud-modal__form" [formGroup]="handoverForm" (ngSubmit)="submitHandover()"><div class="crud-modal__body form-grid">
+      <label class="field full"><span class="form-label">Patient / admission <span class="required-indicator">*</span></span><select formControlName="admissionId"><option value="">Select patient</option>@for (assignment of patientContexts(); track assignment.id) { <option [value]="assignment.admission.id">{{ assignment.patientName }} · {{ assignment.admission.number }}</option> }</select></label>
+      <label class="field"><span class="form-label">From shift</span><select formControlName="fromShift"><option value="MORNING">Morning</option><option value="EVENING">Evening</option><option value="NIGHT">Night</option></select></label>
+      <label class="field"><span class="form-label">To shift</span><select formControlName="toShift"><option value="MORNING">Morning</option><option value="EVENING">Evening</option><option value="NIGHT">Night</option></select></label>
+      <label class="field full"><span class="form-label">Receiving nurse</span><select formControlName="handedOverToId"><option value="">Not assigned</option>@for (nurse of store.nursingStaff(); track nurse.id) { <option [value]="nurse.id">{{ nurse.firstName }} {{ nurse.lastName }}</option> }</select></label>
+      <label class="field"><span class="form-label">Clinical summary <span class="required-indicator">*</span></span><textarea formControlName="clinicalSummary"></textarea></label><label class="field"><span class="form-label">Current condition <span class="required-indicator">*</span></span><textarea formControlName="currentCondition"></textarea></label>
+      <label class="field"><span class="form-label">Important observations</span><textarea formControlName="importantObservations"></textarea></label><label class="field"><span class="form-label">Pending tasks</span><textarea formControlName="pendingTasks"></textarea></label>
+      <label class="field"><span class="form-label">Medication notes</span><textarea formControlName="medicationNotes"></textarea></label><label class="field"><span class="form-label">Investigations pending</span><textarea formControlName="investigationsPending"></textarea></label>
+      <label class="field"><span class="form-label">Special instructions</span><textarea formControlName="specialInstructions"></textarea></label><label class="field"><span class="form-label">Risk / alerts</span><textarea formControlName="riskAlerts"></textarea></label>
+      <label class="field full"><span class="form-label">Additional notes</span><textarea formControlName="additionalNotes"></textarea></label>
+      @if (handoverForm.value.fromShift === handoverForm.value.toShift) { <p class="field-error full">From shift and to shift must be different.</p> } @if (handoverError()) { <p class="field-error full" role="alert">{{ handoverError() }}</p> }
+    </div><footer class="crud-modal__footer"><button class="primary" type="submit" [disabled]="handoverForm.invalid || handoverForm.value.fromShift === handoverForm.value.toShift || handoverSubmitting()">{{ handoverSubmitting() ? 'Submitting…' : 'Submit handover' }}</button></footer></form>
+  </section></div>
+}

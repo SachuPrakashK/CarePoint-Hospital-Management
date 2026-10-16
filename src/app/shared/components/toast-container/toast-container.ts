@@ -1,2 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core'; import { ToastService } from '../../../core/services/toast.service'; import { AppIcon } from '../icon/app-icon';
-@Component({selector:'app-toast-container',imports:[AppIcon],templateUrl:'./toast-container.html',styleUrl:'./toast-container.scss',changeDetection:ChangeDetectionStrategy.OnPush})export class ToastContainer{readonly toast=inject(ToastService)}
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ToastService } from '../../../core/services/toast.service';
+import { AppIcon } from '../icon/app-icon';
+@Component({
+  selector: 'app-toast-container',
+  imports: [AppIcon],
+  templateUrl: './toast-container.html',
+  styleUrl: './toast-container.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ToastContainer {
+  readonly toast = inject(ToastService);
+}

@@ -105,7 +105,8 @@ h1 {
 .toolbar {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap
+    flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .card {
@@ -384,6 +385,12 @@ tbody tr.clickable:hover {
 
 .mobile-cards {
     display: none
+}
+
+.loading-state {
+    padding: 55px 20px;
+    text-align: center;
+    color: #6b7e84
 }
 
 @media(max-width:1050px) {

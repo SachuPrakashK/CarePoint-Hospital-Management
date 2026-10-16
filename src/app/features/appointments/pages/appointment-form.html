@@ -1,0 +1,18 @@
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()">
+  <div class="crud-modal__body"><div class="form-grid">
+    <label class="field"><span class="form-label">Patient <span class="required-indicator">*</span></span>
+      @if (patientId()) { <input [value]="patientName()" readonly aria-label="Selected patient" /> }
+      @else { <select formControlName="patientId"><option value="">Select patient</option>@for (p of options().patients; track p.id) { <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} · {{ p.mrn }}</option> }</select> }
+    </label>
+    <label class="field"><span class="form-label">Department <span class="required-indicator">*</span></span><select formControlName="departmentId"><option value="">Select department</option>@for (department of options().departments; track department.id) { <option [value]="department.id">{{ department.name }}</option> }</select></label>
+    <label class="field"><span class="form-label">Doctor <span class="required-indicator">*</span></span><select formControlName="doctorId"><option value="">Select doctor</option>@for (doctor of filteredDoctors(); track doctor.id) { <option [value]="doctor.id">{{ doctor.firstName }} {{ doctor.lastName }}</option> }</select></label>
+    <label class="field"><span class="form-label">Appointment date <span class="required-indicator">*</span></span><input type="date" formControlName="date" [min]="dates.today()" /></label>
+    <label class="field"><span class="form-label">Available time <span class="required-indicator">*</span></span><select formControlName="time"><option>09:00</option><option>09:30</option><option>10:00</option><option>10:15</option><option>11:00</option></select></label>
+    <label class="field"><span class="form-label">Appointment type</span><select formControlName="type"><option>Consultation</option><option>Follow-up</option><option>Walk-in</option></select></label>
+    <label class="field"><span class="form-label">Consultation type</span><select formControlName="consultationType"><option>In person</option><option>Video</option></select></label>
+    <label class="field"><span class="form-label">Consultation fee</span><input type="number" formControlName="fee" /></label>
+    <label class="field full"><span class="form-label">Reason <span class="required-indicator">*</span></span><textarea formControlName="reason" placeholder="Reason for visit"></textarea></label>
+    @if (error()) { <div class="error full" role="alert">{{ error() }}</div> }
+  </div></div>
+  <div class="crud-modal__footer"><button class="primary" [disabled]="form.invalid || saving()">{{ saving() ? (isEdit() ? 'Updating…' : 'Creating…') : (isEdit() ? 'Update appointment' : 'Create appointment') }}</button></div>
+</form>

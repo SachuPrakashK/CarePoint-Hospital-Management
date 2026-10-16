@@ -1,0 +1,54 @@
+<main class="auth-shell">
+  <section class="auth-brand">
+    <div class="brand-mark">✚</div>
+    <h1>CarePoint</h1>
+    <p>Hospital operations, connected with care.</p>
+    <div class="trust">
+      <span>✓ Secure sessions</span><span>✓ Role-based access</span
+      ><span>✓ Audit-ready workflows</span>
+    </div>
+  </section>
+  <section class="auth-panel">
+    <form class="auth-card" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="mobile-brand"><span class="brand-mark">✚</span> CarePoint</div>
+      <p class="eyebrow">WELCOME BACK</p>
+      <h2>Sign in to your account</h2>
+      <p class="muted">Use your hospital credentials to continue.</p>
+      <label
+        ><span class="form-label">Email address <span class="required-indicator">*</span></span
+        ><input
+          type="email"
+          formControlName="email"
+          placeholder="name@hospital.com"
+          autocomplete="username"
+      /></label>
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <small class="error">Enter a valid email address.</small>
+      }
+      <label
+        ><span class="form-label">Password <span class="required-indicator">*</span></span>
+
+        <input
+          type="password"
+          formControlName="password"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+        />
+      </label>
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small class="error">Password must be at least 8 characters.</small>
+      }
+      <div class="form-row">
+        <label class="check"
+          ><input type="checkbox" formControlName="remember" /> Keep me signed in</label
+        ><a routerLink="/auth/forgot-password">Forgot password?</a>
+      </div>
+      @if (auth.error()) {
+        <div class="alert" role="alert">{{ auth.error() }}</div>
+      }
+      <button class="primary wide" [disabled]="auth.loading()">
+        {{ auth.loading() ? 'Signing in…' : 'Sign in' }}
+      </button>
+    </form>
+  </section>
+</main>

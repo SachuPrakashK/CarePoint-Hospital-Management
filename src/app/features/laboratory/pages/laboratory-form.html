@@ -1,0 +1,69 @@
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+  <div class="crud-modal__body">
+    <div class="form-grid">
+      @if (mode() !== 'result') {
+        <label class="field"
+          ><span class="form-label">Patient <span class="required-indicator">*</span></span
+          ><select formControlName="patientId">
+            <option value="">Select patient</option>
+            @for (p of patients.patients(); track p.id) {
+              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
+            }
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Ordering doctor <span class="required-indicator">*</span></span
+          ><select formControlName="doctorId">
+            <option value="">Select ordering doctor</option>
+            @for (doctor of doctors(); track doctor.id) { <option [value]="doctor.id">{{ doctor.firstName }} {{ doctor.lastName }}</option> }
+          </select>
+          @if (form.controls.doctorId.touched && form.controls.doctorId.invalid) { <span class="error">Ordering doctor is required.</span> }</label
+        ><label class="field"
+          ><span class="form-label">Tests <span class="required-indicator">*</span></span
+          ><select formControlName="testDefinitionId">
+            <option value="">Select laboratory test</option>
+            @for (test of tests(); track test.id) {
+              <option [value]="test.id">{{ test.name }} · {{ test.category }}</option>
+            }
+          </select>
+          @if (form.controls.testDefinitionId.touched && form.controls.testDefinitionId.invalid) { <span class="error">Laboratory test is required.</span> }</label
+        ><label class="field"
+          ><span class="form-label">Priority <span class="required-indicator">*</span></span
+          ><select formControlName="priority">
+            <option>Routine</option>
+            <option>Urgent</option>
+            <option>STAT</option>
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Sample type <span class="required-indicator">*</span></span
+          ><input formControlName="sampleType" placeholder="Enter sample type, for example Blood" /></label
+        ><label class="field full"
+          ><span class="form-label">Clinical notes</span
+          ><textarea formControlName="clinicalNotes" placeholder="Enter relevant clinical notes"></textarea>
+        </label>
+      } @else {
+        <label class="field"
+          ><span class="form-label">Result <span class="required-indicator">*</span></span
+          ><input formControlName="value" placeholder="Enter laboratory result" />
+          @if (form.controls.value.touched && form.controls.value.invalid) { <span class="error">Result is required.</span> }</label
+        ><label class="field"
+          ><span class="form-label">Unit</span><input formControlName="unit" placeholder="Enter measurement unit, if applicable" /></label
+        ><label class="field"
+          ><span class="form-label">Reference range</span
+          ><input formControlName="referenceRange" placeholder="Enter normal reference range" /></label
+        ><label class="check"
+          ><input type="checkbox" formControlName="abnormal" /> Abnormal result</label
+        ><label class="field full"
+          ><span class="form-label">Notes</span><textarea formControlName="notes" placeholder="Enter result notes"></textarea>
+        </label>
+      }
+    </div>
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+  </div>
+  <div class="crud-modal__footer">
+    <button class="primary" [disabled]="submitting || form.invalid">
+      {{ submitting ? (mode() === 'create' ? 'Creating...' : mode() === 'edit' ? 'Updating...' : 'Saving...') : mode() === 'create' ? 'Create order' : mode() === 'edit' ? 'Update order' : 'Save result' }}
+    </button>
+  </div>
+</form>

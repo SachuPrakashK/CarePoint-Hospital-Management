@@ -1,0 +1,321 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Clinical / Inpatient</div>
+    <h1>Admissions & bed management</h1>
+    <p class="muted">Live capacity, occupancy and inpatient movement.</p>
+  </div>
+  <a class="primary button-link" routerLink="new">+ New admission</a>
+</div>
+<section class="stats">
+  <article class="card stat metric-card metric-card--blue">
+    <span class="muted">Current admissions</span>
+    <div class="value">{{ store.activeAdmissions().length }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--green">
+    <span class="muted">Available beds</span>
+    <div class="value">{{ store.availableBeds().length }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--purple">
+    <span class="muted">Occupied beds</span>
+    <div class="value">{{ store.occupiedBeds().length }}</div>
+  </article>
+  <article class="card stat metric-card metric-card--amber">
+    <span class="muted">Occupancy</span>
+    <div class="value">{{ occupancy() }}%</div>
+  </article>
+</section>
+<div class="tabs" role="tablist">
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'admissions'"
+    [class.active]="tab() === 'admissions'"
+    (click)="tab.set('admissions')"
+  >
+    Admissions
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'beds'"
+    [class.active]="tab() === 'beds'"
+    (click)="tab.set('beds')"
+  >
+    Bed board
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [attr.aria-selected]="tab() === 'wards'"
+    [class.active]="tab() === 'wards'"
+    (click)="tab.set('wards')"
+  >
+    Wards & rooms
+  </button>
+</div>
+@if (tab() === 'admissions') {
+  <section class="card">
+    <div class="toolbar">
+      <app-search-field
+        placeholder="Search admissions..."
+        label="Search admissions"
+        [value]="search()"
+        [disabled]="store.loading()"
+        (valueChange)="onSearch($event)"
+      />
+      <div class="toolbar-actions">
+        <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
+        <div
+          class="filter-anchor"
+          appClickOutside
+          (appClickOutside)="filtersOpen.set(false)"
+          (click)="$event.stopPropagation()"
+        >
+          <button
+            type="button"
+            class="secondary button-icon"
+            [attr.aria-expanded]="filtersOpen()"
+            (click)="filtersOpen.update((open) => !open)"
+          >
+            <app-icon name="filter" [size]="17" />Filters
+            @if (activeFilterCount()) {
+              ({{ activeFilterCount() }})
+            }
+          </button>
+          @if (filtersOpen()) {
+            <div class="filter-panel">
+              <div class="filter-grid">
+                <label class="field"
+                  ><span class="form-label">Department</span
+                  ><select
+                    [value]="draftDepartmentId()"
+                    (change)="draftDepartmentId.set($any($event.target).value)"
+                  >
+                    <option value="">All departments</option>
+                    @for (department of store.lookups().departments; track department.id) {
+                      <option [value]="department.id">{{ department.name }}</option>
+                    }
+                  </select></label
+                >
+                <label class="field"
+                  ><span class="form-label">Status</span
+                  ><select
+                    [value]="draftStatus()"
+                    (change)="draftStatus.set($any($event.target).value)"
+                  >
+                    <option value="">All statuses</option>
+                    <option value="ADMITTED">Admitted</option>
+                    <option value="TRANSFERRED">Transferred</option>
+                    <option value="DISCHARGE_PLANNED">Discharge planned</option>
+                    <option value="DISCHARGED">Discharged</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select></label
+                >
+              </div>
+              <div class="filter-actions">
+                <button type="button" class="secondary" (click)="clearFilters()">
+                  Clear Filters</button
+                ><button type="button" class="primary" (click)="applyFilters()">
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+        <button
+          type="button"
+          class="secondary button-icon"
+          [disabled]="!store.admissions().length || exporting()"
+          (click)="export()"
+        >
+          <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
+        </button>
+      </div>
+    </div>
+    @if (store.loading()) {
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading admissions…</div>
+    } @else if (store.error()) {
+      <div class="error-state" role="alert">
+        {{ store.error() }}
+        <button type="button" class="secondary" (click)="loadAdmissions()">Retry</button>
+      </div>
+    } @else if (store.admissions().length) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              @if(columnVisible('admission')){<th [attr.aria-sort]="ariaSort('number')"><app-table-sort-header label="Admission" field="number" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('patient')"><app-table-sort-header label="Patient" field="patient" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('care')){<th [attr.aria-sort]="ariaSort('department')"><app-table-sort-header label="Department / Doctor" field="department" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('bed')){<th>Ward / Room / Bed</th>}
+              @if(columnVisible('admitted')){<th [attr.aria-sort]="ariaSort('admittedAt')"><app-table-sort-header label="Admitted" field="admittedAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+              @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            </tr>
+          </thead>
+          <tbody>
+            @for (admission of store.admissions(); track admission.id) {
+              <tr
+                class="clickable"
+                tabindex="0"
+                (click)="viewAdmission(admission.id)"
+                (keydown.enter)="viewAdmission(admission.id)"
+              >
+                @if(columnVisible('admission')){<td>
+                  <b>{{ admission.number }}</b>
+                </td>}
+                @if(columnVisible('patient')){<td>
+                  <b>{{ admission.patientName || 'Not available' }}</b
+                  ><br /><small>{{ patientMrn(admission.patientId) }}</small>
+                </td>}
+                @if(columnVisible('care')){<td>
+                  {{ admission.department || 'Not available' }}<br /><small>{{
+                    admission.attendingDoctor || 'Not available'
+                  }}</small>
+                </td>}
+                @if(columnVisible('bed')){<td>
+                  @if (activeAllocation(admission); as allocation) {
+                    {{ allocation.ward || 'Not available' }} /
+                    {{ allocation.room || 'Not available' }} /
+                    {{ allocation.bedName || 'Not available' }}
+                  } @else {
+                    Not available
+                  }
+                </td>}
+                @if(columnVisible('admitted')){<td>{{ format(admission.admittedAt) }}</td>}
+                @if(columnVisible('status')){<td><app-status-badge [value]="admission.status" /></td>}
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <app-empty-state
+        title="No admissions found"
+        [description]="
+          hasCriteria()
+            ? 'No records match your filters.'
+            : 'Create the first admission to get started.'
+        "
+        [actionLabel]="hasCriteria() ? 'Clear filters' : ''"
+        (action)="clearCriteria()"
+      />
+    }
+    <app-pagination
+      [loading]="store.loading()"
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [totalItems]="store.admissionsTotal()"
+      [totalPages]="store.admissionsTotalPages()"
+      itemLabel="admissions"
+      (pageChange)="changePage($event)"
+      (pageSizeChange)="changePageSize($event)"
+    />
+  </section>
+} @else if (tab() === 'beds') {
+  <section>
+    @for (ward of bedWards(); track ward) {
+      <div class="ward">
+        <div class="section-title">
+          <h2>{{ ward }}</h2>
+          <span class="muted">{{ available(ward) }} available</span>
+        </div>
+        <div class="bed-grid">
+          @for (bed of beds(ward); track bed.id) {
+            <article class="bed" [class]="bed.status.toLowerCase()">
+              <div class="bed-icon">▰</div>
+              <b>{{ bed.name }}</b
+              ><small>{{ bed.roomType }} · Room {{ bed.room }}</small
+              ><app-status-badge [value]="bed.status" />
+              @if (bed.patientId) {
+                <small>{{ patientName(bed.patientId) }}</small>
+              }
+            </article>
+          }
+        </div>
+      </div>
+    }
+  </section>
+} @else {
+  <section class="card">
+    <div class="section-title">
+      <h2>Configurable ward structure</h2>
+      @if (auth.has('admissions.manage')) {
+        <button type="button" class="primary" (click)="openWard()">+ Add ward</button>
+      }
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ward</th>
+            <th>Code</th>
+            <th>Floor</th>
+            <th>Rooms</th>
+            <th>Beds</th>
+            <th>Available</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ward of store.wards(); track ward.id) {
+            <tr>
+              <td>
+                <b>{{ ward.name }}</b>
+              </td>
+              <td>{{ ward.code }}</td>
+              <td>{{ ward.floor }}</td>
+              <td>{{ ward.rooms.length }}</td>
+              <td>{{ wardBedCount(ward) }}</td>
+              <td>{{ available(ward.name) }}</td>
+              <td><app-status-badge [value]="ward.status" /></td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="empty">No wards found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+@if (wardOpen()) {
+  <app-modal
+    title="Create ward"
+    description="Add a ward using the configured inpatient structure."
+    size="lg"
+    [dirty]="wardForm.dirty"
+    (closed)="wardOpen.set(false)"
+  >
+    <form class="crud-modal__form" [formGroup]="wardForm" (ngSubmit)="createWard()">
+      <div class="crud-modal__body">
+        <div class="form-grid">
+          <label class="field"
+            ><span class="form-label">Ward name <span class="required-indicator">*</span></span
+            ><input formControlName="name" placeholder="e.g. General Ward" /></label
+          ><label class="field"
+            ><span class="form-label">Ward code <span class="required-indicator">*</span></span
+            ><input formControlName="code" placeholder="e.g. GW-01" /></label
+          ><label class="field"
+            ><span class="form-label">Floor <span class="required-indicator">*</span></span
+            ><input formControlName="floor" placeholder="e.g. First floor" /></label
+          ><label class="field"
+            ><span class="form-label">Status <span class="required-indicator">*</span></span
+            ><select formControlName="status">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select></label
+          >
+        </div>
+        @if (wardError()) {
+          <p class="error" role="alert">{{ wardError() }}</p>
+        }
+      </div>
+      <div class="crud-modal__footer">
+        <button type="submit" class="primary" [disabled]="wardForm.invalid || wardSubmitting()">
+          {{ wardSubmitting() ? 'Creating…' : 'Create ward' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
+}

@@ -1,1 +1,118 @@
-.stats .stat{position:relative;overflow:hidden}.stats .stat:nth-child(4n+1){background:linear-gradient(135deg,#fff,#e6f2fa)}.stats .stat:nth-child(4n+2){background:linear-gradient(135deg,#fff,#e8eff9)}.stats .stat:nth-child(4n+3){background:linear-gradient(135deg,#fff,#e9f5f5)}.stats .stat:nth-child(4n){background:linear-gradient(135deg,#fff,#f1edf9)}.dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.chart-container{width:100%;height:320px;min-height:320px}.chart-card{min-width:0;overflow:hidden}
+.dashboard-stat {
+  --dashboard-card-accent: #2878a8;
+  --dashboard-card-gradient: linear-gradient(135deg, #f2f9ff 0%, #b9dcf5 100%);
+
+  position: relative;
+  overflow: hidden;
+  background: var(--dashboard-card-gradient);
+  border-color: rgb(40 120 168 / 18%);
+  box-shadow: 0 6px 18px rgb(34 79 104 / 7%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.dashboard-stat::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--dashboard-card-accent);
+  content: '';
+}
+
+.dashboard-stat:hover {
+  transform: translateY(-2px);
+  border-color: rgb(40 120 168 / 28%);
+  box-shadow: 0 10px 24px rgb(34 79 104 / 11%);
+}
+
+.dashboard-stat .value {
+  color: #163b4e;
+}
+
+.dashboard-stat .muted {
+  color: #405d6c;
+}
+
+.dashboard-stat .trend,
+.dashboard-stat app-icon {
+  color: var(--dashboard-card-accent);
+}
+
+.dashboard-stat--blue {
+  --dashboard-card-accent: #2476a8;
+  --dashboard-card-gradient: linear-gradient(135deg, #edf7ff 0%, #b6d9f2 100%);
+}
+
+.dashboard-stat--purple {
+  --dashboard-card-accent: #7152a7;
+  --dashboard-card-gradient: linear-gradient(135deg, #f6f1ff 0%, #d5c2ef 100%);
+}
+
+.dashboard-stat--green {
+  --dashboard-card-accent: #37825c;
+  --dashboard-card-gradient: linear-gradient(135deg, #edf9f2 0%, #b9dfc8 100%);
+}
+
+.dashboard-stat--teal {
+  --dashboard-card-accent: #287e78;
+  --dashboard-card-gradient: linear-gradient(135deg, #ecfaf8 0%, #b6dfda 100%);
+}
+
+.dashboard-stat--cyan {
+  --dashboard-card-accent: #287f98;
+  --dashboard-card-gradient: linear-gradient(135deg, #edfaff 0%, #b9e1eb 100%);
+}
+
+.dashboard-stat--violet {
+  --dashboard-card-accent: #7855a5;
+  --dashboard-card-gradient: linear-gradient(135deg, #f6f1ff 0%, #d8c7ec 100%);
+}
+
+.dashboard-stat--coral {
+  --dashboard-card-accent: #a95f4b;
+  --dashboard-card-gradient: linear-gradient(135deg, #fff3ef 0%, #f1c5b8 100%);
+}
+
+.dashboard-stat--amber {
+  --dashboard-card-accent: #956a1f;
+  --dashboard-card-gradient: linear-gradient(135deg, #fff8e8 0%, #efd08c 100%);
+}
+
+.dashboard-stat--rose {
+  --dashboard-card-accent: #a4546d;
+  --dashboard-card-gradient: linear-gradient(135deg, #fff1f5 0%, #edc0ce 100%);
+}
+
+.dashboard-stat--indigo {
+  --dashboard-card-accent: #5369a8;
+  --dashboard-card-gradient: linear-gradient(135deg, #f0f3ff 0%, #c5cef0 100%);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.chart-container {
+  width: 100%;
+  height: 320px;
+  min-height: 320px;
+}
+
+.chart-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-stat {
+    transition: none;
+  }
+
+  .dashboard-stat:hover {
+    transform: none;
+  }
+}

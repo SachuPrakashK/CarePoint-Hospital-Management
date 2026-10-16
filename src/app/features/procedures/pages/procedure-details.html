@@ -1,0 +1,93 @@
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Clinical / Procedures & OT / Details</div>
+    <h1>Procedure details</h1>
+    <p class="muted">Clinical schedule, patient, theatre and workflow information.</p>
+  </div>
+</div>
+@if (loading()) {
+  <div class="card state loading-state loading-state--page" role="status" aria-live="polite">Loading procedure details…</div>
+} @else if (error()) {
+  <div class="card error-state" role="alert">
+    {{ error() }} <button class="secondary" type="button" (click)="load()">Retry</button>
+  </div>
+} @else if (record(); as item) {
+  <section class="detail-layout">
+    <article class="card">
+      <div class="section-title">
+        <h2>Procedure information</h2>
+        <app-status-badge [value]="item.status" />
+      </div>
+      <div class="detail-grid">
+        <span
+          ><small>PROCEDURE ID</small><b>{{ display(item.id) }}</b></span
+        ><span
+          ><small>PROCEDURE</small><b>{{ display(item.name) }}</b></span
+        ><span
+          ><small>SCHEDULED</small><b>{{ format(item.scheduledAt) }}</b></span
+        ><span
+          ><small>DURATION</small><b>{{ item.durationMinutes }} minutes</b></span
+        ><span
+          ><small>INDICATION</small><b>{{ display(item.indication) }}</b></span
+        ><span
+          ><small>NOTES</small><b>{{ display(item.notes) }}</b></span
+        >
+      </div>
+    </article>
+    <article class="card">
+      <div class="section-title"><h2>Patient and admission</h2></div>
+      <div class="detail-grid">
+        <span
+          ><small>PATIENT</small><b>{{ item.patientName || 'Not available' }}</b></span
+        ><span
+          ><small>MRN</small><b>{{ display(item.mrn) }}</b></span
+        ><span
+          ><small>ADMISSION</small><b>{{ display(item.admission?.number) }}</b></span
+        ><span
+          ><small>DEPARTMENT</small><b>{{ display(item.admission?.department?.name) }}</b></span
+        >
+      </div>
+    </article>
+    <article class="card">
+      <div class="section-title"><h2>Theatre and clinical team</h2></div>
+      <div class="detail-grid">
+        <span
+          ><small>THEATRE</small><b>{{ item.theatreName || 'Not available' }}</b></span
+        ><span
+          ><small>THEATRE CODE</small><b>{{ display(item.theatre?.code) }}</b></span
+        ><span
+          ><small>SURGEON</small><b>{{ item.doctorName || 'Not available' }}</b></span
+        ><span
+          ><small>TEAM</small
+          ><b>{{ item.team?.length ? item.team.join(', ') : 'Not available' }}</b></span
+        >
+      </div>
+    </article>
+    <article class="card">
+      <div class="section-title"><h2>Clinical documentation</h2></div>
+      <div class="detail-grid">
+        <span
+          ><small>PRE-OP CHECKLIST</small
+          ><b>{{
+            item.preOpChecklist?.length ? item.preOpChecklist.join(', ') : 'Not available'
+          }}</b></span
+        ><span
+          ><small>PROCEDURE NOTES</small><b>{{ display(item.procedureNotes) }}</b></span
+        ><span
+          ><small>POST-OP NOTES</small><b>{{ display(item.postOpNotes) }}</b></span
+        ><span
+          ><small>COMPLICATIONS</small><b>{{ display(item.complications) }}</b></span
+        ><span
+          ><small>CREATED</small><b>{{ format(item.createdAt) }}</b></span
+        ><span
+          ><small>UPDATED</small><b>{{ format(item.updatedAt) }}</b></span
+        >
+      </div>
+    </article>
+  </section>
+} @else {
+  <app-empty-state
+    title="Procedure not found"
+    description="The requested procedure is unavailable."
+  />
+}

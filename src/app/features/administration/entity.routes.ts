@@ -1,1 +1,5 @@
-import { Routes } from '@angular/router'; export const ENTITY_ROUTES:Routes=[{path:'',loadComponent:()=>import('./entity-page').then(m=>m.EntityPage)},{path:'new',loadComponent:()=>import('./entity-page').then(m=>m.EntityPage)}];
+import { Routes } from '@angular/router';
+export const ENTITY_ROUTES: Routes = [
+  { path: '', loadComponent: () => import('./entity-page').then((m) => m.EntityPage) },
+  { path: 'new', loadComponent: () => import('./entity-page').then((m) => m.EntityPage) },
+];

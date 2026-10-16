@@ -1,2 +1,161 @@
-import { Component, computed, inject, input, signal } from '@angular/core'; import { FormsModule } from '@angular/forms'; import { Router } from '@angular/router'; import { InpatientStore } from '../../../core/services/inpatient.store';
-@Component({imports:[FormsModule],template:`@if(admission();as a){<div class="page-head"><div><div class="breadcrumbs">Inpatient / {{a.number}}</div><h1>{{a.patientName}}</h1><p class="muted">{{a.department}} · {{a.attendingDoctor}}</p></div><span class="status">{{a.status}}</span></div><div class="tabs"><button class="active">Admission</button><button>Clinical record</button><button>Nursing</button><button>Medication</button><button>Investigations</button><button>Bed history</button></div><div class="grid-2"><section class="card"><div class="section-title"><h2>Admission details</h2></div><div class="detail-grid"><span><small>ADMISSION NUMBER</small><b>{{a.number}}</b></span><span><small>TYPE</small><b>{{a.type}}</b></span><span><small>INITIAL DIAGNOSIS</small><b>{{a.initialDiagnosis}}</b></span><span><small>REASON</small><b>{{a.reason}}</b></span></div><div class="section-title"><h2>Bed allocation history</h2></div>@for(x of a.allocations;track x.id){<div class="history"><i></i><div><b>{{x.ward}} · Room {{x.room}}</b><small>{{format(x.startedAt)}} → {{x.endedAt?format(x.endedAt):'Current'}}</small></div><span>{{x.reason}}</span></div>}</section><aside class="card actions-panel"><h2>Inpatient actions</h2><label class="field">Transfer to available bed<select [(ngModel)]="targetBed"><option value="">Select bed</option>@for(b of store.availableBeds();track b.id){<option [value]="b.id">{{b.name}} · {{b.ward}}</option>}</select></label><button class="secondary" [disabled]="!targetBed" (click)="transfer()">Transfer patient</button><hr><h3>Discharge patient</h3><label class="field">Final diagnosis<input [(ngModel)]="finalDiagnosis" placeholder="Final diagnosis"></label><label class="field">Treatment summary<textarea [(ngModel)]="treatmentSummary"></textarea></label><label class="field">Condition at discharge<input [(ngModel)]="condition" placeholder="Stable"></label><label class="field">Instructions<textarea [(ngModel)]="instructions"></textarea></label><label class="field">Follow-up<input [(ngModel)]="followUp" placeholder="Follow-up plan"></label><button class="danger" [disabled]="!finalDiagnosis" (click)="discharge()">Complete discharge</button>@if(message()){<p class="error">{{message()}}</p>}</aside></div>}`,styles:[`.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:20px}.detail-grid span{display:grid;gap:5px}.detail-grid small,.history small{color:#6b7d83}.history{display:grid;grid-template-columns:15px 1fr auto;gap:10px;padding:14px 20px;border-bottom:1px solid #e5ecee}.history i{width:9px;height:9px;border-radius:50%;background:#13917a;margin-top:5px}.history div{display:grid;gap:4px}.actions-panel{padding:20px;display:grid;gap:14px;height:max-content}.actions-panel hr{border:0;border-top:1px solid #e0e8ea;width:100%}`]})export class AdmissionDetails{id=input('');readonly store=inject(InpatientStore);private router=inject(Router);readonly admission=computed(()=>this.store.admissions().find(a=>a.id===this.id()));targetBed='';finalDiagnosis='';treatmentSummary='';condition='Stable';instructions='';followUp='';readonly message=signal('');format(v:string){return new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}transfer(){try{this.store.transfer(this.id(),this.targetBed);this.targetBed='';this.message.set('Transfer recorded. Previous allocation was retained.')}catch(e){this.message.set((e as Error).message)}}discharge(){const a=this.admission()!;try{this.store.discharge(a.id,{finalDiagnosis:this.finalDiagnosis,treatmentSummary:this.treatmentSummary,procedures:'See procedure record',investigationSummary:'See verified laboratory and radiology reports',conditionAtDischarge:this.condition,medications:'See discharge prescription',instructions:this.instructions,followUp:this.followUp,attendingDoctor:a.attendingDoctor});void this.router.navigateByUrl('/inpatient')}catch(e){this.message.set((e as Error).message)}}}
+import { Component, effect, inject, input, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { InpatientStore } from '../../../core/services/inpatient.store';
+import { InpatientApiService } from '../../../core/services/inpatient-api.service';
+import { AppDateTimeService } from '../../../core/services/app-date-time.service';
+import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
+import { EmptyState } from '../../../shared/components/empty-state/empty-state';
+
+type DetailTab = 'admission' | 'clinical' | 'nursing' | 'beds' | 'medications' | 'investigations';
+type TabState = { loading: boolean; loaded: boolean; error: string };
+const state = (): TabState => ({ loading: false, loaded: false, error: '' });
+
+@Component({
+  imports: [FormsModule, StatusBadge, EmptyState],
+  templateUrl: './admission-details.html',
+  styleUrl: './admission-details.scss',
+})
+export class AdmissionDetails {
+  readonly id = input('');
+  readonly store = inject(InpatientStore);
+  private api = inject(InpatientApiService);
+  private router = inject(Router);
+  private dates = inject(AppDateTimeService);
+  readonly admission = signal<any | null>(null);
+  readonly loading = signal(true);
+  readonly error = signal('');
+  readonly activeTab = signal<DetailTab>('admission');
+  readonly clinical = signal<any[]>([]);
+  readonly nursing = signal<any>({ notes: [], carePlans: [], intakeOutputs: [] });
+  readonly bedHistory = signal<any[]>([]);
+  readonly medications = signal<any[]>([]);
+  readonly laboratory = signal<any[]>([]);
+  readonly radiology = signal<any[]>([]);
+  readonly tabStates = signal<Record<Exclude<DetailTab, 'admission'>, TabState>>({
+    clinical: state(),
+    nursing: state(),
+    beds: state(),
+    medications: state(),
+    investigations: state(),
+  });
+  targetBed = '';
+  finalDiagnosis = '';
+  treatmentSummary = '';
+  condition = 'Stable';
+  instructions = '';
+  followUp = '';
+  readonly message = signal('');
+  readonly actionSubmitting = signal(false);
+  constructor() {
+    effect(() => {
+      const id = this.id();
+      if (id) void this.loadAdmission(id);
+    });
+  }
+  async loadAdmission(id = this.id()) {
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      this.admission.set(await this.store.loadAdmission(id));
+    } catch {
+      this.error.set('Admission details could not be loaded.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+  format(value?: string | null) {
+    return value ? this.dates.formatDateTime(value) : 'Not available';
+  }
+  display(value: unknown) {
+    return value === null || value === undefined || value === '' ? 'Not available' : String(value);
+  }
+  activeAllocation() {
+    const item = this.admission();
+    return (
+      item?.allocations?.find((allocation: any) => !allocation.endedAt) ?? item?.allocations?.at(-1)
+    );
+  }
+  tabState(tab: DetailTab) {
+    return tab === 'admission' ? state() : this.tabStates()[tab];
+  }
+  private setTabState(tab: Exclude<DetailTab, 'admission'>, changes: Partial<TabState>) {
+    this.tabStates.update((states) => ({ ...states, [tab]: { ...states[tab], ...changes } }));
+  }
+  async selectTab(tab: DetailTab) {
+    this.activeTab.set(tab);
+    if (tab !== 'admission' && !this.tabState(tab).loaded && !this.tabState(tab).loading)
+      await this.loadTab(tab);
+  }
+  async loadTab(tab: DetailTab) {
+    if (tab === 'admission') return;
+    this.setTabState(tab, { loading: true, error: '' });
+    try {
+      if (tab === 'clinical')
+        this.clinical.set((await firstValueFrom(this.api.clinicalRecords(this.id()))).data);
+      if (tab === 'nursing')
+        this.nursing.set((await firstValueFrom(this.api.admissionNursing(this.id()))).data);
+      if (tab === 'beds')
+        this.bedHistory.set((await firstValueFrom(this.api.bedHistory(this.id()))).data);
+      if (tab === 'medications')
+        this.medications.set((await firstValueFrom(this.api.admissionMedications(this.id()))).data);
+      if (tab === 'investigations') {
+        const [labs, radiology] = await Promise.allSettled([
+          firstValueFrom(this.api.admissionLaboratory(this.id())),
+          firstValueFrom(this.api.admissionRadiology(this.id())),
+        ]);
+        if (labs.status === 'fulfilled') this.laboratory.set(labs.value.data);
+        if (radiology.status === 'fulfilled') this.radiology.set(radiology.value.data);
+        if (labs.status === 'rejected' && radiology.status === 'rejected')
+          throw new Error('Forbidden');
+      }
+      this.setTabState(tab, { loaded: true });
+    } catch {
+      this.setTabState(tab, {
+        error: `Unable to load ${tab === 'beds' ? 'bed history' : tab} records.`,
+      });
+    } finally {
+      this.setTabState(tab, { loading: false });
+    }
+  }
+  async transfer() {
+    if (!this.targetBed || this.actionSubmitting()) return;
+    this.actionSubmitting.set(true);
+    try {
+      await this.store.transfer(this.id(), this.targetBed);
+      this.targetBed = '';
+      await this.loadAdmission();
+      this.setTabState('beds', state());
+      if (this.activeTab() === 'beds') await this.loadTab('beds');
+      this.message.set('Transfer recorded.');
+    } catch (error: any) {
+      this.message.set(error?.error?.message ?? error?.message ?? 'Transfer failed.');
+    } finally {
+      this.actionSubmitting.set(false);
+    }
+  }
+  async discharge() {
+    const admission = this.admission();
+    if (!admission || !this.finalDiagnosis.trim() || this.actionSubmitting()) return;
+    this.actionSubmitting.set(true);
+    try {
+      await this.store.discharge(admission.id, {
+        finalDiagnosis: this.finalDiagnosis,
+        treatmentSummary: this.treatmentSummary,
+        procedures: '',
+        investigationSummary: '',
+        conditionAtDischarge: this.condition,
+        medications: '',
+        instructions: this.instructions,
+        followUp: this.followUp,
+        attendingDoctor: admission.attendingDoctor,
+      });
+      void this.router.navigateByUrl('/inpatient');
+    } catch (error: any) {
+      this.message.set(error?.error?.message ?? error?.message ?? 'Discharge failed.');
+    } finally {
+      this.actionSubmitting.set(false);
+    }
+  }
+}

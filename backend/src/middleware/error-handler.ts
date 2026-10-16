@@ -11,12 +11,22 @@ export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
     normalized = new AppError(409, 'A record with these values already exists.', 'CONFLICT');
   }
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    normalized = new AppError(
+      503,
+      'The database service is temporarily unavailable.',
+      'DATABASE_UNAVAILABLE',
+    );
+  }
   const status = normalized?.statusCode ?? 500;
-  if (status >= 500) logger.error({ err: error, requestId: res.getHeader('x-request-id'), path: req.path }, 'Request failed');
+  if (status >= 500)
+    logger.error(
+      { err: error, requestId: res.getHeader('x-request-id'), path: req.path },
+      'Request failed',
+    );
   res.status(status).json({
     message: normalized?.message ?? 'An unexpected error occurred.',
     code: normalized?.code ?? 'INTERNAL_SERVER_ERROR',
     ...(normalized?.errors ? { errors: normalized.errors } : {}),
   });
 };
-
