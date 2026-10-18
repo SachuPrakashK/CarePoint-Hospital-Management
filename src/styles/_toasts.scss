@@ -1,1 +1,19 @@
-.form-api-error,.error-banner{margin:0 22px 16px;padding:10px 12px;border-radius:var(--radius-sm);background:#fff0ee;color:var(--color-danger);font-size:13px}.toast{position:fixed;right:24px;bottom:24px;z-index:var(--z-toast,60);padding:13px 18px;border-radius:var(--radius-sm);background:var(--color-navy-900,#173d48);color:#fff}
+.form-api-error,
+.error-banner {
+  margin: 0 22px 16px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #fff0ee;
+  color: var(--color-danger);
+  font-size: 13px;
+}
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: var(--z-toast, 60);
+  padding: 13px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--mc-primary);
+  color: var(--mc-surface);
+}

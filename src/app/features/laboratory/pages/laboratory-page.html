@@ -1,7 +1,7 @@
 <div class="page-head">
   <div>
     <div class="breadcrumbs">Clinical / Laboratory</div>
-    <h1>Laboratory worklist</h1>
+    <h1>Laboratory Worklist</h1>
     <p class="muted">Orders, samples, results and verification.</p>
   </div>
   <div class="head-actions">
@@ -10,22 +10,25 @@
   </div>
 </div>
 <section class="stats">
-  <article class="card stat lab-stat lab-stat--blue">
-    <span class="muted">Samples pending</span>
-    <div class="value">{{ count('Ordered') }}</div>
-  </article>
-  <article class="card stat lab-stat lab-stat--purple">
-    <span class="muted">Processing</span>
-    <div class="value">{{ count('Processing') }}</div>
-  </article>
-  <article class="card stat lab-stat lab-stat--amber">
-    <span class="muted">Awaiting verification</span>
-    <div class="value">{{ count('Result Entered') }}</div>
-  </article>
-  <article class="card stat lab-stat lab-stat--green">
-    <span class="muted">Completed today</span>
-    <div class="value">{{ count('Completed') }}</div>
-  </article>
+  <app-summary-card title="Samples Pending" [value]="count('Ordered')" icon="lab" variant="blue" />
+  <app-summary-card
+    title="Processing"
+    [value]="count('Processing')"
+    icon="clock"
+    variant="purple"
+  />
+  <app-summary-card
+    title="Awaiting Verification"
+    [value]="count('Result Entered')"
+    icon="audit"
+    variant="amber"
+  />
+  <app-summary-card
+    title="Completed Today"
+    [value]="count('Completed')"
+    icon="check-circle"
+    variant="green"
+  />
 </section>
 <section class="card">
   <div class="toolbar">
@@ -35,24 +38,100 @@
       (valueChange)="searchChanged($event)"
     />
     <div class="toolbar-actions">
-      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
-        <button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())"><app-icon name="filter" [size]="17" /> Filters @if (activeFilterCount()) { ({{ activeFilterCount() }}) }</button>
-        @if (filtersOpen()) { <div class="filter-panel"><div class="filter-grid">
-          <label class="field"><span>Patient</span><select [value]="patientId()" (change)="patientId.set($any($event.target).value)"><option value="">All patients</option>@for (p of patients.patients(); track p.id) { <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option> }</select></label>
-          <label class="field"><span>Doctor</span><select [value]="doctorId()" (change)="doctorId.set($any($event.target).value)"><option value="">All doctors</option>@for (d of doctors(); track d.id) { <option [value]="d.id">{{ d.firstName }} {{ d.lastName }}</option> }</select></label>
-          <label class="field"><span>Test</span><select [value]="testDefinitionId()" (change)="testDefinitionId.set($any($event.target).value)"><option value="">All tests</option>@for (t of tests(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }</select></label>
-          <label class="field"><span>Status</span><select [value]="status()" (change)="status.set($any($event.target).value)"><option value="">All statuses</option>@for (s of ['Ordered','Sample Collected','Processing','Result Entered','Verified','Completed','Cancelled']; track s) { <option [value]="s">{{ s }}</option> }</select></label>
-          <label class="field"><span>Priority</span><select [value]="priority()" (change)="priority.set($any($event.target).value)"><option value="">All priorities</option><option>Routine</option><option>Urgent</option><option>STAT</option></select></label>
-          <label class="field"><span>From</span><input type="date" [value]="dateFrom()" (change)="dateFrom.set($any($event.target).value)" /></label>
-          <label class="field"><span>To</span><input type="date" [value]="dateTo()" (change)="dateTo.set($any($event.target).value)" /></label>
-        </div><div class="filter-actions"><button type="button" class="secondary" (click)="clearFilters()">Clear all</button><button type="button" class="primary" (click)="filter()">Apply filters</button></div></div> }
-      </div>
-      <button type="button" class="secondary" [disabled]="!total() || exporting()" (click)="exportOrders()"><app-icon name="download" [size]="17" /> {{ exporting() ? 'Exporting...' : 'Export' }}</button>
+      <app-column-config
+        [columns]="columns"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+      <app-shared-filter
+        [activeCount]="activeFilterCount()"
+        [loading]="loading()"
+        (applied)="filter()"
+        (cleared)="clearFilters()"
+      >
+        <label class="field"
+          ><span>Patient</span
+          ><select [value]="patientId()" (change)="patientId.set($any($event.target).value)">
+            <option value="">All patients</option>
+            @for (p of patients.patients(); track p.id) {
+              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
+            }
+          </select></label
+        >
+        <label class="field"
+          ><span>Doctor</span
+          ><select [value]="doctorId()" (change)="doctorId.set($any($event.target).value)">
+            <option value="">All doctors</option>
+            @for (d of doctors(); track d.id) {
+              <option [value]="d.id">{{ d.firstName }} {{ d.lastName }}</option>
+            }
+          </select></label
+        >
+        <label class="field"
+          ><span>Test</span
+          ><select
+            [value]="testDefinitionId()"
+            (change)="testDefinitionId.set($any($event.target).value)"
+          >
+            <option value="">All tests</option>
+            @for (t of tests(); track t.id) {
+              <option [value]="t.id">{{ t.name }}</option>
+            }
+          </select></label
+        >
+        <label class="field"
+          ><span>Status</span
+          ><select [value]="status()" (change)="status.set($any($event.target).value)">
+            <option value="">All statuses</option>
+            @for (
+              s of [
+                'Ordered',
+                'Sample Collected',
+                'Processing',
+                'Result Entered',
+                'Verified',
+                'Completed',
+                'Cancelled',
+              ];
+              track s
+            ) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select></label
+        >
+        <label class="field"
+          ><span>Priority</span
+          ><select [value]="priority()" (change)="priority.set($any($event.target).value)">
+            <option value="">All priorities</option>
+            <option>Routine</option>
+            <option>Urgent</option>
+            <option>STAT</option>
+          </select></label
+        >
+        <label class="field"
+          ><span>From</span
+          ><input
+            type="date"
+            [value]="dateFrom()"
+            (change)="dateFrom.set($any($event.target).value)"
+        /></label>
+        <label class="field"
+          ><span>To</span
+          ><input type="date" [value]="dateTo()" (change)="dateTo.set($any($event.target).value)"
+        /></label>
+      </app-shared-filter>
+      <app-shared-export
+        [disabled]="!total()"
+        [exporting]="exporting()"
+        (exportRequested)="exportOrders()"
+      />
     </div>
   </div>
   @if (loading()) {
-    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading...</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">
+      Loading...
+    </div>
   } @else if (error()) {
     <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
   } @else if (!items().length) {
@@ -65,44 +144,127 @@
       <table>
         <thead>
           <tr>
-            @if(columnVisible('order')){<th [attr.aria-sort]="ariaSort('number')"><app-table-sort-header label="Order" field="number" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('patient')"><app-table-sort-header label="Patient" field="patient" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('tests')){<th>Tests</th>}
-            @if(columnVisible('priority')){<th [attr.aria-sort]="ariaSort('priority')"><app-table-sort-header label="Priority" field="priority" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('sample')){<th [attr.aria-sort]="ariaSort('sampleType')"><app-table-sort-header label="Sample" field="sampleType" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('action')){<th>Action</th>}
+            @if (columnVisible('order')) {
+              <th [attr.aria-sort]="ariaSort('number')">
+                <app-table-sort-header
+                  label="Order"
+                  field="number"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('patient')) {
+              <th [attr.aria-sort]="ariaSort('patient')">
+                <app-table-sort-header
+                  label="Patient"
+                  field="patient"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('tests')) {
+              <th>Tests</th>
+            }
+            @if (columnVisible('priority')) {
+              <th [attr.aria-sort]="ariaSort('priority')">
+                <app-table-sort-header
+                  label="Priority"
+                  field="priority"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('sample')) {
+              <th [attr.aria-sort]="ariaSort('sampleType')">
+                <app-table-sort-header
+                  label="Sample"
+                  field="sampleType"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('status')) {
+              <th [attr.aria-sort]="ariaSort('status')">
+                <app-table-sort-header
+                  label="Status"
+                  field="status"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('action')) {
+              <th>Action</th>
+            }
           </tr>
         </thead>
         <tbody>
           @for (o of items(); track o.id) {
-            <tr class="clickable-row" tabindex="0" (click)="view(o.id)" (keydown.enter)="view(o.id)" (keydown.space)="$event.preventDefault(); view(o.id)">
-              @if(columnVisible('order')){<td>
-                <b>{{ o.number }}</b
-                ><br /><small>{{ o.doctor }}</small>
-              </td>}
-              @if(columnVisible('patient')){<td>{{ o.patientName }}</td>}
-              @if(columnVisible('tests')){<td>{{ o.tests.join(', ') }}</td>}
-              @if(columnVisible('priority')){<td>
-                <span class="status" [class.danger]="o.priority === 'STAT'">{{ o.priority }}</span>
-              </td>}
-              @if(columnVisible('sample')){<td>{{ o.sampleType }}</td>}
-              @if(columnVisible('status')){<td>
-                <app-status-badge [value]="o.status" />
-              </td>}
-              @if(columnVisible('action')){<td class="actions" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
-                <app-actions-menu
-                  [id]="o.id"
-                  [label]="o.number + ' actions'"
-                  [canEdit]="o.status === 'Ordered' && auth.has('laboratory.create')"
-                  [canDelete]="false"
-                  [canStatus]="(o.status === 'Ordered' && auth.has('laboratory.collect')) || ((o.status === 'Sample Collected' || o.status === 'Processing' || o.status === 'Result Entered') && auth.has(o.status === 'Result Entered' ? 'laboratory.verify' : 'laboratory.result'))"
-                  [statusLabel]="workflowLabel(o)"
-                  (view)="view(o.id)"
-                  (edit)="open('edit', o)"
-                  (statusChange)="workflow(o)"
-                />
-              </td>}
+            <tr
+              class="clickable-row"
+              tabindex="0"
+              (click)="view(o.id)"
+              (keydown.enter)="view(o.id)"
+              (keydown.space)="$event.preventDefault(); view(o.id)"
+            >
+              @if (columnVisible('order')) {
+                <td>
+                  <b>{{ o.number }}</b
+                  ><br /><small>{{ o.doctor }}</small>
+                </td>
+              }
+              @if (columnVisible('patient')) {
+                <td>{{ o.patientName }}</td>
+              }
+              @if (columnVisible('tests')) {
+                <td>{{ o.tests.join(', ') }}</td>
+              }
+              @if (columnVisible('priority')) {
+                <td>
+                  <span class="status" [class.danger]="o.priority === 'STAT'">{{
+                    o.priority
+                  }}</span>
+                </td>
+              }
+              @if (columnVisible('sample')) {
+                <td>{{ o.sampleType }}</td>
+              }
+              @if (columnVisible('status')) {
+                <td>
+                  <app-status-badge [value]="o.status" />
+                </td>
+              }
+              @if (columnVisible('action')) {
+                <td
+                  class="actions"
+                  (click)="$event.stopPropagation()"
+                  (keydown)="$event.stopPropagation()"
+                >
+                  <app-actions-menu
+                    [id]="o.id"
+                    [label]="o.number + ' actions'"
+                    [canEdit]="o.status === 'Ordered' && auth.has('laboratory.create')"
+                    [canDelete]="false"
+                    [canStatus]="
+                      (o.status === 'Ordered' && auth.has('laboratory.collect')) ||
+                      ((o.status === 'Sample Collected' ||
+                        o.status === 'Processing' ||
+                        o.status === 'Result Entered') &&
+                        auth.has(
+                          o.status === 'Result Entered' ? 'laboratory.verify' : 'laboratory.result'
+                        ))
+                    "
+                    [statusLabel]="workflowLabel(o)"
+                    (view)="view(o.id)"
+                    (edit)="open('edit', o)"
+                    (statusChange)="workflow(o)"
+                  />
+                </td>
+              }
             </tr>
           }
         </tbody>
@@ -125,7 +287,13 @@
 }
 @if (formMode()) {
   <app-modal
-    [title]="formMode() === 'create' ? 'Create laboratory order' : formMode() === 'edit' ? 'Edit laboratory order' : 'Enter laboratory result'"
+    [title]="
+      formMode() === 'create'
+        ? 'Create laboratory order'
+        : formMode() === 'edit'
+          ? 'Edit laboratory order'
+          : 'Enter laboratory result'
+    "
     [size]="formMode() === 'result' ? 'md' : 'xl'"
     [dirty]="dirty()"
     (closed)="close()"

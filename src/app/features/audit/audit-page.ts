@@ -5,14 +5,14 @@ import { SearchField } from '../../shared/components/search/search-field';
 import { AppPagination } from '../../shared/components/pagination/app-pagination';
 import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
-import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
-import { AppIcon } from '../../shared/components/icon/app-icon';
+import { SharedFilter } from '../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../shared/components/export/shared-export';
 import { TableSortHeader } from '../../shared/components/table-sort-header/table-sort-header';
 import { ColumnConfig } from '../../shared/components/column-config/column-config';
 import { TableColumnDefinition, TableSort } from '../../shared/models/table.models';
 import { TablePreferencesService } from '../../core/services/table-preferences.service';
 @Component({
-  imports: [SearchField, AppPagination, EmptyState, StatusBadge, ClickOutsideDirective, AppIcon, TableSortHeader, ColumnConfig],
+  imports: [SearchField, AppPagination, EmptyState, StatusBadge, SharedFilter, SharedExport, TableSortHeader, ColumnConfig],
   templateUrl: './audit-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -26,7 +26,6 @@ export class AuditPage {
   readonly action = signal('');
   readonly from = signal('');
   readonly to = signal('');
-  readonly filtersOpen = signal(false);
   readonly page = signal(1);
   readonly pageSize = signal(10);
   readonly selected = signal<any | null>(null);
@@ -80,7 +79,6 @@ export class AuditPage {
   }
   apply() {
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.load();
   }
   clear() {

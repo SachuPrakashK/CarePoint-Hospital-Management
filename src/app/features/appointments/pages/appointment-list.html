@@ -41,21 +41,7 @@
       />
       <div class="toolbar-actions">
         <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-        <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
-          <button
-            type="button"
-            class="secondary button-icon"
-            [attr.aria-expanded]="filtersOpen()"
-            (click)="filtersOpen.update((open) => !open)"
-          >
-            <app-icon name="filter" [size]="17" />Filters
-            @if (activeFilterCount()) {
-              ({{ activeFilterCount() }})
-            }
-          </button>
-          @if (filtersOpen()) {
-            <div class="filter-panel">
-              <div class="filter-grid">
+        <app-shared-filter [activeCount]="activeFilterCount()" [loading]="loading()" (applied)="applyFilters()" (cleared)="clearFilters()">
                 <label class="field department"
                   ><span class="form-label">Department</span
                   ><select
@@ -97,25 +83,8 @@
                     <option value="CANCELLED">Cancelled</option>
                   </select></label
                 >
-              </div>
-              <div class="filter-actions">
-                <button type="button" class="secondary" (click)="clearFilters()">
-                  Clear Filters</button
-                ><button type="button" class="primary" (click)="applyFilters()">
-                  Apply Filters
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-        <button
-          type="button"
-          class="secondary button-icon"
-          [disabled]="total() === 0 || exporting()"
-          (click)="export()"
-        >
-          <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
-        </button>
+        </app-shared-filter>
+        <app-shared-export [disabled]="total() === 0" [exporting]="exporting()" (exportRequested)="export()" />
       </div>
     </div>
     @if (loading()) {

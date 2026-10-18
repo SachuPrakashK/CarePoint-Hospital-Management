@@ -19,18 +19,7 @@
     <app-search-field [placeholder]="'Search ' + kind" (valueChange)="query($event)" />
     <div class="toolbar-actions">
       <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div
-        class="filter-anchor"
-        appClickOutside
-        (appClickOutside)="filtersOpen.set(false)"
-        (click)="$event.stopPropagation()"
-      >
-        <button class="secondary button-icon" type="button" (click)="filtersOpen.set(!filtersOpen())">
-          <app-icon name="filter" [size]="17" /> Filters
-        </button>
-        @if (filtersOpen()) {
-          <div class="filter-panel">
-            <div class="filter-grid">
+      <app-shared-filter [activeCount]="(department() ? 1 : 0) + (specialization() ? 1 : 0) + (status() ? 1 : 0)" [loading]="loading()" (applied)="apply()" (cleared)="clear()">
               <label class="field"
                 ><span>Department</span
                 ><select
@@ -66,23 +55,9 @@
                   <option value="LOCKED">Locked</option>
                 </select></label
               >
-            </div>
-            <div class="filter-actions">
-              <button class="ghost" type="button" (click)="clear()">Clear</button
-              ><button class="primary" type="button" (click)="apply()">Apply</button>
-            </div>
-          </div>
-        }
-      </div>
+      </app-shared-filter>
       @if (can('export')) {
-        <button
-          class="secondary button-icon"
-          type="button"
-          [disabled]="exporting() || !total()"
-          (click)="export()"
-        >
-          <app-icon name="download" [size]="17" /> {{ exporting() ? 'Exporting...' : 'Export' }}
-        </button>
+        <app-shared-export [disabled]="!total()" [exporting]="exporting()" (exportRequested)="export()" />
       }
     </div>
   </div>

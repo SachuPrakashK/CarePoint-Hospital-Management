@@ -5,7 +5,9 @@ export const authGuard: CanActivateFn = (_, state) => {
   const auth = inject(AuthStore);
   return (
     auth.authenticated() ||
-    inject(Router).createUrlTree(['/auth/login'], { queryParams: { returnUrl: state.url } })
+    inject(Router).createUrlTree(['/auth/login'], {
+      queryParams: { returnUrl: state.url },
+    })
   );
 };
 export const guestGuard: CanActivateFn = () =>

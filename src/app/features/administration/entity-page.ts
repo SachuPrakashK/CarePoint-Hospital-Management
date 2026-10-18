@@ -13,13 +13,13 @@ import { SearchField } from '../../shared/components/search/search-field';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
 import { DisplayValuePipe } from '../../shared/pipes/display-value.pipe';
 import { AppIcon } from '../../shared/components/icon/app-icon';
-import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../shared/components/filters/shared-filter';
 import { TableSortHeader } from '../../shared/components/table-sort-header/table-sort-header';
 import { ColumnConfig } from '../../shared/components/column-config/column-config';
 import { TableColumnDefinition, TableSort } from '../../shared/models/table.models';
 import { TablePreferencesService } from '../../core/services/table-preferences.service';
 @Component({
-  imports: [RouterLink, AppModal, AppPagination, EmptyState, MasterForm, AppActionsMenu, SearchField, StatusBadge, DisplayValuePipe, AppIcon, ClickOutsideDirective, TableSortHeader, ColumnConfig],
+  imports: [RouterLink, AppModal, AppPagination, EmptyState, MasterForm, AppActionsMenu, SearchField, StatusBadge, DisplayValuePipe, AppIcon, SharedFilter, TableSortHeader, ColumnConfig],
   templateUrl: './entity-page.html',
 })
 export class EntityPage {
@@ -75,7 +75,6 @@ export class EntityPage {
   readonly search = signal('');
   readonly status = signal('');
   readonly category = signal('');
-  readonly filtersOpen = signal(false);
   readonly page = signal(1);
   readonly pageSize = signal(10);
   readonly total = signal(0);
@@ -112,7 +111,6 @@ export class EntityPage {
   }
   queryChanged() {
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.load();
   }
   clearFilters() { this.status.set(''); this.category.set(''); this.queryChanged(); }

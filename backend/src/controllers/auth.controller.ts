@@ -16,6 +16,9 @@ export const logout: RequestHandler = asyncHandler(async (req, res) => {
 export const me: RequestHandler = asyncHandler(async (req, res) => {
   res.json({ data: await authService.me(req.auth!.userId) });
 });
+export const passwordPolicy: RequestHandler = asyncHandler(async (_req, res) => {
+  res.json({ data: await authService.passwordPolicy() });
+});
 export const refresh: RequestHandler = asyncHandler(async (req, res) =>
   res.json({
     data: await authService.refresh(req.body.refresh_token, {

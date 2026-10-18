@@ -7,12 +7,12 @@ import { ConfirmationService } from '../../core/services/confirmation.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AppActionsMenu } from '../../shared/components/actions-menu/app-actions-menu';
 import { EmptyState } from '../../shared/components/empty-state/empty-state';
-import { AppIcon } from '../../shared/components/icon/app-icon';
 import { AppModal } from '../../shared/components/modal/app-modal';
 import { AppPagination } from '../../shared/components/pagination/app-pagination';
 import { SearchField } from '../../shared/components/search/search-field';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
-import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../shared/components/export/shared-export';
 import {
   StaffDirectoryApiService,
   StaffKind,
@@ -25,12 +25,12 @@ import { TableSortHeader } from '../../shared/components/table-sort-header/table
   imports: [
     AppActionsMenu,
     EmptyState,
-    AppIcon,
     AppModal,
     AppPagination,
     SearchField,
     StatusBadge,
-    ClickOutsideDirective,
+    SharedFilter,
+    SharedExport,
     StaffForm,
     TableSortHeader,ColumnConfig,
   ],
@@ -57,7 +57,6 @@ export class StaffPage {
   readonly department = signal('');
   readonly specialization = signal('');
   readonly status = signal('');
-  readonly filtersOpen = signal(false);
   readonly page = signal(1);
   readonly pageSize = signal(10);
   readonly total = signal(0);
@@ -106,7 +105,6 @@ export class StaffPage {
   }
   apply() {
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.load();
   }
   clear() {

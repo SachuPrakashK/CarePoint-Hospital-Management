@@ -1,0 +1,12 @@
+<article class="summary-card summary-card--{{ variant() }}">
+  <div class="summary-card__content">
+    <span class="summary-card__title">{{ title() }}</span
+    ><strong class="summary-card__value">{{ value() }}</strong>
+    @if (note()) {
+      <span class="summary-card__note">{{ note() }}</span>
+    }
+  </div>
+  <span class="summary-card__icon" aria-hidden="true"
+    ><app-icon [name]="icon()" [size]="20"
+  /></span>
+</article>

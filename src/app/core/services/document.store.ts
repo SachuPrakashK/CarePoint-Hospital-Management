@@ -1,9 +1,16 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { HttpEventType, HttpResponse } from '@angular/common/http';
+import { filter, firstValueFrom, map, tap } from 'rxjs';
 import { ManagedDocument } from '../../shared/models/operations.models';
-import { DocumentApiService } from './document-api.service';
-const ALLOWED = new Set(['application/pdf', 'image/jpeg', 'image/png', 'text/plain']);
-const MAX_SIZE = 10 * 1024 * 1024;
+import { ApiDoc, DocumentApiService } from './document-api.service';
+export const DOCUMENT_ALLOWED_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'text/plain',
+] as const;
+export const DOCUMENT_MAX_SIZE = 10 * 1024 * 1024;
+const ALLOWED = new Set<string>(DOCUMENT_ALLOWED_TYPES);
 @Injectable({ providedIn: 'root' })
 export class DocumentStore {
   private api = inject(DocumentApiService);
@@ -16,14 +23,33 @@ export class DocumentStore {
   readonly total = signal(0);
   readonly totalPages = signal(0);
   validate(file: File) {
-    if (file.size > MAX_SIZE) throw new Error('File must be 10 MB or smaller.');
+    if (file.size > DOCUMENT_MAX_SIZE) throw new Error('File must be 10 MB or smaller.');
     if (!ALLOWED.has(file.type)) throw new Error('Only PDF, JPEG, PNG and text files are allowed.');
   }
-  async add(file: File, ownerType: string, ownerId: string, sensitive = true) {
+  async add(
+    file: File,
+    ownerType: string,
+    ownerId: string,
+    sensitive = true,
+    onProgress?: (progress: number | null) => void,
+  ) {
     this.validate(file);
     this.loading.set(true);
     try {
-      const r = await firstValueFrom(this.api.upload(file, ownerType, ownerId, sensitive));
+      const r = await firstValueFrom(
+        this.api.upload(file, ownerType, ownerId, sensitive).pipe(
+          tap((event) => {
+            if (event.type === HttpEventType.UploadProgress) {
+              onProgress?.(event.total ? Math.round((event.loaded / event.total) * 100) : null);
+            }
+          }),
+          filter(
+            (event): event is HttpResponse<{ data: ApiDoc }> =>
+              event.type === HttpEventType.Response,
+          ),
+          map((event) => event.body!),
+        ),
+      );
       const item = this.api.normalize(r.data);
       this.state.update((v) => [item, ...v]);
       return item;
@@ -41,8 +67,8 @@ export class DocumentStore {
     search?: string;
     ownerType?: string;
     mimeType?: string;
-    sortBy?:string;
-    sortOrder?:'asc'|'desc';
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) {
     this.loading.set(true);
     this.error.set(null);

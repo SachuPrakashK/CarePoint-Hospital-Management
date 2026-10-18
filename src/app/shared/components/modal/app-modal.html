@@ -7,9 +7,18 @@
     (click)="$event.stopPropagation()"
   >
     <div class="crud-modal__header">
-      <div>
-        <h2 id="shared-modal-title">{{ title() }}</h2>
-        @if (description()) { <p>{{ description() }}</p> }
+      <div class="crud-modal__heading">
+        @if (icon()) {
+          <span class="crud-modal__header-icon" aria-hidden="true"
+            ><app-icon [name]="icon()" [size]="21"
+          /></span>
+        }
+        <div>
+          <h2 id="shared-modal-title">{{ title() }}</h2>
+          @if (description()) {
+            <p>{{ description() }}</p>
+          }
+        </div>
       </div>
       <button class="modal-close" type="button" aria-label="Close" (click)="requestClose()">
         <app-icon name="close" />

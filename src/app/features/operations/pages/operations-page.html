@@ -1,15 +1,425 @@
-<div class="page-head"><div><div class="breadcrumbs">Operations / Inventory</div><h1>Inventory & operations</h1><p class="muted">Hospital supplies, procurement, suppliers and ambulance fleet.</p></div></div>
-<div class="tabs"><button [class.active]="tab()==='inventory'" (click)="selectTab('inventory')">General inventory</button><button [class.active]="tab()==='procurement'" (click)="selectTab('procurement')">Procurement</button><button [class.active]="tab()==='suppliers'" (click)="selectTab('suppliers')">Suppliers</button><button [class.active]="tab()==='ambulance'" (click)="selectTab('ambulance')">Ambulance</button><button [class.active]="tab()==='notifications'" (click)="selectTab('notifications')">Notifications ({{notifications.unreadCount()}})</button></div>
-@if(tableTab()){<section class="card"><div class="toolbar"><app-search-field [placeholder]="'Search '+tab()" [value]="search()" (valueChange)="query($event)"/><div class="toolbar-actions"><app-column-config [columns]="columns()" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()"/>@if(tab()==='inventory'){<button class="primary" (click)="open('inventory')">+ Add item</button>}@if(tab()==='procurement'){<button class="primary" (click)="open('purchase')">+ Purchase request</button>}@if(tab()==='suppliers'){<button class="primary" (click)="open('supplier')">+ Add supplier</button>}</div></div>
-@if(tableLoading()){<div class="loading-state loading-state--table" role="status" aria-live="polite">Loading operations records...</div>}@else if(tableError()){<div class="error-state">{{tableError()}} <button (click)="loadTable()">Retry</button></div>}@else if(!rows().length){<div class="empty">No {{tab()}} records found.</div>}@else{<div class="table-wrap"><table><thead><tr>
-@if(tab()==='inventory'){@if(columnVisible('item')){<th [attr.aria-sort]="ariaSort('name')"><app-table-sort-header label="Item" field="name" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('category')){<th [attr.aria-sort]="ariaSort('category')"><app-table-sort-header label="Category" field="category" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('store')){<th>Store</th>}@if(columnVisible('unit')){<th [attr.aria-sort]="ariaSort('unit')"><app-table-sort-header label="Unit" field="unit" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('stock')){<th [attr.aria-sort]="ariaSort('quantity')"><app-table-sort-header label="Stock" field="quantity" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('reorder')){<th [attr.aria-sort]="ariaSort('reorderLevel')"><app-table-sort-header label="Reorder" field="reorderLevel" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('alert')){<th>Alert</th>}}
-@else if(tab()==='procurement'){@if(columnVisible('po')){<th [attr.aria-sort]="ariaSort('number')"><app-table-sort-header label="PO" field="number" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('supplier')){<th [attr.aria-sort]="ariaSort('supplier')"><app-table-sort-header label="Supplier" field="supplier" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('item')){<th [attr.aria-sort]="ariaSort('item')"><app-table-sort-header label="Item" field="item" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('ordered')){<th [attr.aria-sort]="ariaSort('quantity')"><app-table-sort-header label="Ordered" field="quantity" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('received')){<th [attr.aria-sort]="ariaSort('receivedQuantity')"><app-table-sort-header label="Received" field="receivedQuantity" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('value')){<th [attr.aria-sort]="ariaSort('unitPrice')"><app-table-sort-header label="Unit price" field="unitPrice" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('actions')){<th>Actions</th>}}
-@else{@if(columnVisible('supplier')){<th [attr.aria-sort]="ariaSort('name')"><app-table-sort-header label="Supplier" field="name" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('contact')){<th [attr.aria-sort]="ariaSort('contactPerson')"><app-table-sort-header label="Contact person" field="contactPerson" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('phone')){<th [attr.aria-sort]="ariaSort('phone')"><app-table-sort-header label="Phone" field="phone" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('email')){<th [attr.aria-sort]="ariaSort('email')"><app-table-sort-header label="Email" field="email" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('tax')){<th [attr.aria-sort]="ariaSort('taxNumber')"><app-table-sort-header label="Tax number" field="taxNumber" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('status')){<th>Status</th>}}
-</tr></thead><tbody>@for(item of rows();track item.id){
-@if(tab()==='inventory'){<tr class="clickable-row" (click)="open('inventory',item)">@if(columnVisible('item')){<td><b>{{item.name}}</b></td>}@if(columnVisible('category')){<td>{{item.category}}</td>}@if(columnVisible('store')){<td>{{item.store}}</td>}@if(columnVisible('unit')){<td>{{item.unit}}</td>}@if(columnVisible('stock')){<td>{{item.quantity}}</td>}@if(columnVisible('reorder')){<td>{{item.reorderLevel}}</td>}@if(columnVisible('alert')){<td><span class="status" [class.danger]="item.quantity<=item.reorderLevel">{{item.quantity<=item.reorderLevel?'Low stock':'Healthy'}}</span></td>}</tr>}
-@else if(tab()==='procurement'){<tr>@if(columnVisible('po')){<td>{{item.number}}</td>}@if(columnVisible('supplier')){<td>{{item.supplier?.name}}</td>}@if(columnVisible('item')){<td>{{item.medicine?.name||item.inventoryItem?.name}}</td>}@if(columnVisible('ordered')){<td>{{item.quantity}}</td>}@if(columnVisible('received')){<td>{{item.receivedQuantity}}</td>}@if(columnVisible('value')){<td>₹{{item.quantity*item.unitPrice}}</td>}@if(columnVisible('status')){<td><app-status-badge [value]="item.status"/></td>}@if(columnVisible('actions')){<td>@if(item.status==='Ordered'||item.status==='Partially Received'){<button class="primary" (click)="receive(item.id,item.quantity-item.receivedQuantity)">Receive goods</button>}</td>}</tr>}
-@else{<tr class="clickable-row" (click)="open('supplier',item)">@if(columnVisible('supplier')){<td><b>{{item.name}}</b></td>}@if(columnVisible('contact')){<td>{{item.contactPerson}}</td>}@if(columnVisible('phone')){<td>{{item.phone}}</td>}@if(columnVisible('email')){<td>{{item.email}}</td>}@if(columnVisible('tax')){<td>{{item.taxNumber}}</td>}@if(columnVisible('status')){<td><app-status-badge value="Active"/></td>}</tr>}}
-</tbody></table></div>}<app-pagination [loading]="tableLoading()" [page]="page()" [pageSize]="pageSize()" [totalItems]="total()" [totalPages]="totalPages()" [itemLabel]="tab()" (pageChange)="go($event)" (pageSizeChange)="resize($event)"/></section>}
-@else if(tab()==='ambulance'){<div class="page-actions"><button class="primary" (click)="open('ambulance')">+ Add ambulance</button></div><section class="stats">@for(a of store.ambulances();track a.id){<article class="card stat" (click)="open('ambulance',a)"><span class="muted">{{a.vehicleType}}</span><div class="value vehicle">{{a.number}}</div><p>{{a.registration}} · {{a.driver}}</p><app-status-badge [value]="a.status"/></article>}</section><section class="card booking"><div class="section-title"><h2>New ambulance booking</h2></div><div class="form-grid"><label class="field"><span>Patient</span><select [(ngModel)]="patientId"><option value="">Select patient</option>@for(p of patients.patients();track p.id){<option [value]="p.id">{{p.firstName}} {{p.lastName}}</option>}</select></label><label class="field"><span>Available vehicle</span><select [(ngModel)]="ambulanceId"><option value="">Assign later</option>@for(a of store.ambulances();track a.id){@if(a.status==='Available'){<option [value]="a.id">{{a.number}} · {{a.vehicleType}}</option>}}</select></label><label class="field"><span>Pickup</span><input [(ngModel)]="pickup"/></label><label class="field"><span>Destination</span><input [(ngModel)]="destination"/></label><label class="field"><span>Charges</span><input type="number" [(ngModel)]="charges"/></label></div><div class="form-actions"><button class="primary" (click)="book()">Book ambulance</button></div></section>}
-@else{<section class="card"><div class="section-title"><h2>Notification center</h2></div>@for(n of notifications.notifications();track n.id){<article class="notification" [class.unread]="!n.isRead" (click)="notifications.markRead(n)"><span class="notice-icon">!</span><div><b>{{n.title}}</b><p>{{n.message}}</p><small>{{format(n.createdAt)}}</small></div></article>}@empty{<div class="empty">No notifications.</div>}</section>}
-@if(message()){<div class="toast">{{message()}}</div>}@if(formKind()){<app-modal [title]="title()" size="lg" [dirty]="formDirty()" (closed)="close()"><app-operations-form [kind]="formKind()!" [entity]="editing()" (dirtyChanged)="formDirty.set($event)" (saved)="saved();loadTable()"/></app-modal>}
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Operations / Inventory</div>
+    <h1>Inventory & Operations</h1>
+    <p class="muted">Hospital supplies, procurement, suppliers and ambulance fleet.</p>
+  </div>
+</div>
+<div class="tabs">
+  <button [class.active]="tab() === 'inventory'" (click)="selectTab('inventory')">
+    General inventory</button
+  ><button [class.active]="tab() === 'procurement'" (click)="selectTab('procurement')">
+    Procurement</button
+  ><button [class.active]="tab() === 'suppliers'" (click)="selectTab('suppliers')">Suppliers</button
+  ><button [class.active]="tab() === 'ambulance'" (click)="selectTab('ambulance')">Ambulance</button
+  ><button [class.active]="tab() === 'notifications'" (click)="selectTab('notifications')">
+    Notifications ({{ notifications.unreadCount() }})
+  </button>
+</div>
+@if (tableTab()) {
+  <section class="card">
+    <div class="toolbar">
+      <app-search-field
+        [placeholder]="'Search ' + tab()"
+        [value]="search()"
+        (valueChange)="query($event)"
+      />
+      <div class="toolbar-actions">
+        <app-column-config
+          [columns]="columns()"
+          [visible]="visibleColumns()"
+          (apply)="applyColumns($event)"
+          (reset)="resetColumns()"
+        />
+        @if (tab() === 'inventory') {
+          <button class="primary" (click)="open('inventory')">+ Add item</button>
+        }
+        @if (tab() === 'procurement') {
+          <button class="primary" (click)="open('purchase')">+ Purchase request</button>
+        }
+        @if (tab() === 'suppliers') {
+          <button class="primary" (click)="open('supplier')">+ Add supplier</button>
+        }
+      </div>
+    </div>
+    @if (tableLoading()) {
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">
+        Loading operations records...
+      </div>
+    } @else if (tableError()) {
+      <div class="error-state">{{ tableError() }} <button (click)="loadTable()">Retry</button></div>
+    } @else if (!rows().length) {
+      <div class="empty">No {{ tab() }} records found.</div>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              @if (tab() === 'inventory') {
+                @if (columnVisible('item')) {
+                  <th [attr.aria-sort]="ariaSort('name')">
+                    <app-table-sort-header
+                      label="Item"
+                      field="name"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('category')) {
+                  <th [attr.aria-sort]="ariaSort('category')">
+                    <app-table-sort-header
+                      label="Category"
+                      field="category"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('store')) {
+                  <th>Store</th>
+                }
+                @if (columnVisible('unit')) {
+                  <th [attr.aria-sort]="ariaSort('unit')">
+                    <app-table-sort-header
+                      label="Unit"
+                      field="unit"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('stock')) {
+                  <th [attr.aria-sort]="ariaSort('quantity')">
+                    <app-table-sort-header
+                      label="Stock"
+                      field="quantity"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('reorder')) {
+                  <th [attr.aria-sort]="ariaSort('reorderLevel')">
+                    <app-table-sort-header
+                      label="Reorder"
+                      field="reorderLevel"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('alert')) {
+                  <th>Alert</th>
+                }
+              } @else if (tab() === 'procurement') {
+                @if (columnVisible('po')) {
+                  <th [attr.aria-sort]="ariaSort('number')">
+                    <app-table-sort-header
+                      label="PO"
+                      field="number"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('supplier')) {
+                  <th [attr.aria-sort]="ariaSort('supplier')">
+                    <app-table-sort-header
+                      label="Supplier"
+                      field="supplier"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('item')) {
+                  <th [attr.aria-sort]="ariaSort('item')">
+                    <app-table-sort-header
+                      label="Item"
+                      field="item"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('ordered')) {
+                  <th [attr.aria-sort]="ariaSort('quantity')">
+                    <app-table-sort-header
+                      label="Ordered"
+                      field="quantity"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('received')) {
+                  <th [attr.aria-sort]="ariaSort('receivedQuantity')">
+                    <app-table-sort-header
+                      label="Received"
+                      field="receivedQuantity"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('value')) {
+                  <th [attr.aria-sort]="ariaSort('unitPrice')">
+                    <app-table-sort-header
+                      label="Unit price"
+                      field="unitPrice"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('status')) {
+                  <th [attr.aria-sort]="ariaSort('status')">
+                    <app-table-sort-header
+                      label="Status"
+                      field="status"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('actions')) {
+                  <th>Actions</th>
+                }
+              } @else {
+                @if (columnVisible('supplier')) {
+                  <th [attr.aria-sort]="ariaSort('name')">
+                    <app-table-sort-header
+                      label="Supplier"
+                      field="name"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('contact')) {
+                  <th [attr.aria-sort]="ariaSort('contactPerson')">
+                    <app-table-sort-header
+                      label="Contact person"
+                      field="contactPerson"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('phone')) {
+                  <th [attr.aria-sort]="ariaSort('phone')">
+                    <app-table-sort-header
+                      label="Phone"
+                      field="phone"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('email')) {
+                  <th [attr.aria-sort]="ariaSort('email')">
+                    <app-table-sort-header
+                      label="Email"
+                      field="email"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('tax')) {
+                  <th [attr.aria-sort]="ariaSort('taxNumber')">
+                    <app-table-sort-header
+                      label="Tax number"
+                      field="taxNumber"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  </th>
+                }
+                @if (columnVisible('status')) {
+                  <th>Status</th>
+                }
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of rows(); track item.id) {
+              @if (tab() === 'inventory') {
+                <tr class="clickable-row" (click)="open('inventory', item)">
+                  @if (columnVisible('item')) {
+                    <td>
+                      <b>{{ item.name }}</b>
+                    </td>
+                  }
+                  @if (columnVisible('category')) {
+                    <td>{{ item.category }}</td>
+                  }
+                  @if (columnVisible('store')) {
+                    <td>{{ item.store }}</td>
+                  }
+                  @if (columnVisible('unit')) {
+                    <td>{{ item.unit }}</td>
+                  }
+                  @if (columnVisible('stock')) {
+                    <td>{{ item.quantity }}</td>
+                  }
+                  @if (columnVisible('reorder')) {
+                    <td>{{ item.reorderLevel }}</td>
+                  }
+                  @if (columnVisible('alert')) {
+                    <td>
+                      <span class="status" [class.danger]="item.quantity <= item.reorderLevel">{{
+                        item.quantity <= item.reorderLevel ? 'Low stock' : 'Healthy'
+                      }}</span>
+                    </td>
+                  }
+                </tr>
+              } @else if (tab() === 'procurement') {
+                <tr>
+                  @if (columnVisible('po')) {
+                    <td>{{ item.number }}</td>
+                  }
+                  @if (columnVisible('supplier')) {
+                    <td>{{ item.supplier?.name }}</td>
+                  }
+                  @if (columnVisible('item')) {
+                    <td>{{ item.medicine?.name || item.inventoryItem?.name }}</td>
+                  }
+                  @if (columnVisible('ordered')) {
+                    <td>{{ item.quantity }}</td>
+                  }
+                  @if (columnVisible('received')) {
+                    <td>{{ item.receivedQuantity }}</td>
+                  }
+                  @if (columnVisible('value')) {
+                    <td>₹{{ item.quantity * item.unitPrice }}</td>
+                  }
+                  @if (columnVisible('status')) {
+                    <td><app-status-badge [value]="item.status" /></td>
+                  }
+                  @if (columnVisible('actions')) {
+                    <td>
+                      @if (item.status === 'Ordered' || item.status === 'Partially Received') {
+                        <button
+                          class="primary"
+                          (click)="receive(item.id, item.quantity - item.receivedQuantity)"
+                        >
+                          Receive goods
+                        </button>
+                      }
+                    </td>
+                  }
+                </tr>
+              } @else {
+                <tr class="clickable-row" (click)="open('supplier', item)">
+                  @if (columnVisible('supplier')) {
+                    <td>
+                      <b>{{ item.name }}</b>
+                    </td>
+                  }
+                  @if (columnVisible('contact')) {
+                    <td>{{ item.contactPerson }}</td>
+                  }
+                  @if (columnVisible('phone')) {
+                    <td>{{ item.phone }}</td>
+                  }
+                  @if (columnVisible('email')) {
+                    <td>{{ item.email }}</td>
+                  }
+                  @if (columnVisible('tax')) {
+                    <td>{{ item.taxNumber }}</td>
+                  }
+                  @if (columnVisible('status')) {
+                    <td><app-status-badge value="Active" /></td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <app-pagination
+      [loading]="tableLoading()"
+      [page]="page()"
+      [pageSize]="pageSize()"
+      [totalItems]="total()"
+      [totalPages]="totalPages()"
+      [itemLabel]="tab()"
+      (pageChange)="go($event)"
+      (pageSizeChange)="resize($event)"
+    />
+  </section>
+} @else if (tab() === 'ambulance') {
+  <div class="page-actions">
+    <button class="primary" (click)="open('ambulance')">+ Add ambulance</button>
+  </div>
+  <section class="stats">
+    @for (a of store.ambulances(); track a.id) {
+      <article class="card stat" (click)="open('ambulance', a)">
+        <span class="muted">{{ a.vehicleType }}</span>
+        <div class="value vehicle">{{ a.number }}</div>
+        <p>{{ a.registration }} · {{ a.driver }}</p>
+        <app-status-badge [value]="a.status" />
+      </article>
+    }
+  </section>
+  <section class="card booking">
+    <div class="section-title"><h2>New ambulance booking</h2></div>
+    <div class="form-grid">
+      <label class="field"
+        ><span>Patient</span
+        ><select [(ngModel)]="patientId">
+          <option value="">Select patient</option>
+          @for (p of patients.patients(); track p.id) {
+            <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
+          }
+        </select></label
+      ><label class="field"
+        ><span>Available vehicle</span
+        ><select [(ngModel)]="ambulanceId">
+          <option value="">Assign later</option>
+          @for (a of store.ambulances(); track a.id) {
+            @if (a.status === 'Available') {
+              <option [value]="a.id">{{ a.number }} · {{ a.vehicleType }}</option>
+            }
+          }
+        </select></label
+      ><label class="field"><span>Pickup</span><input [(ngModel)]="pickup" /></label
+      ><label class="field"><span>Destination</span><input [(ngModel)]="destination" /></label
+      ><label class="field"
+        ><span>Charges</span><input type="number" [(ngModel)]="charges"
+      /></label>
+    </div>
+    <div class="form-actions"><button class="primary" (click)="book()">Book ambulance</button></div>
+  </section>
+} @else {
+  <section class="card">
+    <div class="section-title"><h2>Notification center</h2></div>
+    @for (n of notifications.notifications(); track n.id) {
+      <article class="notification" [class.unread]="!n.isRead" (click)="notifications.markRead(n)">
+        <span class="notice-icon">!</span>
+        <div>
+          <b>{{ n.title }}</b>
+          <p>{{ n.message }}</p>
+          <small>{{ format(n.createdAt) }}</small>
+        </div>
+      </article>
+    } @empty {
+      <div class="empty">No notifications.</div>
+    }
+  </section>
+}
+@if (message()) {
+  <div class="toast">{{ message() }}</div>
+}
+@if (formKind()) {
+  <app-modal [title]="title()" size="lg" [dirty]="formDirty()" (closed)="close()"
+    ><app-operations-form
+      [kind]="formKind()!"
+      [entity]="editing()"
+      (dirtyChanged)="formDirty.set($event)"
+      (saved)="saved(); loadTable()"
+  /></app-modal>
+}

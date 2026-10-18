@@ -34,7 +34,7 @@
 .bars span {
   display: block;
   width: 30px;
-  background: #16927b;
+  background: var(--mc-gradient);
   border-radius: 5px 5px 0 0;
 }
 .metrics {
@@ -44,7 +44,7 @@
   display: flex;
   justify-content: space-between;
   padding: 13px 0;
-  border-bottom: 1px solid #e5ebed;
+  border-bottom: 1px solid var(--mc-border);
 }
 .footnote {
   margin: 18px 0;

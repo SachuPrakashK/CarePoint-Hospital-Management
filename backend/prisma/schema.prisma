@@ -240,8 +240,8 @@ model Role {
 
 model HospitalSettings {
   id                 String   @id @default("default")
-  hospitalName       String   @default("CarePoint Hospital")
-  hospitalCode       String   @default("CAREPOINT")
+  hospitalName       String   @default("MediCare+")
+  hospitalCode       String   @default("MEDICARE")
   address            String   @default("")
   phone              String   @default("")
   email              String   @default("")
@@ -253,7 +253,7 @@ model HospitalSettings {
 
 model ApplicationSettings {
   id                 String   @id @default("default")
-  applicationName    String   @default("CarePoint Hospital Management")
+  applicationName    String   @default("MediCare+")
   dateFormat         String   @default("DD-MM-YYYY")
   timeFormat         String   @default("12-hour")
   timezone           String   @default("Asia/Kolkata")

@@ -5,17 +5,17 @@
   margin-bottom: 16px;
 }
 .summary {
-  background: white;
+  background: var(--mc-surface);
   max-width: 850px;
   margin: auto;
   padding: 45px;
-  border: 1px solid #dce6e8;
+  border: 1px solid var(--mc-border);
 }
 .summary header {
   display: flex;
   align-items: center;
   gap: 15px;
-  border-bottom: 2px solid #178f78;
+  border-bottom: 2px solid var(--mc-secondary);
   padding-bottom: 20px;
 }
 .mark {
@@ -23,8 +23,8 @@
   place-items: center;
   width: 48px;
   height: 48px;
-  background: #168f78;
-  color: white;
+  background: var(--mc-gradient);
+  color: var(--mc-surface);
   border-radius: 10px;
   font-size: 24px;
 }
@@ -33,13 +33,13 @@
 }
 .summary header p {
   margin: 4px 0 0;
-  color: #61767c;
+  color: var(--mc-text-secondary);
 }
 .identity {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
-  background: #f2f8f7;
+  background: var(--mc-surface-soft);
   padding: 16px;
   margin: 25px 0;
 }
@@ -48,18 +48,18 @@
   gap: 5px;
 }
 .identity small {
-  color: #65797f;
+  color: var(--mc-text-secondary);
 }
 .summary section h2 {
   font-size: 13px;
   text-transform: uppercase;
-  color: #156f60;
+  color: var(--mc-primary);
   margin: 24px 0 7px;
 }
 .summary footer {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid #dce6e8;
+  border-top: 1px solid var(--mc-border);
   margin-top: 40px;
   padding-top: 25px;
 }

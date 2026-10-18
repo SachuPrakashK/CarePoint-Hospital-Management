@@ -6,8 +6,10 @@ import { Phase23Store } from '../../core/services/phase23.store';
 import { PharmacyStore } from '../../core/services/pharmacy.store';
 import { AppDateTimeService } from '../../core/services/app-date-time.service';
 import { DashboardStore } from '../dashboard/dashboard.store';
+import { SharedExport } from '../../shared/components/export/shared-export';
+import { SummaryCard } from '../../shared/components/summary-card/summary-card';
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, SharedExport, SummaryCard],
   templateUrl: './reports-page.html',
   styleUrl: './reports-page.scss',
 })
@@ -22,8 +24,18 @@ export class ReportsPage {
   from = this.dates.formDateTime(new Date(Date.now() - 30 * 86400000)).slice(0, 10);
   to = this.dates.today();
   category = 'Management overview';
-  readonly activity=computed(()=>{const rows=this.dashboard.patientTrends();const max=Math.max(1,...rows.map(x=>x.count));return rows.map(x=>({day:this.dates.formatDate(x.date),value:Math.round(x.count/max*100),count:x.count}));});
-  constructor(){this.dashboard.load();}
+  readonly activity = computed(() => {
+    const rows = this.dashboard.patientTrends();
+    const max = Math.max(1, ...rows.map((x) => x.count));
+    return rows.map((x) => ({
+      day: this.dates.formatDate(x.date),
+      value: Math.round((x.count / max) * 100),
+      count: x.count,
+    }));
+  });
+  constructor() {
+    this.dashboard.load();
+  }
   occupancy() {
     return Math.round((this.inpatient.occupiedBeds().length / this.inpatient.beds().length) * 100);
   }
@@ -34,21 +46,23 @@ export class ReportsPage {
     if (this.exporting()) return;
     this.exporting.set(true);
     try {
-    const rows = [
-      ['Metric', 'Value'],
-      ['Patients', this.clinical.patients().length],
-      ['Appointments', this.clinical.appointments().length],
-      ['Admissions', this.inpatient.activeAdmissions().length],
-      ['Revenue', this.operations.revenue()],
-      ['Outstanding', this.operations.outstanding()],
-    ];
-    const blob = new Blob([rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' }),
-      url = URL.createObjectURL(blob),
-      a = document.createElement('a');
-    a.href = url;
-    a.download = `carepoint-report-${this.to}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    } finally { this.exporting.set(false); }
+      const rows = [
+        ['Metric', 'Value'],
+        ['Patients', this.clinical.patients().length],
+        ['Appointments', this.clinical.appointments().length],
+        ['Admissions', this.inpatient.activeAdmissions().length],
+        ['Revenue', this.operations.revenue()],
+        ['Outstanding', this.operations.outstanding()],
+      ];
+      const blob = new Blob([rows.map((r) => r.join(',')).join('\n')], { type: 'text/csv' }),
+        url = URL.createObjectURL(blob),
+        a = document.createElement('a');
+      a.href = url;
+      a.download = `medicare-plus-report-${this.to}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      this.exporting.set(false);
+    }
   }
 }

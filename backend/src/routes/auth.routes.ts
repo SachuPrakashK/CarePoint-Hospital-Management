@@ -15,6 +15,7 @@ export const authRoutes = Router();
 authRoutes.post('/login', validate(loginSchema), controller.login);
 authRoutes.post('/logout', authenticate, controller.logout);
 authRoutes.get('/me', authenticate, controller.me);
+authRoutes.get('/password-policy', controller.passwordPolicy);
 authRoutes.post('/refresh', validate(refreshSchema), controller.refresh);
 authRoutes.post(
   '/change-password',

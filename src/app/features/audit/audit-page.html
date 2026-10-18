@@ -6,27 +6,14 @@
       Immutable history of sensitive clinical, financial and administrative activity.
     </p>
   </div>
-  <button class="secondary" [disabled]="!events().length || exporting()" (click)="export()">
-    <app-icon name="download" [size]="17" /> {{ exporting() ? 'Exporting...' : 'Export' }}
-  </button>
+  <app-shared-export [disabled]="!events().length" [exporting]="exporting()" (exportRequested)="export()" />
 </div>
 <section class="card">
   <div class="toolbar">
     <app-search-field placeholder="Search audit logs" (valueChange)="query($event)" />
     <div class="toolbar-actions">
       <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div
-        class="filter-anchor"
-        appClickOutside
-        (appClickOutside)="filtersOpen.set(false)"
-        (click)="$event.stopPropagation()"
-      >
-        <button class="secondary" type="button" (click)="filtersOpen.set(!filtersOpen())">
-          <app-icon name="filter" [size]="17" /> Filters
-        </button>
-        @if (filtersOpen()) {
-          <div class="filter-panel">
-            <div class="filter-grid">
+      <app-shared-filter [activeCount]="(module() ? 1 : 0) + (action() ? 1 : 0) + (from() ? 1 : 0) + (to() ? 1 : 0)" (applied)="apply()" (cleared)="clear()">
               <label class="field"
                 ><span>Module</span
                 ><select [value]="module()" (change)="module.set($any($event.target).value)">
@@ -64,14 +51,7 @@
                 ><span>To</span
                 ><input type="date" [value]="to()" (change)="to.set($any($event.target).value)"
               /></label>
-            </div>
-            <div class="filter-actions">
-              <button class="ghost" type="button" (click)="clear()">Clear</button
-              ><button class="primary" type="button" (click)="apply()">Apply</button>
-            </div>
-          </div>
-        }
-      </div>
+      </app-shared-filter>
     </div>
   </div>
   @if (store.loading()) {

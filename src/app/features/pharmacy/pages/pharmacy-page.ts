@@ -8,12 +8,13 @@ import { StatusBadge } from '../../../shared/components/status-badge/status-badg
 import { SearchField } from '../../../shared/components/search/search-field';
 import { AppPagination } from '../../../shared/components/pagination/app-pagination';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
-import { AppIcon } from '../../../shared/components/icon/app-icon';
-import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../../shared/components/export/shared-export';
 import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
 import { ColumnConfig } from '../../../shared/components/column-config/column-config';
 import { TableColumnDefinition, TableSort } from '../../../shared/models/table.models';
 import { TablePreferencesService } from '../../../core/services/table-preferences.service';
+import { SummaryCard } from '../../../shared/components/summary-card/summary-card';
 
 @Component({
   imports: [
@@ -23,9 +24,11 @@ import { TablePreferencesService } from '../../../core/services/table-preference
     SearchField,
     AppPagination,
     EmptyState,
-    AppIcon,
-    ClickOutsideDirective,
-    TableSortHeader,ColumnConfig,
+    SharedFilter,
+    SharedExport,
+    TableSortHeader,
+    ColumnConfig,
+    SummaryCard,
   ],
   templateUrl: './pharmacy-page.html',
   styleUrl: './pharmacy-page.scss',
@@ -34,7 +37,7 @@ export class PharmacyPage {
   readonly store = inject(PharmacyStore);
   readonly auth = inject(AuthStore);
   private dates = inject(AppDateTimeService);
-  private tablePreferences=inject(TablePreferencesService);
+  private tablePreferences = inject(TablePreferencesService);
   readonly tab = signal<'queue' | 'stock' | 'ledger'>('queue');
   readonly message = signal('');
   readonly formKind = signal<'medicine' | 'batch' | null>(null);
@@ -47,14 +50,58 @@ export class PharmacyPage {
   readonly draftCategory = signal('');
   readonly draftLowStock = signal(false);
   readonly draftExpiry = signal('');
-  readonly filtersOpen = signal(false);
   readonly page = signal(1);
   readonly pageSize = signal(10);
   readonly exporting = signal(false);
-  readonly sort=signal<TableSort|null>(null);
-  readonly columns:readonly TableColumnDefinition[]=[{id:'medicine',header:'Medicine',visibleByDefault:true,required:true,sortable:true,sortKey:'medicine'},{id:'generic',header:'Generic / Brand',visibleByDefault:true},{id:'category',header:'Category',visibleByDefault:true},{id:'batch',header:'Batch',visibleByDefault:true,required:true,sortable:true,sortKey:'batchNumber'},{id:'expiry',header:'Expiry',visibleByDefault:true,sortable:true,sortKey:'expiresAt'},{id:'price',header:'Purchase / Sale',visibleByDefault:true,sortable:true,sortKey:'purchasePrice'},{id:'available',header:'Available',visibleByDefault:true,sortable:true,sortKey:'quantity'},{id:'stock',header:'Stock',visibleByDefault:true}];
-  readonly visibleColumns=signal(this.tablePreferences.load('pharmacy-stock',this.columns));
-  constructor(){void this.tablePreferences.loadRemote('pharmacy-stock',this.columns).then(ids=>this.visibleColumns.set(ids));}
+  readonly sort = signal<TableSort | null>(null);
+  readonly columns: readonly TableColumnDefinition[] = [
+    {
+      id: 'medicine',
+      header: 'Medicine',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'medicine',
+    },
+    { id: 'generic', header: 'Generic / Brand', visibleByDefault: true },
+    { id: 'category', header: 'Category', visibleByDefault: true },
+    {
+      id: 'batch',
+      header: 'Batch',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'batchNumber',
+    },
+    {
+      id: 'expiry',
+      header: 'Expiry',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'expiresAt',
+    },
+    {
+      id: 'price',
+      header: 'Purchase / Sale',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'purchasePrice',
+    },
+    {
+      id: 'available',
+      header: 'Available',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'quantity',
+    },
+    { id: 'stock', header: 'Stock', visibleByDefault: true },
+  ];
+  readonly visibleColumns = signal(this.tablePreferences.load('pharmacy-stock', this.columns));
+  constructor() {
+    void this.tablePreferences
+      .loadRemote('pharmacy-stock', this.columns)
+      .then((ids) => this.visibleColumns.set(ids));
+  }
   readonly activeFilterCount = computed(
     () => [this.category(), this.lowStock(), this.expiry()].filter(Boolean).length,
   );
@@ -98,7 +145,8 @@ export class PharmacyPage {
       category: this.category(),
       lowStock: this.lowStock(),
       expiry: this.expiry(),
-      sortBy:this.sort()?.field,sortOrder:this.sort()?.direction,
+      sortBy: this.sort()?.field,
+      sortOrder: this.sort()?.direction,
     };
   }
   loadStock() {
@@ -114,15 +162,11 @@ export class PharmacyPage {
     this.page.set(1);
     void this.loadStock();
   }
-  toggleFilters() {
-    if (!this.filtersDisabled()) this.filtersOpen.update((value) => !value);
-  }
   applyFilters() {
     this.category.set(this.draftCategory());
     this.lowStock.set(this.draftLowStock());
     this.expiry.set(this.draftExpiry());
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.loadStock();
   }
   clearFilters() {
@@ -133,7 +177,6 @@ export class PharmacyPage {
     this.lowStock.set(false);
     this.expiry.set('');
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.loadStock();
   }
   clearCriteria() {
@@ -149,11 +192,32 @@ export class PharmacyPage {
     this.page.set(1);
     void this.loadStock();
   }
-  changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);void this.loadStock();}
-  ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}
-  columnVisible(id:string){return this.visibleColumns().includes(id);}
-  async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns.some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save('pharmacy-stock',ids);}
-  async resetColumns(){await this.tablePreferences.reset('pharmacy-stock');this.visibleColumns.set(this.tablePreferences.load('pharmacy-stock',this.columns));}
+  changeSort(value: TableSort | null) {
+    this.sort.set(value);
+    this.page.set(1);
+    void this.loadStock();
+  }
+  ariaSort(field: string): 'ascending' | 'descending' | 'none' {
+    const sort = this.sort();
+    return sort?.field === field ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  }
+  columnVisible(id: string) {
+    return this.visibleColumns().includes(id);
+  }
+  async applyColumns(ids: string[]) {
+    const active = this.sort();
+    if (
+      active &&
+      !this.columns.some((column) => ids.includes(column.id) && column.sortKey === active.field)
+    )
+      this.sort.set(null);
+    this.visibleColumns.set(ids);
+    await this.tablePreferences.save('pharmacy-stock', ids);
+  }
+  async resetColumns() {
+    await this.tablePreferences.reset('pharmacy-stock');
+    this.visibleColumns.set(this.tablePreferences.load('pharmacy-stock', this.columns));
+  }
   format(value: string) {
     return this.dates.formatDateTime(value);
   }
@@ -188,17 +252,35 @@ export class PharmacyPage {
     if (this.exporting() || !this.store.stockBatches().length) return;
     this.exporting.set(true);
     try {
-      const exportColumns=[
-        {id:'medicine',header:'Medicine',value:(item:any)=>item.medicine?.name},
-        {id:'generic',header:'Generic / Brand',value:(item:any)=>`${item.medicine?.genericName??''} / ${item.medicine?.brand??''}`},
-        {id:'category',header:'Category',value:(item:any)=>item.medicine?.category},
-        {id:'batch',header:'Batch',value:(item:any)=>item.batchNumber},
-        {id:'expiry',header:'Expiry',value:(item:any)=>this.formatExpiry(item.expiresAt)},
-        {id:'price',header:'Purchase / Sale',value:(item:any)=>`${item.purchasePrice} / ${item.sellingPrice}`},
-        {id:'available',header:'Available',value:(item:any)=>item.quantity},
-        {id:'stock',header:'Stock',value:(item:any)=>item.lowStock?'Low Stock':'Healthy'},
-      ].filter(column=>this.columnVisible(column.id));
-      const rows=[exportColumns.map(column=>column.header),...this.store.stockBatches().map(item=>exportColumns.map(column=>column.value(item)))];
+      const exportColumns = [
+        { id: 'medicine', header: 'Medicine', value: (item: any) => item.medicine?.name },
+        {
+          id: 'generic',
+          header: 'Generic / Brand',
+          value: (item: any) =>
+            `${item.medicine?.genericName ?? ''} / ${item.medicine?.brand ?? ''}`,
+        },
+        { id: 'category', header: 'Category', value: (item: any) => item.medicine?.category },
+        { id: 'batch', header: 'Batch', value: (item: any) => item.batchNumber },
+        { id: 'expiry', header: 'Expiry', value: (item: any) => this.formatExpiry(item.expiresAt) },
+        {
+          id: 'price',
+          header: 'Purchase / Sale',
+          value: (item: any) => `${item.purchasePrice} / ${item.sellingPrice}`,
+        },
+        { id: 'available', header: 'Available', value: (item: any) => item.quantity },
+        {
+          id: 'stock',
+          header: 'Stock',
+          value: (item: any) => (item.lowStock ? 'Low Stock' : 'Healthy'),
+        },
+      ].filter((column) => this.columnVisible(column.id));
+      const rows = [
+        exportColumns.map((column) => column.header),
+        ...this.store
+          .stockBatches()
+          .map((item) => exportColumns.map((column) => column.value(item))),
+      ];
       const blob = new Blob(
         [
           rows

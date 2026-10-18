@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import argon2 from 'argon2';
 import jwt, { type SignOptions } from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import { logger } from '../config/logger.js';
 import { authRepository } from '../repositories/auth.repository.js';
 import { AppError } from '../utils/app-error.js';
 import { notificationProvider } from './notification-provider.js';
@@ -59,6 +60,16 @@ const sessionUserFor = (user: AuthUser) => {
 };
 
 export const authService = {
+  async passwordPolicy() {
+    const policy = await administrationService.security();
+    return {
+      minimumLength: Math.max(12, policy.passwordMinimumLength),
+      requireUppercase: policy.requireUppercase,
+      requireLowercase: policy.requireLowercase,
+      requireNumber: policy.requireNumber,
+      requireSpecial: policy.requireSpecial,
+    };
+  },
   async login(
     email: string,
     password: string,
@@ -66,14 +77,38 @@ export const authService = {
   ) {
     let user = await authRepository.findUserByEmail(email);
     const security = await administrationService.security();
-    if(user?.lockedUntil && user.lockedUntil>new Date()) throw new AppError(401,'Email or password is incorrect.','INVALID_CREDENTIALS');
-    if(user?.status==='LOCKED' && user.lockedUntil && user.lockedUntil<=new Date()){await prisma.user.update({where:{id:user.id},data:{status:'ACTIVE',lockedUntil:null,failedLoginAttempts:0}});user=await authRepository.findUserByEmail(email);}
+    if (user?.lockedUntil && user.lockedUntil > new Date())
+      throw new AppError(401, 'Email or password is incorrect.', 'INVALID_CREDENTIALS');
+    if (user?.status === 'LOCKED' && user.lockedUntil && user.lockedUntil <= new Date()) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { status: 'ACTIVE', lockedUntil: null, failedLoginAttempts: 0 },
+      });
+      user = await authRepository.findUserByEmail(email);
+    }
     if (!user || user.status !== 'ACTIVE' || !(await argon2.verify(user.passwordHash, password))) {
-      if(user){const attempts=user.failedLoginAttempts+1;await prisma.user.update({where:{id:user.id},data:{failedLoginAttempts:attempts>=security.maximumLoginAttempts?0:attempts,...(attempts>=security.maximumLoginAttempts?{lockedUntil:new Date(Date.now()+security.accountLockMinutes*60_000),status:'LOCKED'}:{})}});}
+      if (user) {
+        const attempts = user.failedLoginAttempts + 1;
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: attempts >= security.maximumLoginAttempts ? 0 : attempts,
+            ...(attempts >= security.maximumLoginAttempts
+              ? {
+                  lockedUntil: new Date(Date.now() + security.accountLockMinutes * 60_000),
+                  status: 'LOCKED',
+                }
+              : {}),
+          },
+        });
+      }
       throw new AppError(401, 'Email or password is incorrect.', 'INVALID_CREDENTIALS');
     }
     const sessionId = randomUUID();
-    await prisma.user.update({where:{id:user.id},data:{failedLoginAttempts:0,lockedUntil:null}});
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginAttempts: 0, lockedUntil: null },
+    });
     const permissions = permissionsFor(user);
     const roles = rolesFor(user);
     const refreshToken = jwt.sign(
@@ -160,12 +195,31 @@ export const authService = {
       throw new AppError(422, 'Validation failed.', 'VALIDATION_ERROR', {
         current_password: ['Current password is incorrect.'],
       });
+    if (await argon2.verify(user.passwordHash, next))
+      throw new AppError(422, 'Validation failed.', 'VALIDATION_ERROR', {
+        new_password: ['New password must be different from the current password.'],
+      });
     await validatePasswordAgainstPolicy(next);
-    await authRepository.updatePassword(userId, await argon2.hash(next));
-    await authRepository.revokeAllSessions(userId);
+    const passwordHash = await argon2.hash(next);
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
+      prisma.refreshSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      }),
+      prisma.auditLog.create({
+        data: {
+          userId,
+          action: 'PASSWORD_CHANGED',
+          module: 'Authentication',
+          entityType: 'User',
+          entityId: userId,
+        },
+      }),
+    ]);
   },
   async forgotPassword(email: string) {
-    const user = await authRepository.findUserByEmail(email);
+    const user = await authRepository.findUserByEmail(email.trim().toLowerCase());
     if (!user || user.status !== 'ACTIVE') return;
     await authRepository.invalidatePasswordResets(user.id);
     const token = randomUUID() + randomUUID();
@@ -174,10 +228,26 @@ export const authService = {
       tokenHash: hashToken(token),
       expiresAt: new Date(Date.now() + 30 * 60_000),
     });
-    await notificationProvider.sendPasswordReset(
-      user.email,
-      `${env.FRONTEND_RESET_URL}?token=${encodeURIComponent(token)}`,
-    );
+    try {
+      const acceptance = await notificationProvider.sendPasswordReset(
+        user.email,
+        `${env.FRONTEND_RESET_URL}?token=${encodeURIComponent(token)}`,
+      );
+      logger.info(
+        {
+          event: 'password-reset-provider-accepted',
+          provider: acceptance.provider,
+          userId: user.id,
+        },
+        'Password reset message accepted by notification provider',
+      );
+    } catch (error) {
+      await authRepository.invalidatePasswordResets(user.id);
+      logger.error(
+        { err: error, event: 'password-reset-delivery-failed', userId: user.id },
+        'Password reset message delivery failed',
+      );
+    }
   },
   async resetPassword(token: string, password: string) {
     await validatePasswordAgainstPolicy(password);
@@ -198,6 +268,15 @@ export const authService = {
       await tx.refreshSession.updateMany({
         where: { userId: record.userId, revokedAt: null },
         data: { revokedAt: new Date() },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: record.userId,
+          action: 'PASSWORD_RESET',
+          module: 'Authentication',
+          entityType: 'User',
+          entityId: record.userId,
+        },
       });
     });
   },

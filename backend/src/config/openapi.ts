@@ -7,7 +7,7 @@ const responses = {
 };
 export const openApiDocument = {
   openapi: '3.1.0',
-  info: { title: 'CarePoint Hospital Management API', version: '1.0.0' },
+  info: { title: 'MediCare+ Hospital Management System API', version: '1.0.0' },
   servers: [{ url: '/api/v1' }],
   components: {
     securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } },

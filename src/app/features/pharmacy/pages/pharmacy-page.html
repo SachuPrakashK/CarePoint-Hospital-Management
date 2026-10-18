@@ -12,22 +12,30 @@
   }
 </div>
 <section class="stats">
-  <article class="card stat metric-card metric-card--blue">
-    <span class="muted">Pending prescriptions</span>
-    <div class="value">{{ pending() }}</div>
-  </article>
-  <article class="card stat metric-card metric-card--green">
-    <span class="muted">Medicines</span>
-    <div class="value">{{ store.medicines().length }}</div>
-  </article>
-  <article class="card stat metric-card metric-card--red">
-    <span class="muted">Low stock</span>
-    <div class="value">{{ store.lowStockCount() }}</div>
-  </article>
-  <article class="card stat metric-card metric-card--purple">
-    <span class="muted">Expiring in {{ store.expirySoonDays() }} days</span>
-    <div class="value">{{ store.expiringCount() }}</div>
-  </article>
+  <app-summary-card
+    title="Pending Prescriptions"
+    [value]="pending()"
+    icon="pharmacy"
+    variant="blue"
+  />
+  <app-summary-card
+    title="Medicines"
+    [value]="store.medicines().length"
+    icon="pharmacy"
+    variant="green"
+  />
+  <app-summary-card
+    title="Low Stock"
+    [value]="store.lowStockCount()"
+    icon="inventory"
+    variant="red"
+  />
+  <app-summary-card
+    [title]="'Expiring in ' + store.expirySoonDays() + ' Days'"
+    [value]="store.expiringCount()"
+    icon="calendar"
+    variant="purple"
+  />
 </section>
 <div class="tabs" role="tablist" aria-label="Pharmacy views">
   <button
@@ -119,87 +127,64 @@
         (valueChange)="onSearch($event)"
       />
       <div class="toolbar-actions">
-        <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-        <div
-          class="filter-anchor"
-          appClickOutside
-          (appClickOutside)="filtersOpen.set(false)"
-          (click)="$event.stopPropagation()"
+        <app-column-config
+          [columns]="columns"
+          [visible]="visibleColumns()"
+          (apply)="applyColumns($event)"
+          (reset)="resetColumns()"
+        />
+        <app-shared-filter
+          [activeCount]="activeFilterCount()"
+          [disabled]="filtersDisabled()"
+          [loading]="store.stockLoading()"
+          (applied)="applyFilters()"
+          (cleared)="clearFilters()"
         >
-          <button
-            class="secondary button-icon"
-            type="button"
-            [disabled]="filtersDisabled()"
-            [attr.aria-expanded]="filtersOpen()"
-            (click)="toggleFilters()"
+          <label class="field"
+            ><span class="form-label">Category</span
+            ><select
+              [value]="draftCategory()"
+              (change)="draftCategory.set($any($event.target).value)"
+            >
+              <option value="">All categories</option>
+              @for (item of store.categories(); track item) {
+                <option [value]="item">{{ item }}</option>
+              }
+            </select></label
           >
-            <app-icon name="filter" [size]="17" />Filters
-            @if (activeFilterCount()) {
-              ({{ activeFilterCount() }})
-            }
-          </button>
-          @if (filtersOpen()) {
-            <div class="filter-panel">
-              <div class="filter-grid pharmacy-filter-grid">
-                <label class="field"
-                  ><span class="form-label">Category</span
-                  ><select
-                    [value]="draftCategory()"
-                    (change)="draftCategory.set($any($event.target).value)"
-                  >
-                    <option value="">All categories</option>
-                    @for (item of store.categories(); track item) {
-                      <option [value]="item">{{ item }}</option>
-                    }
-                  </select></label
-                >
-                <label class="field"
-                  ><span class="form-label">Stock level</span
-                  ><select
-                    [value]="draftLowStock() ? 'true' : ''"
-                    (change)="draftLowStock.set($any($event.target).value === 'true')"
-                  >
-                    <option value="">All stock levels</option>
-                    <option value="true">Low stock only</option>
-                  </select></label
-                >
-                <label class="field"
-                  ><span class="form-label">Expiry</span
-                  ><select
-                    [value]="draftExpiry()"
-                    (change)="draftExpiry.set($any($event.target).value)"
-                  >
-                    <option value="">All expiry dates</option>
-                    <option value="expired">Expired</option>
-                    <option value="expiring_soon">
-                      Expiring within {{ store.expirySoonDays() }} days
-                    </option>
-                    <option value="valid">Valid beyond {{ store.expirySoonDays() }} days</option>
-                  </select></label
-                >
-              </div>
-              <div class="filter-actions">
-                <button class="secondary" type="button" (click)="clearFilters()">
-                  Clear Filters</button
-                ><button class="primary" type="button" (click)="applyFilters()">
-                  Apply Filters
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-        <button
-          class="secondary button-icon"
-          type="button"
-          [disabled]="!store.stockBatches().length || exporting()"
-          (click)="exportStock()"
-        >
-          <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
-        </button>
+          <label class="field"
+            ><span class="form-label">Stock level</span
+            ><select
+              [value]="draftLowStock() ? 'true' : ''"
+              (change)="draftLowStock.set($any($event.target).value === 'true')"
+            >
+              <option value="">All stock levels</option>
+              <option value="true">Low stock only</option>
+            </select></label
+          >
+          <label class="field"
+            ><span class="form-label">Expiry</span
+            ><select [value]="draftExpiry()" (change)="draftExpiry.set($any($event.target).value)">
+              <option value="">All expiry dates</option>
+              <option value="expired">Expired</option>
+              <option value="expiring_soon">
+                Expiring within {{ store.expirySoonDays() }} days
+              </option>
+              <option value="valid">Valid beyond {{ store.expirySoonDays() }} days</option>
+            </select></label
+          >
+        </app-shared-filter>
+        <app-shared-export
+          [disabled]="!store.stockBatches().length"
+          [exporting]="exporting()"
+          (exportRequested)="exportStock()"
+        />
       </div>
     </div>
     @if (store.stockLoading()) {
-      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading medicine stock…</div>
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">
+        Loading medicine stock…
+      </div>
     } @else if (store.stockError()) {
       <div class="error-state" role="alert">
         {{ store.stockError() }}
@@ -210,34 +195,103 @@
         <table>
           <thead>
             <tr>
-              @if(columnVisible('medicine')){<th [attr.aria-sort]="ariaSort('medicine')"><app-table-sort-header label="Medicine" field="medicine" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-              @if(columnVisible('generic')){<th>Generic / Brand</th>} @if(columnVisible('category')){<th>Category</th>}
-              @if(columnVisible('batch')){<th [attr.aria-sort]="ariaSort('batchNumber')"><app-table-sort-header label="Batch" field="batchNumber" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-              @if(columnVisible('expiry')){<th [attr.aria-sort]="ariaSort('expiresAt')"><app-table-sort-header label="Expiry" field="expiresAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-              @if(columnVisible('price')){<th [attr.aria-sort]="ariaSort('purchasePrice')"><app-table-sort-header label="Purchase / Sale" field="purchasePrice" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-              @if(columnVisible('available')){<th [attr.aria-sort]="ariaSort('quantity')"><app-table-sort-header label="Available" field="quantity" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('stock')){<th>Stock</th>}
+              @if (columnVisible('medicine')) {
+                <th [attr.aria-sort]="ariaSort('medicine')">
+                  <app-table-sort-header
+                    label="Medicine"
+                    field="medicine"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('generic')) {
+                <th>Generic / Brand</th>
+              }
+              @if (columnVisible('category')) {
+                <th>Category</th>
+              }
+              @if (columnVisible('batch')) {
+                <th [attr.aria-sort]="ariaSort('batchNumber')">
+                  <app-table-sort-header
+                    label="Batch"
+                    field="batchNumber"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('expiry')) {
+                <th [attr.aria-sort]="ariaSort('expiresAt')">
+                  <app-table-sort-header
+                    label="Expiry"
+                    field="expiresAt"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('price')) {
+                <th [attr.aria-sort]="ariaSort('purchasePrice')">
+                  <app-table-sort-header
+                    label="Purchase / Sale"
+                    field="purchasePrice"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('available')) {
+                <th [attr.aria-sort]="ariaSort('quantity')">
+                  <app-table-sort-header
+                    label="Available"
+                    field="quantity"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('stock')) {
+                <th>Stock</th>
+              }
             </tr>
           </thead>
           <tbody>
             @for (b of store.stockBatches(); track b.id) {
               <tr [class.clickable-row]="canManage()" (click)="canManage() && open('batch', b)">
-                @if(columnVisible('medicine')){<td>
-                  <b>{{ b.medicine?.name || 'Not available' }}</b>
-                </td>}
-                @if(columnVisible('generic')){<td>
-                  {{ b.medicine?.genericName || 'Not available' }} ·
-                  {{ b.medicine?.brand || 'Not available' }}
-                </td>}
-                @if(columnVisible('category')){<td>{{ b.medicine?.category || 'Not available' }}</td>}
-                @if(columnVisible('batch')){<td>{{ b.batchNumber }}</td>}
-                @if(columnVisible('expiry')){<td>
-                  <span class="expiry-cell"
-                    >{{ formatExpiry(b.expiresAt) }}<app-status-badge [value]="b.expiryStatus"
-                  /></span>
-                </td>}
-                @if(columnVisible('price')){<td>₹{{ b.purchasePrice }} / ₹{{ b.sellingPrice }}</td>}
-                @if(columnVisible('available')){<td>{{ b.quantity }}</td>}
-                @if(columnVisible('stock')){<td><app-status-badge [value]="b.lowStock ? 'Low Stock' : 'Healthy'" /></td>}
+                @if (columnVisible('medicine')) {
+                  <td>
+                    <b>{{ b.medicine?.name || 'Not available' }}</b>
+                  </td>
+                }
+                @if (columnVisible('generic')) {
+                  <td>
+                    {{ b.medicine?.genericName || 'Not available' }} ·
+                    {{ b.medicine?.brand || 'Not available' }}
+                  </td>
+                }
+                @if (columnVisible('category')) {
+                  <td>{{ b.medicine?.category || 'Not available' }}</td>
+                }
+                @if (columnVisible('batch')) {
+                  <td>{{ b.batchNumber }}</td>
+                }
+                @if (columnVisible('expiry')) {
+                  <td>
+                    <span class="expiry-cell"
+                      >{{ formatExpiry(b.expiresAt) }}<app-status-badge [value]="b.expiryStatus"
+                    /></span>
+                  </td>
+                }
+                @if (columnVisible('price')) {
+                  <td>₹{{ b.purchasePrice }} / ₹{{ b.sellingPrice }}</td>
+                }
+                @if (columnVisible('available')) {
+                  <td>{{ b.quantity }}</td>
+                }
+                @if (columnVisible('stock')) {
+                  <td><app-status-badge [value]="b.lowStock ? 'Low Stock' : 'Healthy'" /></td>
+                }
               </tr>
             }
           </tbody>
@@ -272,7 +326,9 @@
 } @else {
   <section class="card">
     @if (store.ledgerLoading()) {
-      <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading stock ledger…</div>
+      <div class="loading-state loading-state--table" role="status" aria-live="polite">
+        Loading stock ledger…
+      </div>
     } @else if (store.ledgerError()) {
       <div class="error-state" role="alert">
         {{ store.ledgerError() }}

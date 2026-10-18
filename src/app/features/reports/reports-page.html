@@ -1,12 +1,16 @@
 <div class="page-head">
   <div>
     <div class="breadcrumbs">Management / Reports</div>
-    <h1>Reports & analytics</h1>
+    <h1>Reports & Analytics</h1>
     <p class="muted">Operational and financial performance with permission-aware exports.</p>
   </div>
   <div class="head-actions">
-    <button class="secondary" (click)="print()">Print</button
-    ><button class="primary" [disabled]="exporting()" (click)="exportCsv()">{{ exporting() ? 'Exporting…' : 'Export CSV' }}</button>
+    <button class="secondary" (click)="print()">Print</button>
+    <app-shared-export
+      label="Export CSV"
+      [exporting]="exporting()"
+      (exportRequested)="exportCsv()"
+    />
   </div>
 </div>
 <section class="card filters">
@@ -35,33 +39,41 @@
   ><button class="primary">Apply filters</button>
 </section>
 <section class="stats analytics">
-  <article class="card stat">
-    <span class="muted">Revenue</span>
-    <div class="value">₹{{ operations.revenue() }}</div>
-    <span class="trend">Net of processed refunds</span>
-  </article>
-  <article class="card stat">
-    <span class="muted">Outstanding</span>
-    <div class="value">₹{{ operations.outstanding() }}</div>
-    <span class="trend">Across open invoices</span>
-  </article>
-  <article class="card stat">
-    <span class="muted">Bed occupancy</span>
-    <div class="value">{{ occupancy() }}%</div>
-    <span class="trend">{{ inpatient.occupiedBeds().length }} occupied</span>
-  </article>
-  <article class="card stat">
-    <span class="muted">Inventory alerts</span>
-    <div class="value">{{ pharmacy.lowStock().length }}</div>
-    <span class="trend">At or below reorder point</span>
-  </article>
+  <app-summary-card
+    title="Revenue"
+    [value]="'₹' + operations.revenue()"
+    note="Net of processed refunds"
+    icon="billing"
+    variant="green"
+  />
+  <app-summary-card
+    title="Outstanding"
+    [value]="'₹' + operations.outstanding()"
+    note="Across open invoices"
+    icon="documents"
+    variant="amber"
+  />
+  <app-summary-card
+    title="Bed Occupancy"
+    [value]="occupancy() + '%'"
+    [note]="inpatient.occupiedBeds().length + ' occupied'"
+    icon="bed"
+    variant="purple"
+  />
+  <app-summary-card
+    title="Inventory Alerts"
+    [value]="pharmacy.lowStock().length"
+    note="At or below reorder point"
+    icon="inventory"
+    variant="red"
+  />
 </section>
 <div class="grid-2">
   <section class="card chart-card">
     <div class="section-title"><h2>Patient & appointment activity</h2></div>
     <div class="bars" role="img" aria-label="Weekly appointment activity">
       @for (x of activity(); track x.day) {
-        <div [attr.title]="x.count+' registrations'">
+        <div [attr.title]="x.count + ' registrations'">
           <span [style.height.%]="x.value"></span><small>{{ x.day }}</small>
         </div>
       }
@@ -86,7 +98,7 @@
         <span>Radiology worklist</span><b>{{ inpatient.radiologyOrders().length }}</b>
       </div>
       <div>
-          <span>Pharmacy dispenses</span><b>{{ pharmacy.dispenses().length }}</b>
+        <span>Pharmacy dispenses</span><b>{{ pharmacy.dispenses().length }}</b>
       </div>
       <div>
         <span>Insurance claims</span><b>{{ operations.claims().length }}</b>

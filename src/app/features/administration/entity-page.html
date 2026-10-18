@@ -20,12 +20,10 @@
       <app-search-field [placeholder]="type() === 'laboratory-tests' ? 'Search tests by code, name or category' : 'Search records'" [label]="type() === 'laboratory-tests' ? 'Search tests' : 'Search records'" (valueChange)="search.set($event); queryChanged()" />
       <div class="toolbar-actions">
         <app-column-config [columns]="applicableColumns()" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-        <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()"><button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())"><app-icon name="filter" [size]="17" /> Filters @if(status() || category()) { ({{ (status() ? 1 : 0) + (category() ? 1 : 0) }}) }</button>
-          @if(filtersOpen()) { <div class="filter-panel"><div class="filter-grid">
+        <app-shared-filter [activeCount]="(status() ? 1 : 0) + (category() ? 1 : 0)" [loading]="loading()" (applied)="queryChanged()" (cleared)="clearFilters()">
             <label class="field"><span>Status</span><select aria-label="Status filter" [value]="status()" (change)="status.set($any($event.target).value)"><option value="">All statuses</option><option>Active</option><option>Inactive</option></select></label>
             @if(type() === 'laboratory-tests') { <label class="field"><span>Category</span><input placeholder="Filter by category" [value]="category()" (input)="category.set($any($event.target).value)" /></label> }
-          </div><div class="filter-actions"><button type="button" class="secondary" (click)="clearFilters()">Clear all</button><button type="button" class="primary" (click)="queryChanged()">Apply filters</button></div></div> }
-        </div>
+        </app-shared-filter>
       </div>
     </div>
     @if (loading()) {

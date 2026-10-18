@@ -22,7 +22,7 @@
   top: calc(100% + 10px);
   z-index: 40;
   width: min(390px, calc(100vw - 24px));
-  background: #fff;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-dialog);
@@ -64,15 +64,15 @@
   padding: 13px 16px;
   border: 0;
   border-bottom: 1px solid var(--color-border);
-  background: #fff;
+  background: var(--color-surface);
   text-align: left;
   color: var(--color-text);
 }
 .notification-row.unread {
-  background: #edf5fb;
+  background: var(--color-light-blue);
 }
 .notification-row:hover {
-  background: #e4f0f8;
+  background: var(--color-surface-muted);
 }
 .notification-row > span:last-child {
   display: grid;

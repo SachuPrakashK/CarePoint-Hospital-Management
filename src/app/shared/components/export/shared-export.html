@@ -1,0 +1,10 @@
+<button
+  type="button"
+  class="secondary button-icon"
+  [disabled]="disabled() || exporting()"
+  [attr.aria-busy]="exporting()"
+  (click)="exportRequested.emit()"
+>
+  <app-icon name="download" [size]="17" />
+  {{ exporting() ? 'Exporting…' : label() }}
+</button>

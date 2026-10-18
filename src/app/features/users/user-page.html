@@ -13,21 +13,7 @@
     <app-search-field placeholder="Search users" (valueChange)="query($event)" />
     <div class="toolbar-actions">
       <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div
-        class="filter-anchor"
-        appClickOutside
-        (appClickOutside)="filtersOpen.set(false)"
-        (click)="$event.stopPropagation()"
-      >
-        <button type="button" class="secondary button-icon" (click)="filtersOpen.set(!filtersOpen())">
-          <app-icon name="filter" [size]="17" /> Filters
-          @if (status() || role()) {
-            ({{ (status() ? 1 : 0) + (role() ? 1 : 0) }})
-          }
-        </button>
-        @if (filtersOpen()) {
-          <div class="filter-panel">
-            <div class="filter-grid">
+      <app-shared-filter [activeCount]="(status() ? 1 : 0) + (role() ? 1 : 0)" [loading]="loading()" (applied)="applyFilters()" (cleared)="clearFilters()">
               <label class="field"
                 ><span>Status</span
                 ><select [value]="status()" (change)="status.set($any($event.target).value)">
@@ -46,23 +32,9 @@
                   }
                 </select></label
               >
-            </div>
-            <div class="filter-actions">
-              <button type="button" class="ghost" (click)="clearFilters()">Clear</button
-              ><button type="button" class="primary" (click)="applyFilters()">Apply</button>
-            </div>
-          </div>
-        }
-      </div>
+      </app-shared-filter>
       @if (auth.has('users.export')) {
-        <button
-          type="button"
-          class="secondary button-icon"
-          [disabled]="exporting() || !total()"
-          (click)="export()"
-        >
-          <app-icon name="download" [size]="17" /> {{ exporting() ? 'Exporting...' : 'Export' }}
-        </button>
+        <app-shared-export [disabled]="!total()" [exporting]="exporting()" (exportRequested)="export()" />
       }
     </div>
   </div>

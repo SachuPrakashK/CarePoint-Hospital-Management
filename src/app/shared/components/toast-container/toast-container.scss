@@ -12,7 +12,7 @@ article {
   grid-template-columns: 10px 1fr 26px;
   align-items: center;
   gap: 10px;
-  background: #fff;
+  background: var(--color-surface);
   padding: 13px 14px;
   border: 1px solid var(--color-border);
   border-radius: 10px;

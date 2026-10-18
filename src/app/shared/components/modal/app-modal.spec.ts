@@ -7,7 +7,10 @@ describe('AppModal', () => {
   const confirmation = { confirm: vi.fn() };
   beforeEach(async () => {
     confirmation.confirm.mockReset();
-    await TestBed.configureTestingModule({ imports: [AppModal], providers: [{ provide: ConfirmationService, useValue: confirmation }] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [AppModal],
+      providers: [{ provide: ConfirmationService, useValue: confirmation }],
+    }).compileComponents();
   });
   it('does not close on backdrop click or Escape', () => {
     const fixture = TestBed.createComponent(AppModal);
@@ -29,6 +32,14 @@ describe('AppModal', () => {
     await Promise.resolve();
     expect(confirmation.confirm).not.toHaveBeenCalled();
     expect(closed).toHaveBeenCalledOnce();
+  });
+  it('renders an optional header icon without changing the title', () => {
+    const fixture = TestBed.createComponent(AppModal);
+    fixture.componentRef.setInput('title', 'Change Password');
+    fixture.componentRef.setInput('icon', 'shield');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.crud-modal__header-icon')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('h2').textContent).toContain('Change Password');
   });
   it('keeps editing when discard confirmation is declined', async () => {
     confirmation.confirm.mockResolvedValue(false);

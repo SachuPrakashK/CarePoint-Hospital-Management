@@ -11,8 +11,8 @@ import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { AppActionsMenu } from '../../../shared/components/actions-menu/app-actions-menu';
 import { RadiologyForm } from './radiology-form';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
-import { AppIcon } from '../../../shared/components/icon/app-icon';
-import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../../shared/components/export/shared-export';
 import { ConfirmationService } from '../../../core/services/confirmation.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
@@ -30,8 +30,8 @@ import { TablePreferencesService } from '../../../core/services/table-preference
     EmptyState,
     AppActionsMenu,
     StatusBadge,
-    AppIcon,
-    ClickOutsideDirective,
+    SharedFilter,
+    SharedExport,
     TableSortHeader,
     ColumnConfig,
   ],
@@ -74,7 +74,6 @@ export class RadiologyPage {
   readonly investigation = signal('');
   readonly draftStatus = signal('');
   readonly draftInvestigation = signal('');
-  readonly filtersOpen = signal(false);
   readonly exporting = signal(false);
   readonly deletingId = signal('');
   readonly sort=signal<TableSort|null>(null);
@@ -121,7 +120,6 @@ export class RadiologyPage {
     this.status.set(this.draftStatus());
     this.investigation.set(this.draftInvestigation());
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.load();
   }
   clearFilters() { this.draftStatus.set(''); this.draftInvestigation.set(''); this.applyFilters(); }

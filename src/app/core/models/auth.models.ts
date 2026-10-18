@@ -1,5 +1,14 @@
 export type RoleCode = string;
-export type PermissionAction = 'view' | 'create' | 'edit' | 'update' | 'delete' | 'print' | 'export' | 'download' | 'reset_password';
+export type PermissionAction =
+  | 'view'
+  | 'create'
+  | 'edit'
+  | 'update'
+  | 'delete'
+  | 'print'
+  | 'export'
+  | 'download'
+  | 'reset_password';
 export type Permission =
   | `${string}.${PermissionAction}`
   | `${string}.${'cancel' | 'manage' | 'collect' | 'result' | 'verify' | 'order' | 'report' | 'transfer' | 'discharge' | 'notes' | 'medication' | 'schedule' | 'dispense' | 'stock' | 'payment' | 'refund' | 'claim' | 'receive'}`;

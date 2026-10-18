@@ -141,7 +141,15 @@ async function main() {
     skipDuplicates: true,
   });
   const permissionByCode = new Map(created.map((permission) => [permission.code, permission.id]));
-  await prisma.rolePermission.createMany({data:staffRoles.flatMap(role=>['support.view','support.ticket.create'].map(code=>({roleId:role.id,permissionId:permissionByCode.get(code)!}))),skipDuplicates:true});
+  await prisma.rolePermission.createMany({
+    data: staffRoles.flatMap((role) =>
+      ['support.view', 'support.ticket.create'].map((code) => ({
+        roleId: role.id,
+        permissionId: permissionByCode.get(code)!,
+      })),
+    ),
+    skipDuplicates: true,
+  });
   const staffPermissions: Record<string, string[]> = {
     DOCTOR: [
       'dashboard.view',
@@ -279,12 +287,17 @@ async function main() {
   await prisma.hospitalSettings.upsert({
     where: { id: 'default' },
     update: {},
-    create: { id: 'default' },
+    create: { id: 'default', hospitalName: 'MediCare+', hospitalCode: 'MEDICARE' },
   });
   await prisma.applicationSettings.upsert({
     where: { id: 'default' },
     update: {},
-    create: { id: 'default', timezone: 'Asia/Kolkata', defaultRowsPerPage: 10 },
+    create: {
+      id: 'default',
+      applicationName: 'MediCare+',
+      timezone: 'Asia/Kolkata',
+      defaultRowsPerPage: 10,
+    },
   });
   await prisma.notificationSettings.upsert({
     where: { id: 'default' },

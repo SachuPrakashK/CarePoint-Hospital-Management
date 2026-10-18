@@ -49,6 +49,15 @@ export const createApp = () => {
       legacyHeaders: false,
     }),
   );
+  app.use(
+    '/api/v1/auth/forgot-password',
+    rateLimit({
+      windowMs: 15 * 60_000,
+      limit: 5,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+    }),
+  );
   app.get('/health', (_req, res) => res.json({ data: { status: 'ok' } }));
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/dashboard', dashboardRoutes);

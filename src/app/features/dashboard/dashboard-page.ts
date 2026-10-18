@@ -8,6 +8,7 @@ import { ChartEmptyState } from '../../shared/components/chart-empty-state/chart
 import { AppIcon } from '../../shared/components/icon/app-icon';
 import { AppDateTimePipe } from '../../core/services/app-date-time.service';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
+import { SummaryCard } from '../../shared/components/summary-card/summary-card';
 
 @Component({
   imports: [
@@ -19,6 +20,7 @@ import { StatusBadge } from '../../shared/components/status-badge/status-badge';
     AppIcon,
     AppDateTimePipe,
     StatusBadge,
+    SummaryCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard-page.html',

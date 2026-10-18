@@ -1,0 +1,74 @@
+<div
+  class="file-upload"
+  [class.file-upload--dragging]="dragging()"
+  [class.file-upload--selected]="selected()"
+  [class.file-upload--error]="error()"
+  [class.file-upload--disabled]="disabled()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+>
+  <input
+    class="file-upload__input"
+    type="file"
+    [id]="inputId"
+    [accept]="accept()"
+    [disabled]="disabled()"
+    (change)="onFileInput($event)"
+  />
+
+  @if (selected(); as file) {
+    <div class="file-upload__summary">
+      <span class="file-upload__file-icon" aria-hidden="true"
+        ><app-icon name="documents" [size]="24"
+      /></span>
+      <div class="file-upload__details">
+        <strong>{{ file.name }}</strong>
+        <span>{{ formatSize(file.size) }}</span>
+        @if (uploading()) {
+          <div class="file-upload__progress-copy">
+            <span>Uploading…</span>
+            @if (progress() !== null) {
+              <span>{{ progress() }}%</span>
+            }
+          </div>
+          <div
+            class="file-upload__progress"
+            role="progressbar"
+            aria-label="Document upload progress"
+            [attr.aria-valuenow]="progress()"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <span [style.width.%]="progress() ?? 15"></span>
+          </div>
+        }
+      </div>
+      @if (!uploading()) {
+        <div class="file-upload__actions">
+          <label class="file-upload__change" [for]="inputId">Change</label>
+          <button
+            type="button"
+            class="file-upload__remove"
+            aria-label="Remove selected file"
+            (click)="remove()"
+          >
+            <app-icon name="close" [size]="18" />
+          </button>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="file-upload__empty">
+      <span class="file-upload__file-icon" aria-hidden="true"
+        ><app-icon name="documents" [size]="26"
+      /></span>
+      <div><strong>Drag and drop your document here</strong><span>or</span></div>
+      <label class="file-upload__browse" [for]="inputId">Browse files</label>
+      <small>{{ formatsLabel() }} · Maximum {{ formatSize(maxSize()) }}</small>
+    </div>
+  }
+</div>
+@if (error()) {
+  <p class="file-upload__error" role="alert">{{ error() }}</p>
+}

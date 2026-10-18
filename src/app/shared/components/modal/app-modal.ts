@@ -12,7 +12,8 @@ export class AppModal {
   private readonly confirmation = inject(ConfirmationService);
   readonly title = input.required<string>();
   readonly description = input('');
-  readonly size = input<'sm' | 'md' | 'lg' | 'xl'>('md');
+  readonly icon = input('');
+  readonly size = input<'sm' | 'compact' | 'md' | 'lg' | 'xl'>('md');
   readonly dirty = input(false);
   readonly closed = output<void>();
 
@@ -26,7 +27,8 @@ export class AppModal {
         cancelLabel: 'Keep editing',
         danger: true,
       }))
-    ) return;
+    )
+      return;
     this.closed.emit();
   }
 }

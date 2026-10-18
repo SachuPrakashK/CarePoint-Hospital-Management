@@ -14,79 +14,74 @@
       placeholder="Search patients..."
       label="Search patients"
       [value]="search()"
-      (valueChange)="search.set($event)"
+      (valueChange)="onSearch($event)"
     />
     <div class="toolbar-actions">
-      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
-        <button
-          class="secondary button-icon"
-          [disabled]="store.allTotal() === 0"
-          [attr.aria-expanded]="filtersOpen()"
-          (click)="toggleFilters($event)"
-        >
-          <app-icon name="filter" [size]="17" />Filters
-          @if (activeFilterCount()) {
-            ({{ activeFilterCount() }})
+      <app-column-config
+        [columns]="columns"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+      <app-shared-filter
+        [activeCount]="activeFilterCount()"
+        [disabled]="store.allTotal() === 0 && !activeFilterCount()"
+        [loading]="store.loading()"
+        [applyDisabled]="filterForm.invalid"
+        (applied)="applyFilters()"
+        (cleared)="clearFilters()"
+      >
+        <form class="shared-filter-fields" [formGroup]="filterForm">
+          <label class="field"
+            ><span class="form-label">Gender</span
+            ><select formControlName="gender">
+              <option value="">All genders</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Non-binary</option>
+              <option>Prefer not to say</option>
+            </select></label
+          >
+          <label class="field"
+            ><span class="form-label">Status</span
+            ><select formControlName="status">
+              <option value="">All statuses</option>
+              <option>Active</option>
+              <option>Inactive</option>
+            </select></label
+          >
+          <label class="field"
+            ><span class="form-label">Minimum age</span
+            ><input
+              type="number"
+              min="0"
+              max="130"
+              formControlName="minAge"
+              placeholder="0" /></label
+          ><label class="field"
+            ><span class="form-label">Maximum age</span
+            ><input type="number" min="0" max="130" formControlName="maxAge" placeholder="130"
+          /></label>
+          <label class="field"
+            ><span class="form-label">Registered from</span
+            ><input type="date" formControlName="createdFrom" /></label
+          ><label class="field"
+            ><span class="form-label">Registered to</span
+            ><input type="date" formControlName="createdTo"
+          /></label>
+          @if (filterForm.hasError('ageRange')) {
+            <span class="error">Minimum age cannot exceed maximum age.</span>
           }
-        </button>
-        @if (filtersOpen()) {
-          <form class="filter-panel" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
-            <div class="filter-grid">
-              <label class="field"
-                ><span class="form-label">Gender</span
-                ><select formControlName="gender">
-                  <option value="">All genders</option>
-                  <option>Female</option>
-                  <option>Male</option>
-                  <option>Non-binary</option>
-                  <option>Prefer not to say</option>
-                </select></label
-              >
-              <label class="field"
-                ><span class="form-label">Status</span
-                ><select formControlName="status">
-                  <option value="">All statuses</option>
-                  <option>Active</option>
-                  <option>Inactive</option>
-                </select></label
-              >
-              <label class="field"
-                ><span class="form-label">Minimum age</span
-                ><input
-                  type="number"
-                  min="0"
-                  max="130"
-                  formControlName="minAge"
-                  placeholder="0" /></label
-              ><label class="field"
-                ><span class="form-label">Maximum age</span
-                ><input type="number" min="0" max="130" formControlName="maxAge" placeholder="130"
-              /></label>
-              <label class="field"
-                ><span class="form-label">Registered from</span
-                ><input type="date" formControlName="createdFrom" /></label
-              ><label class="field"
-                ><span class="form-label">Registered to</span
-                ><input type="date" formControlName="createdTo"
-              /></label>
-            </div>
-            @if (filterForm.hasError('ageRange')) {
-              <span class="error">Minimum age cannot exceed maximum age.</span>
-            }
-            @if (filterForm.hasError('dateRange')) {
-              <span class="error">Start date cannot be after end date.</span>
-            }
-            <div class="filter-actions">
-              <button type="button" class="secondary" (click)="clearFilters()">Clear All</button
-              ><button class="primary" [disabled]="filterForm.invalid">Apply Filters</button>
-            </div>
-          </form>
-        }
-      </div>
-      <button class="secondary button-icon" [disabled]="store.allTotal() === 0 || exporting()" (click)="export()">
-        <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
-      </button>
+          @if (filterForm.hasError('dateRange')) {
+            <span class="error">Start date cannot be after end date.</span>
+          }
+        </form>
+      </app-shared-filter>
+      <app-shared-export
+        [disabled]="store.allTotal() === 0"
+        [exporting]="exporting()"
+        (exportRequested)="export()"
+      />
     </div>
   </div>
   @if (store.patients().length) {
@@ -94,37 +89,89 @@
       <table>
         <thead>
           <tr>
-            @if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('firstName')"><app-table-sort-header label="Patient" field="firstName" [sort]="store.sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('mrn')){<th [attr.aria-sort]="ariaSort('mrn')"><app-table-sort-header label="Patient Id" field="mrn" [sort]="store.sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('contact')){<th>Contact</th>} @if(columnVisible('age')){<th>Age</th>} @if(columnVisible('gender')){<th>Gender</th>}
-            @if(columnVisible('bloodGroup')){<th>Blood group</th>} @if(columnVisible('status')){<th>Status</th>} @if(columnVisible('actions')){<th class="actions-column">Actions</th>}
+            @if (columnVisible('patient')) {
+              <th [attr.aria-sort]="ariaSort('firstName')">
+                <app-table-sort-header
+                  label="Patient"
+                  field="firstName"
+                  [sort]="store.sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('mrn')) {
+              <th [attr.aria-sort]="ariaSort('mrn')">
+                <app-table-sort-header
+                  label="Patient Id"
+                  field="mrn"
+                  [sort]="store.sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('contact')) {
+              <th>Contact</th>
+            }
+            @if (columnVisible('age')) {
+              <th>Age</th>
+            }
+            @if (columnVisible('gender')) {
+              <th>Gender</th>
+            }
+            @if (columnVisible('bloodGroup')) {
+              <th>Blood group</th>
+            }
+            @if (columnVisible('status')) {
+              <th>Status</th>
+            }
+            @if (columnVisible('actions')) {
+              <th class="actions-column">Actions</th>
+            }
           </tr>
         </thead>
         <tbody>
           @for (p of store.patients(); track p.id) {
             <tr class="clickable" tabindex="0" (click)="open(p.id)" (keydown.enter)="open(p.id)">
-              @if(columnVisible('patient')){<td>
-                <b>{{ p.firstName }} {{ p.lastName }}</b
-                ><br /><small class="muted">{{ p.city }}</small>
-              </td>}
-              @if(columnVisible('mrn')){<td>{{ p.mrn }}</td>}
-              @if(columnVisible('contact')){<td>
-                {{ p.phone }}<br /><small>{{ p.email }}</small>
-              </td>}
-              @if(columnVisible('age')){<td>{{ age(p.dob) }}</td>} @if(columnVisible('gender')){<td>{{ p.gender }}</td>} @if(columnVisible('bloodGroup')){<td>{{ p.bloodGroup }}</td>}
-              @if(columnVisible('status')){<td>
-                <app-status-badge [value]="p.status" />
-              </td>}
-              @if(columnVisible('actions')){<td class="actions actions-column" (click)="$event.stopPropagation()">
-                <app-actions-menu
-                  [id]="p.id"
-                  label="Patient actions"
-                  [canDelete]="p.status === 'Active'"
-                  (view)="open(p.id)"
-                  (edit)="openEdit(p)"
-                  (delete)="deactivate(p)"
-                />
-              </td>}
+              @if (columnVisible('patient')) {
+                <td>
+                  <b>{{ p.firstName }} {{ p.lastName }}</b
+                  ><br /><small class="muted">{{ p.city }}</small>
+                </td>
+              }
+              @if (columnVisible('mrn')) {
+                <td>{{ p.mrn }}</td>
+              }
+              @if (columnVisible('contact')) {
+                <td>
+                  {{ p.phone }}<br /><small>{{ p.email }}</small>
+                </td>
+              }
+              @if (columnVisible('age')) {
+                <td>{{ age(p.dob) }}</td>
+              }
+              @if (columnVisible('gender')) {
+                <td>{{ p.gender }}</td>
+              }
+              @if (columnVisible('bloodGroup')) {
+                <td>{{ p.bloodGroup }}</td>
+              }
+              @if (columnVisible('status')) {
+                <td>
+                  <app-status-badge [value]="p.status" />
+                </td>
+              }
+              @if (columnVisible('actions')) {
+                <td class="actions actions-column" (click)="$event.stopPropagation()">
+                  <app-actions-menu
+                    [id]="p.id"
+                    label="Patient actions"
+                    [canDelete]="p.status === 'Active'"
+                    (view)="open(p.id)"
+                    (edit)="openEdit(p)"
+                    (delete)="deactivate(p)"
+                  />
+                </td>
+              }
             </tr>
           }
         </tbody>
@@ -169,7 +216,11 @@
     size="lg"
     [dirty]="patientForm.form.dirty"
     (closed)="createOpen.set(false)"
-    ><app-patient-form #patientForm mode="create" (saved)="onPatientChanged()"
+    ><app-patient-form
+      #patientForm
+      mode="create"
+      (saved)="onPatientChanged()"
+      (cancelled)="createOpen.set(false)"
   /></app-modal>
 }
 @if (editingPatient(); as patient) {
@@ -179,6 +230,11 @@
     size="lg"
     [dirty]="patientForm.form.dirty"
     (closed)="editingPatient.set(null)"
-    ><app-patient-form #patientForm mode="edit" [patient]="patient" (saved)="onPatientChanged()"
+    ><app-patient-form
+      #patientForm
+      mode="edit"
+      [patient]="patient"
+      (saved)="onPatientChanged()"
+      (cancelled)="editingPatient.set(null)"
   /></app-modal>
 }

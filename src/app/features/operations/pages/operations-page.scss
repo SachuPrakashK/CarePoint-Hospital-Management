@@ -9,17 +9,17 @@
   grid-template-columns: 35px 1fr;
   gap: 12px;
   padding: 15px 18px;
-  border-bottom: 1px solid #e4ebed;
+  border-bottom: 1px solid var(--mc-border);
   cursor: pointer;
 }
 .notification.unread {
-  background: #f0faf7;
+  background: var(--mc-surface-soft);
 }
 .notification p {
   margin: 4px 0;
 }
 .notification small {
-  color: #6c7e84;
+  color: var(--mc-text-secondary);
 }
 .notice-icon {
   display: grid;
@@ -34,8 +34,8 @@
   position: fixed;
   right: 24px;
   bottom: 24px;
-  background: #173e49;
-  color: white;
+  background: var(--mc-primary);
+  color: var(--mc-surface);
   padding: 13px;
   border-radius: 8px;
 }
