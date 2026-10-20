@@ -1,7 +1,7 @@
 <div class="page-head">
   <div>
     <div class="breadcrumbs">Administration / Roles & Permissions</div>
-    <h1>Roles</h1>
+    <h1>Roles & Permissions</h1>
     <p class="muted">Control application access with database-backed roles and permissions.</p>
   </div>
   @if (auth.has('roles.create')) {
@@ -13,45 +13,12 @@
     <app-search-field placeholder="Search roles" (valueChange)="query($event)" />
     <div class="toolbar-actions">
       <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div
-        class="filter-anchor"
-        appClickOutside
-        (appClickOutside)="filtersOpen.set(false)"
-        (click)="$event.stopPropagation()"
-      >
-        <button type="button" class="secondary button-icon" (click)="filtersOpen.set(!filtersOpen())">
-          <app-icon name="filter" [size]="17" /> Filters
-          @if (status()) {
-            (1)
-          }
-        </button>
-        @if (filtersOpen()) {
-          <div class="filter-panel">
-            <div class="filter-grid">
-              <label class="field"
-                ><span>Status</span
-                ><select [value]="status()" (change)="status.set($any($event.target).value)">
-                  <option value="">All statuses</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                </select></label
-              >
-            </div>
-            <div class="filter-actions">
-              <button type="button" class="secondary" (click)="clearFilters()">Clear Filters</button
-              ><button type="button" class="primary" (click)="applyFilters()">Apply</button>
-            </div>
-          </div>
-        }
-      </div>
-      <button
-        type="button"
-        class="secondary button-icon"
-        [disabled]="exporting() || !total()"
-        (click)="export()"
-      >
-        <app-icon name="download" [size]="17" /> {{ exporting() ? 'Exporting...' : 'Export' }}
-      </button>
+      <app-shared-filter [activeCount]="status() ? 1 : 0" [loading]="loading()" (applied)="applyFilters()" (cleared)="clearFilters()">
+        <label class="field"><span>Status</span><select [value]="status()" (change)="status.set($any($event.target).value)">
+          <option value="">All statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option>
+        </select></label>
+      </app-shared-filter>
+      <app-shared-export [disabled]="!total()" [exporting]="exporting()" (exportRequested)="export()" />
     </div>
   </div>
   @if (loading()) {

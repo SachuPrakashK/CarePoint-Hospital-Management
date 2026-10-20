@@ -25,7 +25,7 @@ export class Phase23Store {
     void this.loadAll();
   }
   private optional<T extends { data: any[] }>(request: Promise<T>): Promise<T> {
-    return request.catch(() => ({ data: [] } as unknown as T));
+    return request.catch(() => ({ data: [] }) as unknown as T);
   }
   async loadAll() {
     this.loading.set(true);
@@ -160,6 +160,10 @@ export class Phase23Store {
   }
   async saveAmbulance(v: any, id?: string) {
     await firstValueFrom(id ? this.api.updateAmbulance(id, v) : this.api.createAmbulance(v));
+    await this.changed('ambulance');
+  }
+  async removeAmbulance(id: string) {
+    await firstValueFrom(this.api.removeAmbulance(id));
     await this.changed('ambulance');
   }
   async savePurchaseOrder(v: any, id?: string) {

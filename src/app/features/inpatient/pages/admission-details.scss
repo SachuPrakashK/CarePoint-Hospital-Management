@@ -10,20 +10,20 @@
 }
 .detail-grid small,
 .history small {
-  color: #6b7d83;
+  color: var(--mc-text-secondary);
 }
 .history {
   display: grid;
   grid-template-columns: 15px 1fr auto;
   gap: 10px;
   padding: 14px 20px;
-  border-bottom: 1px solid #e5ecee;
+  border-bottom: 1px solid var(--mc-border);
 }
 .history i {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #13917a;
+  background: var(--mc-secondary);
   margin-top: 5px;
 }
 .history div {
@@ -38,21 +38,46 @@
 }
 .actions-panel hr {
   border: 0;
-  border-top: 1px solid #e0e8ea;
+  border-top: 1px solid var(--mc-border);
   width: 100%;
 }
-.detail-tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin; }
-.detail-tabs button { flex: 0 0 auto; }
-.records-grid { display: grid; gap: 16px; }
-.record-card { overflow: hidden; }
-.record-list { padding: 0 20px 20px; }
-.history-list { overflow: hidden; }
-.full { grid-column: 1 / -1; }
+.detail-tabs {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+}
+.detail-tabs button {
+  flex: 0 0 auto;
+}
+.records-grid {
+  display: grid;
+  gap: 16px;
+}
+.record-card {
+  overflow: hidden;
+}
+.record-list {
+  padding: 0 20px 20px;
+}
+.history-list {
+  overflow: hidden;
+}
+.full {
+  grid-column: 1 / -1;
+}
 @media (max-width: 850px) {
-  .grid-2 { grid-template-columns: 1fr; }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 600px) {
-  .detail-grid { grid-template-columns: 1fr; }
-  .history { grid-template-columns: 15px 1fr; }
-  .history app-status-badge { grid-column: 2; }
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+  .history {
+    grid-template-columns: 15px 1fr;
+  }
+  .history app-status-badge {
+    grid-column: 2;
+  }
 }

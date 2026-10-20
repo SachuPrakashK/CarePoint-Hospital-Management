@@ -27,6 +27,7 @@ import { administrationService } from './services/administration.service.js';
 import { preferenceRoutes } from './routes/preference.routes.js';
 import { languageRoutes } from './routes/language.routes.js';
 import { supportRoutes } from './routes/support.routes.js';
+import { reportsRoutes } from './routes/reports.routes.js';
 
 export const createApp = () => {
   const app = express();
@@ -49,6 +50,15 @@ export const createApp = () => {
       legacyHeaders: false,
     }),
   );
+  app.use(
+    '/api/v1/auth/forgot-password',
+    rateLimit({
+      windowMs: 15 * 60_000,
+      limit: 5,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+    }),
+  );
   app.get('/health', (_req, res) => res.json({ data: { status: 'ok' } }));
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/dashboard', dashboardRoutes);
@@ -61,6 +71,7 @@ export const createApp = () => {
   app.use('/api/v1/preferences', preferenceRoutes);
   app.use('/api/v1/languages', languageRoutes);
   app.use('/api/v1/support', supportRoutes);
+  app.use('/api/v1/reports', reportsRoutes);
   app.use('/api/v1/appointments', appointmentRoutes);
   app.use('/api/v1/opd-queue', opdQueueRoutes);
   app.use('/api/v1', clinicalRoutes);

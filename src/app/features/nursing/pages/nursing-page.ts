@@ -7,10 +7,22 @@ import { ToastService } from '../../../core/services/toast.service';
 import { AuthStore } from '../../../core/auth/auth.store';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
-import{TableSortHeader}from'../../../shared/components/table-sort-header/table-sort-header';import{ColumnConfig}from'../../../shared/components/column-config/column-config';import{TableColumnDefinition,TableSort}from'../../../shared/models/table.models';import{TablePreferencesService}from'../../../core/services/table-preferences.service';import{sortTableRows}from'../../../shared/utils/table-sort';
+import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
+import { ColumnConfig } from '../../../shared/components/column-config/column-config';
+import { TableColumnDefinition, TableSort } from '../../../shared/models/table.models';
+import { TablePreferencesService } from '../../../core/services/table-preferences.service';
+import { sortTableRows } from '../../../shared/utils/table-sort';
+import { SummaryCard } from '../../../shared/components/summary-card/summary-card';
 
 @Component({
-  imports: [ReactiveFormsModule, StatusBadge, EmptyState,TableSortHeader,ColumnConfig],
+  imports: [
+    ReactiveFormsModule,
+    StatusBadge,
+    EmptyState,
+    TableSortHeader,
+    ColumnConfig,
+    SummaryCard,
+  ],
   templateUrl: './nursing-page.html',
   styleUrl: './nursing-page.scss',
 })
@@ -21,7 +33,7 @@ export class NursingPage {
   private toast = inject(ToastService);
   private router = inject(Router);
   private fb = inject(FormBuilder);
-  private preferences=inject(TablePreferencesService);
+  private preferences = inject(TablePreferencesService);
 
   readonly selected = signal('');
   readonly savingNote = signal(false);
@@ -39,9 +51,16 @@ export class NursingPage {
     const assignedIds = new Set(assigned.map((item) => item.admission.id));
     return [
       ...assigned,
-      ...this.store.activeAdmissions()
+      ...this.store
+        .activeAdmissions()
         .filter((admission) => !assignedIds.has(admission.id))
-        .map((admission) => ({ id: `unassigned-${admission.id}`, admission, patientName: admission.patientName, mrn: '', shift: 'UNASSIGNED' })),
+        .map((admission) => ({
+          id: `unassigned-${admission.id}`,
+          admission,
+          patientName: admission.patientName,
+          mrn: '',
+          shift: 'UNASSIGNED',
+        })),
     ];
   });
   readonly selectedMedications = computed(() =>
@@ -50,12 +69,89 @@ export class NursingPage {
   readonly selectedNotes = computed(() =>
     this.store.nursingNotes().filter((item) => item.admissionId === this.selected()),
   );
-  readonly assignedSort=signal<TableSort|null>(null);readonly handoverSort=signal<TableSort|null>(null);
-  readonly assignedColumns:readonly TableColumnDefinition[]=[{id:'patient',header:'Patient',visibleByDefault:true,required:true,sortable:true,sortKey:'patient'},{id:'admission',header:'Admission',visibleByDefault:true,sortable:true,sortKey:'admission'},{id:'location',header:'Location',visibleByDefault:true,sortable:true,sortKey:'location'},{id:'doctor',header:'Doctor',visibleByDefault:true,sortable:true,sortKey:'doctor'},{id:'shift',header:'Shift',visibleByDefault:true,sortable:true,sortKey:'shift'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'}];
-  readonly handoverColumns:readonly TableColumnDefinition[]=[{id:'date',header:'Date/time',visibleByDefault:true,required:true,sortable:true,sortKey:'createdAt'},{id:'patient',header:'Patient',visibleByDefault:true,sortable:true,sortKey:'patient'},{id:'shift',header:'Shift',visibleByDefault:true,sortable:true,sortKey:'shift'},{id:'from',header:'Handed over by',visibleByDefault:true,sortable:true,sortKey:'from'},{id:'to',header:'Received by',visibleByDefault:true,sortable:true,sortKey:'to'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'},{id:'actions',header:'Action',visibleByDefault:true,required:true}];
-  readonly assignedVisible=signal(this.preferences.load('nursing-assigned',this.assignedColumns));readonly handoverVisible=signal(this.preferences.load('nursing-handovers',this.handoverColumns));
-  readonly assignedRows=computed(()=>sortTableRows(this.store.assignedPatients(),this.assignedSort(),{patient:x=>x.patientName,admission:x=>x.admission.number,location:x=>x.admission.allocations[0]?.ward,doctor:x=>x.admission.attendingDoctor,shift:x=>x.shift,status:x=>x.admission.status}));
-  readonly handoverRows=computed(()=>sortTableRows(this.store.handovers(),this.handoverSort(),{createdAt:x=>new Date(x.createdAt).getTime(),patient:x=>x.admission?.patient?.firstName,shift:x=>x.fromShift,from:x=>x.handedOverBy?.firstName,to:x=>x.handedOverTo?.firstName,status:x=>x.status}));
+  readonly assignedSort = signal<TableSort | null>(null);
+  readonly handoverSort = signal<TableSort | null>(null);
+  readonly assignedColumns: readonly TableColumnDefinition[] = [
+    {
+      id: 'patient',
+      header: 'Patient',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'patient',
+    },
+    {
+      id: 'admission',
+      header: 'Admission',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'admission',
+    },
+    {
+      id: 'location',
+      header: 'Location',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'location',
+    },
+    { id: 'doctor', header: 'Doctor', visibleByDefault: true, sortable: true, sortKey: 'doctor' },
+    { id: 'shift', header: 'Shift', visibleByDefault: true, sortable: true, sortKey: 'shift' },
+    { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
+  ];
+  readonly handoverColumns: readonly TableColumnDefinition[] = [
+    {
+      id: 'date',
+      header: 'Date/time',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'createdAt',
+    },
+    {
+      id: 'patient',
+      header: 'Patient',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'patient',
+    },
+    { id: 'shift', header: 'Shift', visibleByDefault: true, sortable: true, sortKey: 'shift' },
+    {
+      id: 'from',
+      header: 'Handed over by',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'from',
+    },
+    { id: 'to', header: 'Received by', visibleByDefault: true, sortable: true, sortKey: 'to' },
+    { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
+    { id: 'actions', header: 'Action', visibleByDefault: true, required: true },
+  ];
+  readonly assignedVisible = signal(
+    this.preferences.load('nursing-assigned', this.assignedColumns),
+  );
+  readonly handoverVisible = signal(
+    this.preferences.load('nursing-handovers', this.handoverColumns),
+  );
+  readonly assignedRows = computed(() =>
+    sortTableRows(this.store.assignedPatients(), this.assignedSort(), {
+      patient: (x) => x.patientName,
+      admission: (x) => x.admission.number,
+      location: (x) => x.admission.allocations[0]?.ward,
+      doctor: (x) => x.admission.attendingDoctor,
+      shift: (x) => x.shift,
+      status: (x) => x.admission.status,
+    }),
+  );
+  readonly handoverRows = computed(() =>
+    sortTableRows(this.store.handovers(), this.handoverSort(), {
+      createdAt: (x) => new Date(x.createdAt).getTime(),
+      patient: (x) => x.admission?.patient?.firstName,
+      shift: (x) => x.fromShift,
+      from: (x) => x.handedOverBy?.firstName,
+      to: (x) => x.handedOverTo?.firstName,
+      status: (x) => x.status,
+    }),
+  );
 
   readonly noteForm = this.fb.nonNullable.group({
     observation: ['', [Validators.required, Validators.maxLength(2000)]],
@@ -84,9 +180,42 @@ export class NursingPage {
 
   constructor() {
     void this.initialize();
-    void this.preferences.loadRemote('nursing-assigned',this.assignedColumns).then(ids=>this.assignedVisible.set(ids));void this.preferences.loadRemote('nursing-handovers',this.handoverColumns).then(ids=>this.handoverVisible.set(ids));
+    void this.preferences
+      .loadRemote('nursing-assigned', this.assignedColumns)
+      .then((ids) => this.assignedVisible.set(ids));
+    void this.preferences
+      .loadRemote('nursing-handovers', this.handoverColumns)
+      .then((ids) => this.handoverVisible.set(ids));
   }
-  visible(kind:'assigned'|'handover',id:string){return(kind==='assigned'?this.assignedVisible():this.handoverVisible()).includes(id);}ariaSort(kind:'assigned'|'handover',field:string):'ascending'|'descending'|'none'{const sort=kind==='assigned'?this.assignedSort():this.handoverSort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}changeSort(kind:'assigned'|'handover',value:TableSort|null){(kind==='assigned'?this.assignedSort:this.handoverSort).set(value);}async applyColumns(kind:'assigned'|'handover',ids:string[]){const columns=kind==='assigned'?this.assignedColumns:this.handoverColumns;const sort=kind==='assigned'?this.assignedSort:this.handoverSort;if(sort()&&!columns.some(x=>ids.includes(x.id)&&x.sortKey===sort()!.field))sort.set(null);(kind==='assigned'?this.assignedVisible:this.handoverVisible).set(ids);await this.preferences.save(kind==='assigned'?'nursing-assigned':'nursing-handovers',ids);}async resetColumns(kind:'assigned'|'handover'){const id=kind==='assigned'?'nursing-assigned':'nursing-handovers',columns=kind==='assigned'?this.assignedColumns:this.handoverColumns;await this.preferences.reset(id);(kind==='assigned'?this.assignedVisible:this.handoverVisible).set(this.preferences.load(id,columns));}
+  visible(kind: 'assigned' | 'handover', id: string) {
+    return (kind === 'assigned' ? this.assignedVisible() : this.handoverVisible()).includes(id);
+  }
+  ariaSort(kind: 'assigned' | 'handover', field: string): 'ascending' | 'descending' | 'none' {
+    const sort = kind === 'assigned' ? this.assignedSort() : this.handoverSort();
+    return sort?.field === field ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  }
+  changeSort(kind: 'assigned' | 'handover', value: TableSort | null) {
+    (kind === 'assigned' ? this.assignedSort : this.handoverSort).set(value);
+  }
+  async applyColumns(kind: 'assigned' | 'handover', ids: string[]) {
+    const columns = kind === 'assigned' ? this.assignedColumns : this.handoverColumns;
+    const sort = kind === 'assigned' ? this.assignedSort : this.handoverSort;
+    if (sort() && !columns.some((x) => ids.includes(x.id) && x.sortKey === sort()!.field))
+      sort.set(null);
+    (kind === 'assigned' ? this.assignedVisible : this.handoverVisible).set(ids);
+    await this.preferences.save(
+      kind === 'assigned' ? 'nursing-assigned' : 'nursing-handovers',
+      ids,
+    );
+  }
+  async resetColumns(kind: 'assigned' | 'handover') {
+    const id = kind === 'assigned' ? 'nursing-assigned' : 'nursing-handovers',
+      columns = kind === 'assigned' ? this.assignedColumns : this.handoverColumns;
+    await this.preferences.reset(id);
+    (kind === 'assigned' ? this.assignedVisible : this.handoverVisible).set(
+      this.preferences.load(id, columns),
+    );
+  }
 
   private async initialize() {
     await this.store.loadNursing();
@@ -118,7 +247,10 @@ export class NursingPage {
     this.savingNote.set(true);
     this.noteError.set('');
     try {
-      await this.store.addNursingNote({ admissionId: this.selected(), ...this.noteForm.getRawValue() });
+      await this.store.addNursingNote({
+        admissionId: this.selected(),
+        ...this.noteForm.getRawValue(),
+      });
       this.noteForm.reset({ observation: '', intervention: '', notes: '' });
       this.toast.success('Nursing note recorded.');
     } catch (error: any) {
@@ -164,9 +296,18 @@ export class NursingPage {
   openHandover() {
     this.handoverError.set('');
     this.handoverForm.reset({
-      admissionId: this.selected(), fromShift: 'MORNING', toShift: 'EVENING', handedOverToId: '',
-      clinicalSummary: '', currentCondition: '', importantObservations: '', pendingTasks: '',
-      medicationNotes: '', investigationsPending: '', specialInstructions: '', riskAlerts: '',
+      admissionId: this.selected(),
+      fromShift: 'MORNING',
+      toShift: 'EVENING',
+      handedOverToId: '',
+      clinicalSummary: '',
+      currentCondition: '',
+      importantObservations: '',
+      pendingTasks: '',
+      medicationNotes: '',
+      investigationsPending: '',
+      specialInstructions: '',
+      riskAlerts: '',
       additionalNotes: '',
     });
     this.handoverDialog.set(true);
@@ -179,7 +320,8 @@ export class NursingPage {
   async submitHandover() {
     this.handoverForm.markAllAsTouched();
     const value = this.handoverForm.getRawValue();
-    if (this.handoverForm.invalid || value.fromShift === value.toShift || this.handoverSubmitting()) return;
+    if (this.handoverForm.invalid || value.fromShift === value.toShift || this.handoverSubmitting())
+      return;
     this.handoverSubmitting.set(true);
     this.handoverError.set('');
     try {

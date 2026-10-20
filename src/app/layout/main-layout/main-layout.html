@@ -1,12 +1,15 @@
 <div class="app-shell" [class.collapsed]="collapsed()">
   <aside [class.open]="mobileOpen()">
-    <a class="logo" routerLink="/" aria-label="CarePoint dashboard"
-      ><img class="logo-full" src="logo-full.svg" alt="CarePoint Hospital Management" /><img
+    <a class="logo" routerLink="/" aria-label="MediCare+ dashboard"
+      ><img
+        class="logo-full"
+        src="logo-full-light.svg"
+        alt="MediCare+ Hospital Management System" /><img
         class="logo-short"
-        src="logo-mark.svg"
+        src="logo-mark-light.svg"
         alt=""
     /></a>
-    <nav aria-label="Primary navigation">
+    <nav class="sidebar-nav" aria-label="Primary navigation" tabindex="0">
       @for (item of nav; track item.path) {
         @if (auth.has($any(item.permission))) {
           <a
@@ -26,11 +29,18 @@
     </nav>
     <div class="sidebar-footer">
       @if (auth.has('support.view')) {
-        <a class="settings-link" routerLink="/help-support" routerLinkActive="active"
+        <a
+          class="settings-link"
+          routerLink="/help-support"
+          routerLinkActive="active"
           [attr.data-label]="'nav.support' | translate"
-          (mouseenter)="showSidebarTooltip($event, t('nav.support'))" (mouseleave)="hideSidebarTooltip()"
-          (focus)="showSidebarTooltip($event, t('nav.support'))" (blur)="hideSidebarTooltip()">
-          <span class="nav-icon"><app-icon name="help" /></span><span class="nav-label">{{ 'nav.support' | translate }}</span>
+          (mouseenter)="showSidebarTooltip($event, t('nav.support'))"
+          (mouseleave)="hideSidebarTooltip()"
+          (focus)="showSidebarTooltip($event, t('nav.support'))"
+          (blur)="hideSidebarTooltip()"
+        >
+          <span class="nav-icon"><app-icon name="help" /></span
+          ><span class="nav-label">{{ 'nav.support' | translate }}</span>
         </a>
       }
       @if (auth.has('settings.view')) {
@@ -50,7 +60,9 @@
     </div>
   </aside>
   @if (sidebarTooltip(); as tooltip) {
-    <div class="sidebar-tooltip" [style.top.px]="tooltip.top" role="tooltip">{{ tooltip.label }}</div>
+    <div class="sidebar-tooltip" [style.top.px]="tooltip.top" role="tooltip">
+      {{ tooltip.label }}
+    </div>
   }
   <div class="workspace">
     <header>
@@ -63,14 +75,28 @@
       </button>
       <div class="header-actions">
         <div class="language-menu">
-          <button class="language-button" type="button" (click)="$event.stopPropagation(); languageMenu.set(!languageMenu())" [attr.aria-expanded]="languageMenu()" aria-haspopup="menu">
-            <span aria-hidden="true">🌐</span><span>{{ language.current().toUpperCase() }}</span><app-icon name="chevron-down" [size]="14" />
+          <button
+            class="language-button"
+            type="button"
+            (click)="$event.stopPropagation(); languageMenu.set(!languageMenu())"
+            [attr.aria-expanded]="languageMenu()"
+            aria-haspopup="menu"
+          >
+            <span aria-hidden="true">🌐</span><span>{{ language.current().toUpperCase() }}</span
+            ><app-icon name="chevron-down" [size]="14" />
           </button>
-          @if(languageMenu()){
+          @if (languageMenu()) {
             <div class="language-dropdown" role="menu" (click)="$event.stopPropagation()">
-              @for(item of language.enabled();track item.code){
-                <button type="button" role="menuitemradio" [attr.aria-checked]="language.current()===item.code" [class.active]="language.current()===item.code" (click)="language.select(item.code);languageMenu.set(false)">
-                  <span>{{ item.nativeName }}</span><small>{{ item.name }}</small>
+              @for (item of language.enabled(); track item.code) {
+                <button
+                  type="button"
+                  role="menuitemradio"
+                  [attr.aria-checked]="language.current() === item.code"
+                  [class.active]="language.current() === item.code"
+                  (click)="language.select(item.code); languageMenu.set(false)"
+                >
+                  <span>{{ item.nativeName }}</span
+                  ><small>{{ item.name }}</small>
                 </button>
               }
             </div>
@@ -99,7 +125,13 @@
                 }
               </div>
               @if (notifications.loading()) {
-                <div class="notification-state loading-state loading-state--compact" role="status" aria-live="polite">Loading notifications…</div>
+                <div
+                  class="notification-state loading-state loading-state--compact"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Loading notifications…
+                </div>
               } @else if (notifications.error()) {
                 <div class="notification-state error" role="alert">
                   {{ notifications.error()

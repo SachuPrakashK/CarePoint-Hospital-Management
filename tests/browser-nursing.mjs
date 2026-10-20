@@ -40,7 +40,7 @@ try {
   const errors = []; let noteRequests = 0;
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
   page.on('request', (request) => { if (request.method() === 'POST' && request.url().endsWith('/api/v1/nursing-notes')) noteRequests++; });
-  await page.goto('http://127.0.0.1:4200/auth/sign-in', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:4200/auth/login', { waitUntil: 'networkidle' });
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();

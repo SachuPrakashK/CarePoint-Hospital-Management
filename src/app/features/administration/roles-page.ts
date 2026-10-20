@@ -15,8 +15,8 @@ import { RoleForm } from './role-form';
 import { ConfirmationService } from '../../core/services/confirmation.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AuthStore } from '../../core/auth/auth.store';
-import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
-import { AppIcon } from '../../shared/components/icon/app-icon';
+import { SharedFilter } from '../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../shared/components/export/shared-export';
 import { TableSortHeader } from '../../shared/components/table-sort-header/table-sort-header';
 import { ColumnConfig } from '../../shared/components/column-config/column-config';
 import { TableColumnDefinition, TableSort } from '../../shared/models/table.models';
@@ -31,8 +31,8 @@ import { formatPermissionLabel } from '../../shared/utils/permission-label';
     EmptyState,
     AppModal,
     RoleForm,
-    ClickOutsideDirective,
-    AppIcon,
+    SharedFilter,
+    SharedExport,
     TableSortHeader,
     ColumnConfig,
   ],
@@ -56,7 +56,6 @@ export class RolesPage {
   readonly totalPages = signal(0);
   readonly search = signal('');
   readonly status = signal('');
-  readonly filtersOpen = signal(false);
   readonly exporting = signal(false);
   readonly modal = signal(false);
   readonly editLoading = signal<string | null>(null);
@@ -145,7 +144,6 @@ export class RolesPage {
   }
   applyFilters() {
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.load();
   }
   clearFilters() {

@@ -1,3 +1,93 @@
-.actions{position:relative}.actions.actions-column{display:table-cell;text-align:center}.actions-column{width:92px;min-width:92px;text-align:center}.more-button{display:grid;place-items:center;width:32px;height:32px;margin:auto;border:0;background:transparent;color:var(--color-blue-700);border-radius:var(--radius-sm);padding:6px}.more-button:hover{background:#edf5fb}.more-button app-icon{color:currentColor}.action-menu{position:absolute;right:14px;top:42px;z-index:8;width:150px;padding:5px;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-dialog)}.action-menu--overlay{position:fixed;z-index:100;top:auto;right:auto}.action-menu button{display:flex;align-items:center;gap:9px;width:100%;padding:9px;border:0;border-radius:5px;background:transparent;color:var(--color-text);text-align:left}.action-menu button:hover{background:#edf5fb}.action-menu .delete{color:var(--color-danger)}
-.action-trigger{display:grid;place-items:center;width:32px;height:32px;margin:auto;padding:6px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--color-blue-700);cursor:pointer}.action-trigger:hover{background:#edf5fb}.action-trigger app-icon{color:currentColor}.action-menu .danger{color:var(--color-danger)}
-.action-menu button:disabled{cursor:not-allowed;opacity:.5;background:transparent}
+.actions {
+  position: relative;
+}
+.actions.actions-column {
+  display: table-cell;
+  text-align: center;
+}
+.actions-column {
+  width: 92px;
+  min-width: 92px;
+  text-align: center;
+}
+.more-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: auto;
+  border: 0;
+  background: transparent;
+  color: var(--color-blue-700);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+}
+.more-button:hover {
+  background: var(--color-light-blue);
+}
+.more-button app-icon {
+  color: currentColor;
+}
+.action-menu {
+  position: absolute;
+  right: 14px;
+  top: 42px;
+  z-index: 8;
+  width: 150px;
+  padding: 5px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-dialog);
+}
+.action-menu--overlay {
+  position: fixed;
+  z-index: 100;
+  top: auto;
+  right: auto;
+}
+.action-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+}
+.action-menu button:hover {
+  background: var(--color-light-blue);
+}
+.action-menu .delete {
+  color: var(--color-danger);
+}
+.action-trigger {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: auto;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-blue-700);
+  cursor: pointer;
+}
+.action-trigger:hover {
+  background: var(--color-light-blue);
+}
+.action-trigger app-icon {
+  color: currentColor;
+}
+.action-menu .danger {
+  color: var(--color-danger);
+}
+.action-menu button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: transparent;
+}

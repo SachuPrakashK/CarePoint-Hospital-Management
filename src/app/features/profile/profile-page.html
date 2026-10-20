@@ -4,7 +4,7 @@
 <div class="breadcrumbs"><a routerLink="/dashboard">Dashboard</a> / Profile</div>
 <div class="page-head">
   <div>
-    <h1>My profile</h1>
+    <h1>My Profile</h1>
     <p class="muted">Manage your account information and profile image.</p>
   </div>
 </div>
@@ -58,10 +58,204 @@
       /></label>
     </div>
     <div class="form-actions">
-      <button type="button" class="secondary">Change password</button
+      <button type="button" class="secondary" (click)="openChangePassword()">Change password</button
       ><button class="primary" [disabled]="form.invalid || saving()">
         {{ saving() ? 'Saving…' : 'Save changes' }}
       </button>
     </div>
   </form>
 </div>
+
+@if (changePasswordOpen()) {
+  <app-modal
+    title="Change Password"
+    description="Update your password to keep your account secure."
+    icon="shield"
+    size="compact"
+    [dirty]="passwordForm.dirty"
+    (closed)="closeChangePassword()"
+  >
+    <form
+      class="crud-modal__form"
+      [formGroup]="passwordForm"
+      (ngSubmit)="changePassword()"
+      novalidate
+    >
+      <div class="crud-modal__body password-form">
+        <label class="field">
+          <span class="form-label">Current Password <span class="required-indicator">*</span></span>
+          <span
+            class="profile-password-input"
+            [class.profile-password-input--error]="
+              passwordForm.controls.currentPassword.touched &&
+              passwordForm.controls.currentPassword.invalid
+            "
+          >
+            <app-icon name="lock" [size]="18" />
+            <input
+              [type]="passwordVisible().current ? 'text' : 'password'"
+              formControlName="currentPassword"
+              placeholder="Enter current password"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              [attr.aria-label]="
+                passwordVisible().current ? 'Hide current password' : 'Show current password'
+              "
+              (click)="togglePassword('current')"
+            >
+              <app-icon [name]="passwordVisible().current ? 'eye-off' : 'eye'" [size]="18" />
+            </button>
+          </span>
+          @if (
+            passwordForm.controls.currentPassword.touched &&
+            passwordForm.controls.currentPassword.invalid
+          ) {
+            <span class="error">{{
+              passwordForm.controls.currentPassword.hasError('server')
+                ? 'Current password is incorrect.'
+                : 'Current password is required.'
+            }}</span>
+          }
+        </label>
+        <label class="field">
+          <span class="form-label">New Password <span class="required-indicator">*</span></span>
+          <span
+            class="profile-password-input"
+            [class.profile-password-input--error]="
+              passwordForm.controls.newPassword.touched && passwordForm.controls.newPassword.invalid
+            "
+          >
+            <app-icon name="lock" [size]="18" />
+            <input
+              [type]="passwordVisible().next ? 'text' : 'password'"
+              formControlName="newPassword"
+              placeholder="Enter new password"
+              autocomplete="new-password"
+              maxlength="128"
+            />
+            <button
+              type="button"
+              [attr.aria-label]="passwordVisible().next ? 'Hide new password' : 'Show new password'"
+              (click)="togglePassword('next')"
+            >
+              <app-icon [name]="passwordVisible().next ? 'eye-off' : 'eye'" [size]="18" />
+            </button>
+          </span>
+          <div class="password-strength" aria-live="polite">
+            <span class="password-strength__label">Password strength</span>
+            <span class="password-strength__value">{{ passwordStrength().label }}</span>
+            <span class="password-strength__segments" aria-hidden="true">
+              @for (segment of [1, 2, 3, 4]; track segment) {
+                <span
+                  [class.password-strength__segment--active]="passwordStrength().score >= segment"
+                  [attr.data-strength]="passwordStrength().className"
+                ></span>
+              }
+            </span>
+          </div>
+          @if (
+            passwordForm.controls.newPassword.touched &&
+            passwordForm.controls.newPassword.hasError('sameAsCurrent')
+          ) {
+            <span class="error">New password must be different from the current password.</span>
+          } @else if (
+            passwordForm.controls.newPassword.touched && passwordForm.controls.newPassword.invalid
+          ) {
+            <span class="error"
+              >Use at least {{ passwordPolicy().minimumLength }} characters and meet the listed
+              security requirements.</span
+            >
+          }
+          <small class="password-requirements"
+            >Required: {{ passwordPolicy().minimumLength }}+ characters
+            @if (passwordPolicy().requireUppercase) {
+              , uppercase
+            }
+            @if (passwordPolicy().requireLowercase) {
+              , lowercase
+            }
+            @if (passwordPolicy().requireNumber) {
+              , number
+            }
+            @if (passwordPolicy().requireSpecial) {
+              , special character
+            }
+            .</small
+          >
+        </label>
+        <label class="field">
+          <span class="form-label"
+            >Confirm New Password <span class="required-indicator">*</span></span
+          >
+          <span
+            class="profile-password-input"
+            [class.profile-password-input--error]="
+              passwordForm.controls.confirmPassword.touched &&
+              passwordForm.controls.confirmPassword.invalid
+            "
+          >
+            <app-icon name="lock" [size]="18" />
+            <input
+              [type]="passwordVisible().confirmation ? 'text' : 'password'"
+              formControlName="confirmPassword"
+              placeholder="Confirm new password"
+              autocomplete="new-password"
+              maxlength="128"
+            />
+            <button
+              type="button"
+              [attr.aria-label]="
+                passwordVisible().confirmation
+                  ? 'Hide confirmed password'
+                  : 'Show confirmed password'
+              "
+              (click)="togglePassword('confirmation')"
+            >
+              <app-icon [name]="passwordVisible().confirmation ? 'eye-off' : 'eye'" [size]="18" />
+            </button>
+          </span>
+          @if (
+            passwordForm.controls.confirmPassword.touched &&
+            passwordForm.controls.confirmPassword.hasError('mismatch')
+          ) {
+            <span class="error">Passwords do not match.</span>
+          } @else if (
+            passwordForm.controls.confirmPassword.touched &&
+            passwordForm.controls.confirmPassword.invalid
+          ) {
+            <span class="error">Confirm your new password.</span>
+          }
+        </label>
+        @if (passwordError()) {
+          <p class="error password-form__error" role="alert">{{ passwordError() }}</p>
+        }
+        <aside class="password-security-tip">
+          <app-icon name="check-circle" [size]="19" />
+          <p>
+            <strong>Security Tip:</strong> Use a strong, unique password and avoid reusing passwords
+            across accounts.
+          </p>
+        </aside>
+      </div>
+      <footer class="crud-modal__footer">
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="changingPassword()"
+          (click)="closeChangePassword()"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="primary button-icon" [disabled]="changingPassword()">
+          @if (changingPassword()) {
+            <span class="password-button-spinner" aria-hidden="true"></span><span>Updating…</span>
+          } @else {
+            <app-icon name="shield" [size]="17" /><span>Update Password</span>
+          }
+        </button>
+      </footer>
+    </form>
+  </app-modal>
+}

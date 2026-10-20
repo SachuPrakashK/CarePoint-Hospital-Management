@@ -1,0 +1,211 @@
+@if (loading()) {
+  <div class="loading-state loading-state--page" role="status">
+    Loading {{ label().toLowerCase() }} details…
+  </div>
+} @else if (error()) {
+  <div class="error-state" role="alert">
+    {{ error() }} <button type="button" class="secondary" (click)="load()">Retry</button>
+  </div>
+} @else if (record(); as item) {
+  <header class="page-head details-head">
+    <div>
+      <div class="breadcrumbs">Inventory & Operations / {{ label() }} / Details</div>
+      <h1>{{ title(item) }}</h1>
+      <p class="muted">Read-only {{ label().toLowerCase() }} information</p>
+    </div>
+    <div class="details-actions">
+      @if (item.status) {
+        <app-status-badge [value]="item.status" />
+      }
+      <button type="button" class="secondary" (click)="back()">Back</button>
+    </div>
+  </header>
+
+  @if (kind === 'inventory') {
+    <div class="details-layout">
+      <section class="card detail-card">
+        <div class="section-title"><h2>General information</h2></div>
+        <dl>
+          <div>
+            <dt>Item name</dt>
+            <dd>{{ item.name }}</dd>
+          </div>
+          <div>
+            <dt>Item code</dt>
+            <dd>{{ item.code }}</dd>
+          </div>
+          <div>
+            <dt>Category</dt>
+            <dd>{{ display(item.category?.name) }}</dd>
+          </div>
+          <div>
+            <dt>Supplier</dt>
+            <dd>{{ display(item.supplier?.name) }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="card detail-card">
+        <div class="section-title"><h2>Stock information</h2></div>
+        <dl>
+          <div>
+            <dt>Quantity</dt>
+            <dd>{{ item.quantity }}</dd>
+          </div>
+          <div>
+            <dt>Unit</dt>
+            <dd>{{ item.unit }}</dd>
+          </div>
+          <div>
+            <dt>Minimum stock</dt>
+            <dd>{{ item.reorderLevel }}</dd>
+          </div>
+          <div>
+            <dt>Storage location</dt>
+            <dd>{{ item.store }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  } @else if (kind === 'procurement') {
+    <div class="details-layout">
+      <section class="card detail-card">
+        <div class="section-title"><h2>Request information</h2></div>
+        <dl>
+          <div>
+            <dt>Request number</dt>
+            <dd>{{ item.number }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd><app-status-badge [value]="item.status" /></dd>
+          </div>
+          <div>
+            <dt>Supplier</dt>
+            <dd>{{ display(item.supplier?.name) }}</dd>
+          </div>
+          <div>
+            <dt>Item</dt>
+            <dd>{{ display(item.inventoryItem?.name || item.medicine?.name) }}</dd>
+          </div>
+          <div>
+            <dt>Item type</dt>
+            <dd>{{ item.itemType }}</dd>
+          </div>
+          <div>
+            <dt>Requested</dt>
+            <dd>{{ item.requestedAt | appDateTime }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="card detail-card">
+        <div class="section-title"><h2>Order values</h2></div>
+        <dl>
+          <div>
+            <dt>Ordered quantity</dt>
+            <dd>{{ item.quantity }}</dd>
+          </div>
+          <div>
+            <dt>Received quantity</dt>
+            <dd>{{ item.receivedQuantity }}</dd>
+          </div>
+          <div>
+            <dt>Unit price</dt>
+            <dd>₹{{ item.unitPrice }}</dd>
+          </div>
+          <div>
+            <dt>Total value</dt>
+            <dd>₹{{ item.quantity * item.unitPrice }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  } @else if (kind === 'suppliers') {
+    <div class="details-layout">
+      <section class="card detail-card">
+        <div class="section-title"><h2>Supplier information</h2></div>
+        <dl>
+          <div>
+            <dt>Supplier name</dt>
+            <dd>{{ item.name }}</dd>
+          </div>
+          <div>
+            <dt>Supplier code</dt>
+            <dd>{{ item.code }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd><app-status-badge [value]="item.isActive ? 'Active' : 'Inactive'" /></dd>
+          </div>
+          <div>
+            <dt>Tax number</dt>
+            <dd>{{ display(item.taxNumber) }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="card detail-card">
+        <div class="section-title"><h2>Contact information</h2></div>
+        <dl>
+          <div>
+            <dt>Contact person</dt>
+            <dd>{{ display(item.contactPerson) }}</dd>
+          </div>
+          <div>
+            <dt>Phone</dt>
+            <dd>{{ display(item.phone) }}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>{{ display(item.email) }}</dd>
+          </div>
+          <div class="full">
+            <dt>Address</dt>
+            <dd>{{ display(item.address) }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  } @else {
+    <div class="details-layout">
+      <section class="card detail-card">
+        <div class="section-title"><h2>Vehicle information</h2></div>
+        <dl>
+          <div>
+            <dt>Fleet number</dt>
+            <dd>{{ item.number }}</dd>
+          </div>
+          <div>
+            <dt>Registration</dt>
+            <dd>{{ item.registration }}</dd>
+          </div>
+          <div>
+            <dt>Vehicle type</dt>
+            <dd>{{ item.vehicleType }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd><app-status-badge [value]="item.status" /></dd>
+          </div>
+        </dl>
+      </section>
+      <section class="card detail-card">
+        <div class="section-title"><h2>Driver information</h2></div>
+        <dl>
+          <div>
+            <dt>Driver</dt>
+            <dd>{{ display(item.driver) }}</dd>
+          </div>
+          <div>
+            <dt>Contact number</dt>
+            <dd>{{ display(item.driverContact) }}</dd>
+          </div>
+          <div>
+            <dt>Active record</dt>
+            <dd>{{ item.isActive ? 'Yes' : 'No' }}</dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+  }
+} @else {
+  <div class="empty-state">The requested record was not found.</div>
+}

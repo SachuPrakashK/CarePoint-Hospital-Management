@@ -11,10 +11,12 @@ import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { apiErrorInterceptor } from './core/interceptors/api-error.interceptor';
 import { loadingInterceptor } from './core/interceptors/loading.interceptor';
 import { AuthStore } from './core/auth/auth.store';
+import { AppTitleService } from './core/services/app-title.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    provideAppInitializer(() => void inject(AppTitleService)),
     provideAppInitializer(() => inject(AuthStore).initialize()),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([loadingInterceptor, apiErrorInterceptor, authInterceptor])),

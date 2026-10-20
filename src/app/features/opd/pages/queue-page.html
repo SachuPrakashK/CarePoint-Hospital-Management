@@ -9,17 +9,29 @@
 <section class="stats queue-stats">
   @for (
     item of [
-      { label: 'Waiting', key: 'WAITING' },
-      { label: 'Called', key: 'CALLED' },
-      { label: 'In consultation', key: 'IN_CONSULTATION' },
-      { label: 'Completed', key: 'COMPLETED' },
+      { label: 'Waiting', key: 'WAITING', icon: 'clock' },
+      { label: 'Called', key: 'CALLED', icon: 'patients' },
+      { label: 'In Consultation', key: 'IN_CONSULTATION', icon: 'doctor' },
+      { label: 'Completed', key: 'COMPLETED', icon: 'check-circle' },
     ];
     track item.key
   ) {
-    <article class="card stat metric-card metric-card--{{ item.key === 'WAITING' ? 'amber' : item.key === 'CALLED' ? 'purple' : item.key === 'IN_CONSULTATION' ? 'cyan' : 'green' }}">
-      <span class="muted">{{ item.label }}</span>
-      <div class="value">{{ counts()[item.key] || 0 }}</div>
-    </article>
+    <app-summary-card
+      [title]="item.label"
+      [value]="counts()[item.key] || 0"
+      [icon]="item.icon"
+      [variant]="
+        $any(
+          item.key === 'WAITING'
+            ? 'amber'
+            : item.key === 'CALLED'
+              ? 'purple'
+              : item.key === 'IN_CONSULTATION'
+                ? 'cyan'
+                : 'green'
+        )
+      "
+    />
   }
 </section>
 <section class="card">
@@ -32,84 +44,69 @@
       (valueChange)="searchChanged($event)"
     />
     <div class="toolbar-actions">
-      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
-        <button
-          type="button"
-          class="secondary button-icon"
-          [attr.aria-expanded]="filtersOpen()"
-          (click)="filtersOpen.update((value) => !value)"
-        >
-          <app-icon name="filter" [size]="17" />Filters
-          @if (activeFilterCount()) {
-            ({{ activeFilterCount() }})
-          }
-        </button>
-        @if (filtersOpen()) {
-          <div class="filter-panel">
-            <div class="filter-grid">
-              <label class="field"
-                ><span class="form-label">Department</span
-                ><select
-                  [value]="draftDepartmentId()"
-                  (change)="departmentChanged($any($event.target).value)"
-                >
-                  <option value="">All departments</option>
-                  @for (d of options().departments; track d.id) {
-                    <option [value]="d.id">{{ d.name }}</option>
-                  }
-                </select></label
-              ><label class="field"
-                ><span class="form-label">Doctor</span
-                ><select
-                  [value]="draftDoctorId()"
-                  (change)="draftDoctorId.set($any($event.target).value)"
-                >
-                  <option value="">All doctors</option>
-                  @for (d of filteredDoctors(); track d.id) {
-                    <option [value]="d.id">{{ d.firstName }} {{ d.lastName }}</option>
-                  }
-                </select></label
-              ><label class="field"
-                ><span class="form-label">Status</span
-                ><select
-                  [value]="draftStatus()"
-                  (change)="draftStatus.set($any($event.target).value)"
-                >
-                  <option value="">All statuses</option>
-                  <option>WAITING</option>
-                  <option>CALLED</option>
-                  <option>IN_CONSULTATION</option>
-                  <option>COMPLETED</option>
-                  <option>CANCELLED</option>
-                </select></label
-              ><label class="field"
-                ><span class="form-label">Queue date</span
-                ><input
-                  type="date"
-                  [value]="draftDate()"
-                  (change)="draftDate.set($any($event.target).value)"
-              /></label>
-            </div>
-            <div class="filter-actions">
-              <button type="button" class="secondary" (click)="clearFilters()">Clear Filters</button
-              ><button type="button" class="primary" (click)="applyFilters()">Apply Filters</button>
-            </div>
-          </div>
-        }
-      </div>
-      <button
-        type="button"
-        class="secondary button-icon"
-        [disabled]="!items().length || exporting()"
-        (click)="export()"
+      <app-column-config
+        [columns]="columns"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+      <app-shared-filter
+        [activeCount]="activeFilterCount()"
+        [loading]="loading()"
+        (applied)="applyFilters()"
+        (cleared)="clearFilters()"
       >
-        <app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}
-      </button>
+        <label class="field"
+          ><span class="form-label">Department</span
+          ><select
+            [value]="draftDepartmentId()"
+            (change)="departmentChanged($any($event.target).value)"
+          >
+            <option value="">All departments</option>
+            @for (d of options().departments; track d.id) {
+              <option [value]="d.id">{{ d.name }}</option>
+            }
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Doctor</span
+          ><select
+            [value]="draftDoctorId()"
+            (change)="draftDoctorId.set($any($event.target).value)"
+          >
+            <option value="">All doctors</option>
+            @for (d of filteredDoctors(); track d.id) {
+              <option [value]="d.id">{{ d.firstName }} {{ d.lastName }}</option>
+            }
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Status</span
+          ><select [value]="draftStatus()" (change)="draftStatus.set($any($event.target).value)">
+            <option value="">All statuses</option>
+            <option>WAITING</option>
+            <option>CALLED</option>
+            <option>IN_CONSULTATION</option>
+            <option>COMPLETED</option>
+            <option>CANCELLED</option>
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Queue date</span
+          ><input
+            type="date"
+            [value]="draftDate()"
+            (change)="draftDate.set($any($event.target).value)"
+        /></label>
+      </app-shared-filter>
+      <app-shared-export
+        [disabled]="!items().length"
+        [exporting]="exporting()"
+        (exportRequested)="export()"
+      />
     </div>
   </div>
   @if (loading()) {
-    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading OPD queue…</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">
+      Loading OPD queue…
+    </div>
   } @else if (error()) {
     <div class="error-state" role="alert">
       {{ error() }} <button class="secondary" (click)="load()">Retry</button>
@@ -119,31 +116,113 @@
       <table>
         <thead>
           <tr>
-            @if(columnVisible('token')){<th [attr.aria-sort]="ariaSort('tokenNumber')"><app-table-sort-header label="Token" field="tokenNumber" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('patient')"><app-table-sort-header label="Patient" field="patient" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('care')){<th [attr.aria-sort]="ariaSort('doctor')"><app-table-sort-header label="Doctor / Department" field="doctor" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('appointment')){<th [attr.aria-sort]="ariaSort('appointment')"><app-table-sort-header label="Appointment" field="appointment" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('checkin')){<th [attr.aria-sort]="ariaSort('checkedInAt')"><app-table-sort-header label="Checked in" field="checkedInAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('actions')){<th class="actions-column">Actions</th>}
+            @if (columnVisible('token')) {
+              <th [attr.aria-sort]="ariaSort('tokenNumber')">
+                <app-table-sort-header
+                  label="Token"
+                  field="tokenNumber"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('patient')) {
+              <th [attr.aria-sort]="ariaSort('patient')">
+                <app-table-sort-header
+                  label="Patient"
+                  field="patient"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('care')) {
+              <th [attr.aria-sort]="ariaSort('doctor')">
+                <app-table-sort-header
+                  label="Doctor / Department"
+                  field="doctor"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('appointment')) {
+              <th [attr.aria-sort]="ariaSort('appointment')">
+                <app-table-sort-header
+                  label="Appointment"
+                  field="appointment"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('checkin')) {
+              <th [attr.aria-sort]="ariaSort('checkedInAt')">
+                <app-table-sort-header
+                  label="Checked in"
+                  field="checkedInAt"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('status')) {
+              <th [attr.aria-sort]="ariaSort('status')">
+                <app-table-sort-header
+                  label="Status"
+                  field="status"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('actions')) {
+              <th class="actions-column">Actions</th>
+            }
           </tr>
         </thead>
         <tbody>
           @for (item of items(); track item.id) {
             <tr class="clickable" tabindex="0" (click)="view(item)" (keydown.enter)="view(item)">
-              @if(columnVisible('token')){<td>
-                <strong class="token">{{ item.token }}</strong>
-              </td>} @if(columnVisible('patient')){<td>
-                <b>{{ item.patientName }}</b
-                ><br /><small>{{ item.mrn }}</small>
-              </td>} @if(columnVisible('care')){<td>
-                {{ item.doctor }}<br /><small>{{ item.department }}</small>
-              </td>} @if(columnVisible('appointment')){<td>{{ item.appointmentNumber }}</td>} @if(columnVisible('checkin')){<td>{{ dates.formatTime(item.checkedInAt) }}</td>} @if(columnVisible('status')){<td><app-status-badge [value]="item.status" /></td>} @if(columnVisible('actions')){<td class="actions actions-column" (click)="$event.stopPropagation()">
-                <app-actions-menu
-                  [id]="item.id"
-                  label="Queue actions"
-                  [canEdit]="false"
-                  [canDelete]="false"
-                  [canStatus]="!!nextStatus(item)"
-                  [statusLabel]="nextStatus(item).replaceAll('_', ' ')"
-                  (view)="view(item)"
+              @if (columnVisible('token')) {
+                <td>
+                  <strong class="token">{{ item.token }}</strong>
+                </td>
+              }
+              @if (columnVisible('patient')) {
+                <td>
+                  <b>{{ item.patientName }}</b
+                  ><br /><small>{{ item.mrn }}</small>
+                </td>
+              }
+              @if (columnVisible('care')) {
+                <td>
+                  {{ item.doctor }}<br /><small>{{ item.department }}</small>
+                </td>
+              }
+              @if (columnVisible('appointment')) {
+                <td>{{ item.appointmentNumber }}</td>
+              }
+              @if (columnVisible('checkin')) {
+                <td>{{ dates.formatTime(item.checkedInAt) }}</td>
+              }
+              @if (columnVisible('status')) {
+                <td><app-status-badge [value]="item.status" /></td>
+              }
+              @if (columnVisible('actions')) {
+                <td class="actions actions-column" (click)="$event.stopPropagation()">
+                  <app-actions-menu
+                    [id]="item.id"
+                    label="Queue actions"
+                    [canEdit]="false"
+                    [canDelete]="false"
+                    [canStatus]="!!nextStatus(item)"
+                    [statusLabel]="nextStatus(item).replaceAll('_', ' ')"
+                    (view)="view(item)"
                     (statusChange)="advance(item)"
-                />
-              </td>}
+                  />
+                </td>
+              }
             </tr>
           }
         </tbody>

@@ -1,83 +1,82 @@
-
 .field select,
 label.field select,
 .toolbar select .department {
-    min-width: 100px;
+  min-width: 100px;
 }
 .calendar {
-    overflow-x: auto;
-    padding: 0 16px 16px;
+  overflow-x: auto;
+  padding: 0 16px 16px;
 }
 .calendar-head {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px;
 }
 .week-current {
-    border: 0;
-    background: transparent;
-    display: grid;
-    gap: 2px;
-    place-items: center;
-    color: var(--color-text);
-    cursor: pointer;
-    font: inherit;
+  border: 0;
+  background: transparent;
+  display: grid;
+  gap: 2px;
+  place-items: center;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
 }
 .week-current span {
-    color: var(--color-blue-700);
-    font-size: 12px;
+  color: var(--color-blue-700);
+  font-size: 12px;
 }
 .week {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(145px, 1fr));
-    gap: 8px;
-    min-width: 1050px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(145px, 1fr));
+  gap: 8px;
+  min-width: 1050px;
 }
 .day {
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    min-height: 310px;
-    padding: 10px;
-    background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  min-height: 310px;
+  padding: 10px;
+  background: var(--mc-surface);
 }
 .day header {
-    display: flex;
-    justify-content: space-between;
-    gap: 6px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
 }
 .day header span {
-    color: var(--color-muted);
-    font-size: 12px;
+  color: var(--color-muted);
+  font-size: 12px;
 }
 .event {
-    width: 100%;
-    display: grid;
-    gap: 4px;
-    text-align: left;
-    border: 0;
-    border-left: 3px solid #15927b;
-    background: #e9f6f3;
-    padding: 9px;
-    margin-top: 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    font: inherit;
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  border: 0;
+  border-left: 3px solid var(--mc-secondary);
+  background: var(--mc-surface-soft);
+  padding: 9px;
+  margin-top: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
 }
 .event:hover {
-    background: #d9f0eb;
+  background: color-mix(in srgb, var(--mc-secondary) 14%, var(--mc-surface));
 }
 .event span,
 .event small {
-    font-size: 11px;
-    color: var(--color-muted);
+  font-size: 11px;
+  color: var(--color-muted);
 }
 .day-empty {
-    color: var(--color-muted);
-    text-align: center;
-    font-size: 12px;
-    margin-top: 36px;
+  color: var(--color-muted);
+  text-align: center;
+  font-size: 12px;
+  margin-top: 36px;
 }

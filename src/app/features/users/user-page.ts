@@ -14,9 +14,9 @@ import { StatusBadge } from '../../shared/components/status-badge/status-badge';
 import { AuthStore } from '../../core/auth/auth.store';
 import { ResetPasswordForm } from './reset-password-form';
 import { AppPagination } from '../../shared/components/pagination/app-pagination';
-import { ClickOutsideDirective } from '../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../shared/components/export/shared-export';
 import { AdministrationApiService, RoleRecord } from '../administration/administration-api.service';
-import { AppIcon } from '../../shared/components/icon/app-icon';
 import { TableSortHeader } from '../../shared/components/table-sort-header/table-sort-header';import { ColumnConfig } from '../../shared/components/column-config/column-config';import { TableColumnDefinition, TableSort } from '../../shared/models/table.models';import { TablePreferencesService } from '../../core/services/table-preferences.service';
 @Component({
   imports: [
@@ -29,8 +29,8 @@ import { TableSortHeader } from '../../shared/components/table-sort-header/table
     StatusBadge,
     ResetPasswordForm,
     AppPagination,
-    ClickOutsideDirective,
-    AppIcon,
+    SharedFilter,
+    SharedExport,
     TableSortHeader,ColumnConfig,
   ],
   templateUrl: './user-page.html',
@@ -51,7 +51,6 @@ export class UserPage {
   readonly pageSize = signal(10);
   readonly total = signal(0);
   readonly totalPages = signal(0);
-  readonly filtersOpen = signal(false);
   readonly exporting = signal(false);
   readonly status = signal('');
   readonly role = signal('');
@@ -95,7 +94,6 @@ export class UserPage {
   }
   applyFilters() {
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.load();
   }
   clearFilters() {

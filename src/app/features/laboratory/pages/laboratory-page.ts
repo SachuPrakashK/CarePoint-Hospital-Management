@@ -11,18 +11,33 @@ import { AppPagination } from '../../../shared/components/pagination/app-paginat
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { AppActionsMenu } from '../../../shared/components/actions-menu/app-actions-menu';
-import { AppIcon } from '../../../shared/components/icon/app-icon';
 import { PatientStore } from '../../patients/patient.store';
 import { AppointmentApiService } from '../../appointments/appointment-api.service';
 import { MasterApiService } from '../../administration/master-api.service';
-import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../../shared/components/export/shared-export';
 import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
 import { TableSort } from '../../../shared/models/table.models';
 import { TableColumnDefinition } from '../../../shared/models/table.models';
 import { ColumnConfig } from '../../../shared/components/column-config/column-config';
 import { TablePreferencesService } from '../../../core/services/table-preferences.service';
+import { SummaryCard } from '../../../shared/components/summary-card/summary-card';
 @Component({
-  imports: [AppModal, LaboratoryForm, RouterLink, SearchField, AppPagination, EmptyState, StatusBadge, AppActionsMenu, AppIcon, ClickOutsideDirective,TableSortHeader,ColumnConfig],
+  imports: [
+    AppModal,
+    LaboratoryForm,
+    RouterLink,
+    SearchField,
+    AppPagination,
+    EmptyState,
+    StatusBadge,
+    AppActionsMenu,
+    SharedFilter,
+    SharedExport,
+    TableSortHeader,
+    ColumnConfig,
+    SummaryCard,
+  ],
   templateUrl: './laboratory-page.html',
 })
 export class LaboratoryPage {
@@ -33,7 +48,7 @@ export class LaboratoryPage {
   readonly patients = inject(PatientStore);
   private appointmentsApi = inject(AppointmentApiService);
   private mastersApi = inject(MasterApiService);
-  private tablePreferences=inject(TablePreferencesService);
+  private tablePreferences = inject(TablePreferencesService);
   readonly message = signal('');
   readonly formMode = signal<'create' | 'edit' | 'result' | null>(null);
   readonly selected = signal<any | null>(null);
@@ -53,20 +68,59 @@ export class LaboratoryPage {
   readonly testDefinitionId = signal('');
   readonly dateFrom = signal('');
   readonly dateTo = signal('');
-  readonly filtersOpen = signal(false);
   readonly doctors = signal<any[]>([]);
   readonly tests = signal<any[]>([]);
   readonly exporting = signal(false);
   readonly mutatingId = signal('');
-  readonly sort=signal<TableSort|null>(null);
-  readonly columns:readonly TableColumnDefinition[]=[{id:'order',header:'Order',visibleByDefault:true,required:true,sortable:true,sortKey:'number'},{id:'patient',header:'Patient',visibleByDefault:true,required:true,sortable:true,sortKey:'patient'},{id:'tests',header:'Tests',visibleByDefault:true},{id:'priority',header:'Priority',visibleByDefault:true,sortable:true,sortKey:'priority'},{id:'sample',header:'Sample',visibleByDefault:true,sortable:true,sortKey:'sampleType'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'},{id:'action',header:'Action',visibleByDefault:true,required:true}];
-  readonly visibleColumns=signal(this.tablePreferences.load('laboratory-orders',this.columns));
+  readonly sort = signal<TableSort | null>(null);
+  readonly columns: readonly TableColumnDefinition[] = [
+    {
+      id: 'order',
+      header: 'Order',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'number',
+    },
+    {
+      id: 'patient',
+      header: 'Patient',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'patient',
+    },
+    { id: 'tests', header: 'Tests', visibleByDefault: true },
+    {
+      id: 'priority',
+      header: 'Priority',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'priority',
+    },
+    {
+      id: 'sample',
+      header: 'Sample',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'sampleType',
+    },
+    { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
+    { id: 'action', header: 'Action', visibleByDefault: true, required: true },
+  ];
+  readonly visibleColumns = signal(this.tablePreferences.load('laboratory-orders', this.columns));
   constructor() {
     void this.patients.load();
-    void firstValueFrom(this.appointmentsApi.options()).then((r) => this.doctors.set(r.data.doctors));
-    void firstValueFrom(this.mastersApi.list('laboratory-tests', '', 'Active', 1, 100)).then((r) => this.tests.set(r.data));
+    void firstValueFrom(this.appointmentsApi.options()).then((r) =>
+      this.doctors.set(r.data.doctors),
+    );
+    void firstValueFrom(this.mastersApi.list('laboratory-tests', '', 'Active', 1, 100)).then((r) =>
+      this.tests.set(r.data),
+    );
     void this.load();
-    void this.tablePreferences.loadRemote('laboratory-orders',this.columns).then(ids=>this.visibleColumns.set(ids));
+    void this.tablePreferences
+      .loadRemote('laboratory-orders', this.columns)
+      .then((ids) => this.visibleColumns.set(ids));
   }
   async load() {
     this.loading.set(true);
@@ -79,9 +133,13 @@ export class LaboratoryPage {
           search: this.search(),
           status: this.status(),
           priority: this.priority(),
-          patient_id: this.patientId(), doctor_id: this.doctorId(), test_definition_id: this.testDefinitionId(),
-          date_from: this.dateFrom(), date_to: this.dateTo(),
-          sort_by:this.sort()?.field,sort_order:this.sort()?.direction,
+          patient_id: this.patientId(),
+          doctor_id: this.doctorId(),
+          test_definition_id: this.testDefinitionId(),
+          date_from: this.dateFrom(),
+          date_to: this.dateTo(),
+          sort_by: this.sort()?.field,
+          sort_order: this.sort()?.direction,
         }),
       );
       this.items.set(
@@ -108,25 +166,78 @@ export class LaboratoryPage {
   }
   filter() {
     this.page.set(1);
-    this.filtersOpen.set(false);
     void this.load();
   }
-  clearFilters() { this.status.set(''); this.priority.set(''); this.patientId.set(''); this.doctorId.set(''); this.testDefinitionId.set(''); this.dateFrom.set(''); this.dateTo.set(''); this.filter(); }
-  activeFilterCount() { return [this.status(), this.priority(), this.patientId(), this.doctorId(), this.testDefinitionId(), this.dateFrom(), this.dateTo()].filter(Boolean).length; }
+  clearFilters() {
+    this.status.set('');
+    this.priority.set('');
+    this.patientId.set('');
+    this.doctorId.set('');
+    this.testDefinitionId.set('');
+    this.dateFrom.set('');
+    this.dateTo.set('');
+    this.filter();
+  }
+  activeFilterCount() {
+    return [
+      this.status(),
+      this.priority(),
+      this.patientId(),
+      this.doctorId(),
+      this.testDefinitionId(),
+      this.dateFrom(),
+      this.dateTo(),
+    ].filter(Boolean).length;
+  }
   async exportOrders() {
     if (this.exporting() || !this.total()) return;
     this.exporting.set(true);
     try {
-      const query = { page_size: 100, search: this.search(), status: this.status(), priority: this.priority(), patient_id: this.patientId(), doctor_id: this.doctorId(), test_definition_id: this.testDefinitionId(), date_from: this.dateFrom(), date_to: this.dateTo(),sort_by:this.sort()?.field,sort_order:this.sort()?.direction };
+      const query = {
+        page_size: 100,
+        search: this.search(),
+        status: this.status(),
+        priority: this.priority(),
+        patient_id: this.patientId(),
+        doctor_id: this.doctorId(),
+        test_definition_id: this.testDefinitionId(),
+        date_from: this.dateFrom(),
+        date_to: this.dateTo(),
+        sort_by: this.sort()?.field,
+        sort_order: this.sort()?.direction,
+      };
       const first = await firstValueFrom(this.api.labOrders({ ...query, page: 1 }));
       const rows = [...first.data];
-      for (let page = 2; page <= first.pagination.total_pages; page++) rows.push(...(await firstValueFrom(this.api.labOrders({ ...query, page }))).data);
+      for (let page = 2; page <= first.pagination.total_pages; page++)
+        rows.push(...(await firstValueFrom(this.api.labOrders({ ...query, page }))).data);
       const quote = (v: unknown) => `"${String(v ?? '').replaceAll('"', '""')}"`;
-      const exportColumns=[{id:'order',header:'Order',value:(o:any)=>`${o.number} / ${o.doctor}`},{id:'patient',header:'Patient',value:(o:any)=>`${o.patient?.firstName??''} ${o.patient?.lastName??''}`.trim()},{id:'tests',header:'Tests',value:(o:any)=>o.tests?.join(', ')},{id:'priority',header:'Priority',value:(o:any)=>o.priority},{id:'sample',header:'Sample',value:(o:any)=>o.sampleType},{id:'status',header:'Status',value:(o:any)=>o.status}].filter(column=>this.columnVisible(column.id));
-      const csv = [exportColumns.map(column=>column.header), ...rows.map((o:any) => exportColumns.map(column=>column.value(o)))].map((row) => row.map(quote).join(',')).join('\r\n');
+      const exportColumns = [
+        { id: 'order', header: 'Order', value: (o: any) => `${o.number} / ${o.doctor}` },
+        {
+          id: 'patient',
+          header: 'Patient',
+          value: (o: any) => `${o.patient?.firstName ?? ''} ${o.patient?.lastName ?? ''}`.trim(),
+        },
+        { id: 'tests', header: 'Tests', value: (o: any) => o.tests?.join(', ') },
+        { id: 'priority', header: 'Priority', value: (o: any) => o.priority },
+        { id: 'sample', header: 'Sample', value: (o: any) => o.sampleType },
+        { id: 'status', header: 'Status', value: (o: any) => o.status },
+      ].filter((column) => this.columnVisible(column.id));
+      const csv = [
+        exportColumns.map((column) => column.header),
+        ...rows.map((o: any) => exportColumns.map((column) => column.value(o))),
+      ]
+        .map((row) => row.map(quote).join(','))
+        .join('\r\n');
       const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      const link = document.createElement('a'); link.href = url; link.download = 'laboratory-orders.csv'; link.click(); URL.revokeObjectURL(url);
-    } finally { this.exporting.set(false); }
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'laboratory-orders.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      this.exporting.set(false);
+    }
   }
   go(v: number) {
     this.page.set(v);
@@ -137,11 +248,32 @@ export class LaboratoryPage {
     this.page.set(1);
     void this.load();
   }
-  changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);void this.load();}
-  ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}
-  columnVisible(id:string){return this.visibleColumns().includes(id);}
-  async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns.some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save('laboratory-orders',ids);}
-  async resetColumns(){await this.tablePreferences.reset('laboratory-orders');this.visibleColumns.set(this.tablePreferences.load('laboratory-orders',this.columns));}
+  changeSort(value: TableSort | null) {
+    this.sort.set(value);
+    this.page.set(1);
+    void this.load();
+  }
+  ariaSort(field: string): 'ascending' | 'descending' | 'none' {
+    const sort = this.sort();
+    return sort?.field === field ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  }
+  columnVisible(id: string) {
+    return this.visibleColumns().includes(id);
+  }
+  async applyColumns(ids: string[]) {
+    const active = this.sort();
+    if (
+      active &&
+      !this.columns.some((column) => ids.includes(column.id) && column.sortKey === active.field)
+    )
+      this.sort.set(null);
+    this.visibleColumns.set(ids);
+    await this.tablePreferences.save('laboratory-orders', ids);
+  }
+  async resetColumns() {
+    await this.tablePreferences.reset('laboratory-orders');
+    this.visibleColumns.set(this.tablePreferences.load('laboratory-orders', this.columns));
+  }
   open(mode: 'create' | 'edit' | 'result', order: any = null) {
     this.formMode.set(mode);
     this.selected.set(order);
@@ -165,17 +297,21 @@ export class LaboratoryPage {
     if (this.mutatingId()) return;
     this.mutatingId.set(id);
     try {
-    await this.store.collectSample(id, 'Current user');
-    await this.load();
-    } finally { this.mutatingId.set(''); }
+      await this.store.collectSample(id, 'Current user');
+      await this.load();
+    } finally {
+      this.mutatingId.set('');
+    }
   }
   async verify(id: string) {
     if (this.mutatingId()) return;
     this.mutatingId.set(id);
     try {
-    await this.store.verifyLab(id, 'Current user');
-    await this.load();
-    } finally { this.mutatingId.set(''); }
+      await this.store.verifyLab(id, 'Current user');
+      await this.load();
+    } finally {
+      this.mutatingId.set('');
+    }
   }
   view(id: string) {
     void this.router.navigate(['/laboratory', id]);

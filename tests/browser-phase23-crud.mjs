@@ -33,7 +33,7 @@ const firstOption = async (label) => {
   await select.selectOption(values[0]);
 };
 try {
-  await page.goto('http://127.0.0.1:4200/auth/sign-in');
+  await page.goto('http://127.0.0.1:4200/auth/login');
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();

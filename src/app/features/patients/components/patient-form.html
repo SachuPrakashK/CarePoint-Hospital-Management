@@ -1,13 +1,217 @@
-<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()"><div class="crud-modal__body">@if (error()) { <div class="form-api-error" role="alert">{{ error() }}</div> }<div class="form-grid">
-  <label class="field"><span class="form-label">First name <span class="required-indicator">*</span></span><input formControlName="firstName" placeholder="Enter first name" />@if (invalid('firstName','required')) { <span class="error">First name is required.</span> } @else if (invalid('firstName')) { <span class="error">Enter a valid first name.</span> }</label>
-  <label class="field"><span class="form-label">Middle name</span><input formControlName="middleName" placeholder="Enter middle name" /></label>
-  <label class="field"><span class="form-label">Last name <span class="required-indicator">*</span></span><input formControlName="lastName" placeholder="Enter last name" />@if (invalid('lastName')) { <span class="error">Enter a valid last name.</span> }</label>
-  <label class="field"><span class="form-label">Date of birth <span class="required-indicator">*</span></span><input type="date" formControlName="dob" [max]="dates.today()" />@if (invalid('dob','futureDate')) { <span class="error">Date of birth cannot be in the future.</span> }</label>
-  <label class="field"><span class="form-label">Gender <span class="required-indicator">*</span></span><select formControlName="gender"><option value="" disabled>Select gender</option><option>Female</option><option>Male</option><option>Non-binary</option><option>Prefer not to say</option></select>@if (invalid('gender')) { <span class="error">Select a gender.</span> }</label>
-  <label class="field"><span class="form-label">Blood group</span><select formControlName="bloodGroup"><option>Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></label>
-  <label class="field"><span class="form-label">Phone <span class="required-indicator">*</span></span><input type="tel" inputmode="tel" formControlName="phone" placeholder="9876543210" />@if (invalid('phone')) { <span class="error">Enter a valid Indian mobile number.</span> }</label>
-  <label class="field"><span class="form-label">Email</span><input type="email" formControlName="email" placeholder="Enter email address" />@if (invalid('email')) { <span class="error">Enter a valid email address.</span> }</label>
-  <label class="field"><span class="form-label">City</span><input formControlName="city" placeholder="Enter city" /></label>
-  <label class="field"><span class="form-label">Emergency Contact Number</span><input type="tel" inputmode="tel" formControlName="emergencyContact" placeholder="9876543210" />@if (invalid('emergencyContact')) { <span class="error">Enter a valid emergency contact number.</span> }</label>
-  <label class="field full"><span class="form-label">Allergies</span><input formControlName="allergies" placeholder="Enter allergies separated by commas" /></label>
-</div></div><div class="crud-modal__footer"><button class="primary" [disabled]="form.invalid || submitting()">{{ submitting() ? (mode() === 'edit' ? 'Updating…' : 'Creating…') : (mode() === 'edit' ? 'Update' : 'Create') }}</button></div></form>
+<form
+  class="crud-modal__form patient-form"
+  [formGroup]="form"
+  [attr.aria-busy]="submitting()"
+  (ngSubmit)="save()"
+>
+  <div class="crud-modal__body patient-form__body">
+    @if (error()) {
+      <div class="form-api-error" role="alert">{{ error() }}</div>
+    }
+
+    <div class="patient-form__sections">
+      <section class="patient-form__section" aria-labelledby="patient-personal-heading">
+        <h3 id="patient-personal-heading">Personal Information</h3>
+        <div class="patient-form__grid patient-form__grid--three">
+          <label class="field">
+            <span class="form-label"
+              >First name <span class="required-indicator" aria-hidden="true">*</span></span
+            >
+            <input
+              formControlName="firstName"
+              placeholder="Enter first name"
+              autocomplete="given-name"
+              [attr.aria-invalid]="invalid('firstName')"
+            />
+            @if (invalid('firstName', 'required')) {
+              <span class="error">First name is required.</span>
+            } @else if (invalid('firstName')) {
+              <span class="error">Enter a valid first name.</span>
+            }
+          </label>
+          <label class="field">
+            <span class="form-label">Middle name</span>
+            <input
+              formControlName="middleName"
+              placeholder="Enter middle name"
+              autocomplete="additional-name"
+              [attr.aria-invalid]="invalid('middleName')"
+            />
+            @if (invalid('middleName')) {
+              <span class="error">Enter a valid middle name.</span>
+            }
+          </label>
+          <label class="field">
+            <span class="form-label"
+              >Last name <span class="required-indicator" aria-hidden="true">*</span></span
+            >
+            <input
+              formControlName="lastName"
+              placeholder="Enter last name"
+              autocomplete="family-name"
+              [attr.aria-invalid]="invalid('lastName')"
+            />
+            @if (invalid('lastName', 'required')) {
+              <span class="error">Last name is required.</span>
+            } @else if (invalid('lastName')) {
+              <span class="error">Enter a valid last name.</span>
+            }
+          </label>
+        </div>
+        <div class="patient-form__grid patient-form__grid--three">
+          <label class="field">
+            <span class="form-label"
+              >Date of birth <span class="required-indicator" aria-hidden="true">*</span></span
+            >
+            <input
+              type="date"
+              formControlName="dob"
+              autocomplete="bday"
+              [max]="dates.today()"
+              [attr.aria-invalid]="invalid('dob')"
+            />
+            @if (invalid('dob', 'required')) {
+              <span class="error">Date of birth is required.</span>
+            } @else if (invalid('dob', 'futureDate')) {
+              <span class="error">Date of birth cannot be in the future.</span>
+            }
+          </label>
+          <label class="field">
+            <span class="form-label"
+              >Gender <span class="required-indicator" aria-hidden="true">*</span></span
+            >
+            <select
+              formControlName="gender"
+              autocomplete="sex"
+              [attr.aria-invalid]="invalid('gender')"
+            >
+              <option value="" disabled>Select gender</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Non-binary</option>
+              <option>Prefer not to say</option>
+            </select>
+            @if (invalid('gender')) {
+              <span class="error">Select a gender.</span>
+            }
+          </label>
+          <label class="field">
+            <span class="form-label">Blood group</span>
+            <select formControlName="bloodGroup">
+              <option>Unknown</option>
+              <option>A+</option>
+              <option>A-</option>
+              <option>B+</option>
+              <option>B-</option>
+              <option>O+</option>
+              <option>O-</option>
+              <option>AB+</option>
+              <option>AB-</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="patient-form__section" aria-labelledby="patient-contact-heading">
+        <h3 id="patient-contact-heading">Contact Information</h3>
+        <div class="patient-form__grid">
+          <label class="field">
+            <span class="form-label"
+              >Phone number <span class="required-indicator" aria-hidden="true">*</span></span
+            >
+            <input
+              type="tel"
+              inputmode="tel"
+              formControlName="phone"
+              placeholder="9876543210"
+              autocomplete="tel"
+              [attr.aria-invalid]="invalid('phone')"
+            />
+            @if (invalid('phone')) {
+              <span class="error">Enter a valid Indian mobile number.</span>
+            }
+          </label>
+          <label class="field">
+            <span class="form-label">Email address</span>
+            <input
+              type="email"
+              formControlName="email"
+              placeholder="patient@example.com"
+              autocomplete="email"
+              [attr.aria-invalid]="invalid('email')"
+            />
+            @if (invalid('email')) {
+              <span class="error">Enter a valid email address.</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <section class="patient-form__section" aria-labelledby="patient-address-heading">
+        <h3 id="patient-address-heading">Address Information</h3>
+        <div class="patient-form__grid">
+          <label class="field patient-form__field--full">
+            <span class="form-label">City</span>
+            <input
+              formControlName="city"
+              placeholder="Enter city"
+              autocomplete="address-level2"
+              [attr.aria-invalid]="invalid('city')"
+            />
+            @if (invalid('city')) {
+              <span class="error">City cannot exceed 100 characters.</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <section class="patient-form__section" aria-labelledby="patient-emergency-heading">
+        <h3 id="patient-emergency-heading">Emergency Contact</h3>
+        <div class="patient-form__grid">
+          <label class="field patient-form__field--full">
+            <span class="form-label">Emergency contact number</span>
+            <input
+              type="tel"
+              inputmode="tel"
+              formControlName="emergencyContact"
+              placeholder="9876543210"
+              autocomplete="tel"
+              [attr.aria-invalid]="invalid('emergencyContact')"
+            />
+            @if (invalid('emergencyContact')) {
+              <span class="error">Enter a valid emergency contact number.</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <section class="patient-form__section" aria-labelledby="patient-additional-heading">
+        <h3 id="patient-additional-heading">Additional Patient Information</h3>
+        <div class="patient-form__grid">
+          <label class="field patient-form__field--full">
+            <span class="form-label">Allergies</span>
+            <input formControlName="allergies" placeholder="Enter allergies separated by commas" />
+          </label>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="crud-modal__footer patient-form__footer">
+    <button class="secondary" type="button" [disabled]="submitting()" (click)="cancelled.emit()">
+      Cancel
+    </button>
+    <button
+      class="primary patient-form__submit"
+      type="submit"
+      [disabled]="form.invalid || submitting()"
+    >
+      @if (submitting()) {
+        <span class="patient-form__spinner" aria-hidden="true"></span
+        >{{ mode() === 'edit' ? 'Updating…' : 'Creating…' }}
+      } @else {
+        {{ mode() === 'edit' ? 'Update Patient' : 'Create Patient' }}
+      }
+    </button>
+  </div>
+</form>

@@ -87,18 +87,10 @@
       <div class="section-title timeline-heading">
         <div><h2>Timeline</h2><p class="muted">Clinical events shown in India Standard Time.</p></div>
         <div class="toolbar-actions timeline-filters">
-          <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
-            <button type="button" class="secondary button-icon" [attr.aria-expanded]="filtersOpen()" (click)="filtersOpen.update((open) => !open)"><app-icon name="filter" [size]="17" /> Filters @if (filter() || selectedDate()) { ({{ (filter() ? 1 : 0) + (selectedDate() ? 1 : 0) }}) }</button>
-            @if (filtersOpen()) {
-              <div class="filter-panel timeline-filter-panel">
-                <div class="filter-grid">
+          <app-shared-filter [activeCount]="(filter() ? 1 : 0) + (selectedDate() ? 1 : 0)" [loading]="timelineLoading()" (applied)="applyTimelineFilters()" (cleared)="clearTimelineFilters()">
                   <label class="field"><span class="form-label">Event type</span><select aria-label="Timeline event type" [value]="filter()" (change)="filter.set($any($event.target).value)"><option value="">All event types</option>@for (t of eventTypes; track t) { <option [value]="t">{{ t }}</option> }</select></label>
                   <label class="field"><span class="form-label">Clinical date</span><app-calendar [value]="selectedDate()" (valueChange)="selectedDate.set($event)" /></label>
-                </div>
-                <div class="filter-actions"><button type="button" class="secondary" (click)="clearTimelineFilters()">Clear filters</button><button type="button" class="primary" (click)="applyTimelineFilters()">Apply filters</button></div>
-              </div>
-            }
-          </div>
+          </app-shared-filter>
         </div>
       </div>
       @if (timelineLoading()) {

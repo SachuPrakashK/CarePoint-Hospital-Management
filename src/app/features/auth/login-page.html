@@ -1,54 +1,116 @@
-<main class="auth-shell">
-  <section class="auth-brand">
-    <div class="brand-mark">✚</div>
-    <h1>CarePoint</h1>
-    <p>Hospital operations, connected with care.</p>
-    <div class="trust">
-      <span>✓ Secure sessions</span><span>✓ Role-based access</span
-      ><span>✓ Audit-ready workflows</span>
+<main class="login-shell">
+  <section class="login-brand" aria-labelledby="login-brand-title">
+    <img
+      class="login-brand__logo"
+      src="logo-full-light.svg"
+      alt="MediCare+ Hospital Management System"
+    />
+    <div class="login-brand__copy">
+      <h1 id="login-brand-title">Smarter Healthcare<br />for Brighter Lives</h1>
+      <p>
+        A complete hospital management solution for better patient care, smoother operations and a
+        healthier tomorrow.
+      </p>
+    </div>
+    <div class="login-brand__benefits" aria-label="MediCare+ benefits">
+      <span><app-icon name="clinical" [size]="22" />Patient Centric Care</span>
+      <span><app-icon name="shield" [size]="22" />Secure &amp; Reliable</span>
+      <span><app-icon name="patients" [size]="22" />Unified Hospital Operations</span>
     </div>
   </section>
-  <section class="auth-panel">
-    <form class="auth-card" [formGroup]="form" (ngSubmit)="submit()">
-      <div class="mobile-brand"><span class="brand-mark">✚</span> CarePoint</div>
-      <p class="eyebrow">WELCOME BACK</p>
-      <h2>Sign in to your account</h2>
-      <p class="muted">Use your hospital credentials to continue.</p>
-      <label
-        ><span class="form-label">Email address <span class="required-indicator">*</span></span
-        ><input
-          type="email"
-          formControlName="email"
-          placeholder="name@hospital.com"
-          autocomplete="username"
-      /></label>
-      @if (form.controls.email.touched && form.controls.email.invalid) {
-        <small class="error">Enter a valid email address.</small>
-      }
-      <label
-        ><span class="form-label">Password <span class="required-indicator">*</span></span>
-
-        <input
-          type="password"
-          formControlName="password"
-          placeholder="Enter your password"
-          autocomplete="current-password"
-        />
-      </label>
-      @if (form.controls.password.touched && form.controls.password.invalid) {
-        <small class="error">Password must be at least 8 characters.</small>
-      }
-      <div class="form-row">
-        <label class="check"
-          ><input type="checkbox" formControlName="remember" /> Keep me signed in</label
+  <section class="login-panel">
+    <form class="login-card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="login-mobile-brand">
+        <img src="logo-full-dark.svg" alt="MediCare+ Hospital Management System" />
+      </div>
+      <header class="login-card__header">
+        <h2>Welcome Back</h2>
+        <p>Sign in to your account to continue</p>
+      </header>
+      <div class="login-field">
+        <label for="login-email">Email Address <span aria-hidden="true">*</span></label>
+        <div
+          class="login-input"
+          [class.login-input--invalid]="form.controls.email.touched && form.controls.email.invalid"
+        >
+          <app-icon name="mail" [size]="19" />
+          <input
+            id="login-email"
+            type="email"
+            formControlName="email"
+            placeholder="Enter your email address"
+            autocomplete="username"
+            inputmode="email"
+            [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+            [attr.aria-describedby]="
+              form.controls.email.touched && form.controls.email.invalid
+                ? 'login-email-error'
+                : null
+            "
+          />
+        </div>
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <small id="login-email-error" class="login-error">Enter a valid email address.</small>
+        }
+      </div>
+      <div class="login-field">
+        <label for="login-password">Password <span aria-hidden="true">*</span></label>
+        <div
+          class="login-input"
+          [class.login-input--invalid]="
+            form.controls.password.touched && form.controls.password.invalid
+          "
+        >
+          <app-icon name="lock" [size]="19" />
+          <input
+            id="login-password"
+            [type]="passwordVisible() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            [attr.aria-invalid]="form.controls.password.touched && form.controls.password.invalid"
+            [attr.aria-describedby]="
+              form.controls.password.touched && form.controls.password.invalid
+                ? 'login-password-error'
+                : null
+            "
+          />
+          <button
+            class="password-toggle"
+            type="button"
+            [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="passwordVisible()"
+            (click)="togglePasswordVisibility()"
+          >
+            <app-icon [name]="passwordVisible() ? 'eye-off' : 'eye'" [size]="19" />
+          </button>
+        </div>
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <small id="login-password-error" class="login-error"
+            >Password must be at least 8 characters.</small
+          >
+        }
+      </div>
+      <div class="login-options">
+        <label class="login-check"
+          ><input type="checkbox" formControlName="remember" /><span>Remember me</span></label
         ><a routerLink="/auth/forgot-password">Forgot password?</a>
       </div>
       @if (auth.error()) {
-        <div class="alert" role="alert">{{ auth.error() }}</div>
+        <div class="login-alert" role="alert">
+          <app-icon name="help" [size]="18" /><span>{{ auth.error() }}</span>
+        </div>
       }
-      <button class="primary wide" [disabled]="auth.loading()">
-        {{ auth.loading() ? 'Signing in…' : 'Sign in' }}
+      <button class="login-submit" type="submit" [disabled]="auth.loading()">
+        @if (auth.loading()) {
+          <span class="login-spinner" aria-hidden="true"></span><span>Signing in…</span>
+        } @else {
+          <span>Sign In</span><app-icon name="arrow-right" [size]="18" />
+        }
       </button>
+      <p class="login-help">
+        Need help accessing your account? Contact your hospital administrator.
+      </p>
     </form>
   </section>
 </main>

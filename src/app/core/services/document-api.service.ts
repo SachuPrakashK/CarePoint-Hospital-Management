@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ManagedDocument } from '../../shared/models/operations.models';
-type ApiDoc = {
+export type ApiDoc = {
   id: string;
   ownerType: string;
   ownerId: string;
@@ -33,15 +33,15 @@ export class DocumentApiService {
     search?: string;
     ownerType?: string;
     mimeType?: string;
-    sortBy?:string;
-    sortOrder?:'asc'|'desc';
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) {
     let params = new HttpParams().set('page', query.page).set('page_size', query.pageSize);
     if (query.search) params = params.set('search', query.search);
     if (query.ownerType) params = params.set('owner_type', query.ownerType);
     if (query.mimeType) params = params.set('mime_type', query.mimeType);
-    if(query.sortBy)params=params.set('sort_by',query.sortBy);
-    if(query.sortOrder)params=params.set('sort_order',query.sortOrder);
+    if (query.sortBy) params = params.set('sort_by', query.sortBy);
+    if (query.sortOrder) params = params.set('sort_order', query.sortOrder);
     return this.http.get<{
       data: ApiDoc[];
       pagination: { page: number; page_size: number; total: number; total_pages: number };
@@ -53,7 +53,10 @@ export class DocumentApiService {
     data.append('ownerType', ownerType);
     data.append('ownerId', ownerId);
     data.append('sensitive', String(sensitive));
-    return this.http.post<{ data: ApiDoc }>('/api/v1/documents', data);
+    return this.http.post<{ data: ApiDoc }>('/api/v1/documents', data, {
+      observe: 'events',
+      reportProgress: true,
+    });
   }
   forPatient(id: string) {
     return this.http.get<{ data: ApiDoc[] }>(`/api/v1/patients/${id}/documents`);

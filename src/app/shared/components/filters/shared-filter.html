@@ -1,0 +1,40 @@
+<div
+  class="filter-anchor"
+  appClickOutside
+  (appClickOutside)="open.set(false)"
+  (click)="$event.stopPropagation()"
+>
+  <button
+    type="button"
+    class="secondary button-icon"
+    [disabled]="disabled() || loading()"
+    [attr.aria-expanded]="open()"
+    aria-haspopup="dialog"
+    (click)="toggle()"
+  >
+    <app-icon name="filter" [size]="17" />
+    {{ label() }}
+    @if (activeCount()) {
+      <span aria-label="active filters">({{ activeCount() }})</span>
+    }
+  </button>
+  @if (open()) {
+    <section class="filter-panel" role="dialog" aria-label="Filters">
+      <div class="filter-grid"><ng-content /></div>
+      <footer class="filter-actions">
+        <button type="button" class="filter-clear-btn" [disabled]="loading()" (click)="clear()">
+          <app-icon class="clear-icon" name="rotate-ccw" [size]="15" />
+          <span>Clear</span>
+        </button>
+        <button
+          type="button"
+          class="primary filter-apply-btn"
+          [disabled]="loading() || applyDisabled()"
+          (click)="apply()"
+        >
+          {{ loading() ? 'Applying…' : 'Apply' }}
+        </button>
+      </footer>
+    </section>
+  }
+</div>

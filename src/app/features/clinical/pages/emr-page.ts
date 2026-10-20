@@ -12,9 +12,8 @@ import { DisplayValuePipe } from '../../../shared/pipes/display-value.pipe';
 import { TimelineEvent } from '../../../shared/models/inpatient.models';
 import { DashboardInvalidationService } from '../../../core/services/dashboard-invalidation.service';
 import { AppCalendar } from '../../../shared/components/calendar/app-calendar';
-import { AppIcon } from '../../../shared/components/icon/app-icon';
-import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
-@Component({ imports: [RouterLink, EmptyState, StatusBadge, DisplayValuePipe, AppCalendar, AppIcon, ClickOutsideDirective], templateUrl: './emr-page.html', styleUrl: './emr-page.scss' })
+import { SharedFilter } from '../../../shared/components/filters/shared-filter';
+@Component({ imports: [RouterLink, EmptyState, StatusBadge, DisplayValuePipe, AppCalendar, SharedFilter], templateUrl: './emr-page.html', styleUrl: './emr-page.scss' })
 export class EmrPage {
   id = input('');
   readonly clinical = inject(ClinicalStore);
@@ -33,7 +32,6 @@ export class EmrPage {
   readonly summaryLoading = signal(false);
   readonly summaryError = signal('');
   readonly detailsNotFound = signal(false);
-  readonly filtersOpen = signal(false);
   readonly eventTypes = [
     'Admission',
     'Consultation',
@@ -116,13 +114,11 @@ export class EmrPage {
     }
   }
   applyTimelineFilters() {
-    this.filtersOpen.set(false);
     void this.loadTimeline();
   }
   clearTimelineFilters() {
     this.filter.set('');
     this.selectedDate.set('');
-    this.filtersOpen.set(false);
     void this.loadTimeline();
   }
   shiftDate(days: number) {

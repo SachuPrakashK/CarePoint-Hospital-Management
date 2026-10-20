@@ -15,10 +15,19 @@
   background: transparent;
   text-align: left;
   color: var(--color-text);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.settings-nav button:hover:not(.active) {
+  background: var(--mc-surface-soft);
+  color: var(--mc-primary);
 }
 .settings-nav button.active {
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--mc-gradient);
+  color: var(--mc-surface);
+  box-shadow: inset 3px 0 var(--mc-secondary);
 }
 .settings-card {
   overflow: hidden;
@@ -38,8 +47,8 @@
   overflow: hidden;
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-sm);
-  background: var(--color-surface-muted, #f7f9fc);
-  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+  color: var(--color-muted);
 }
 .logo-preview img {
   display: block;
@@ -70,9 +79,56 @@
   justify-content: space-between;
   align-items: center;
   padding: 13px 15px;
-  background: #fff;
+  background: var(--mc-surface);
 }
-.language-summary{display:flex;justify-content:space-between;margin:22px;padding:14px;border:1px solid var(--color-border);border-radius:var(--radius-sm)}.language-settings{display:grid;margin:22px;border:1px solid var(--color-border);border-radius:var(--radius-sm);overflow:hidden}.language-settings article{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px;border-bottom:1px solid var(--color-border)}.language-settings article:last-child{border-bottom:0}.language-settings small{display:block;color:var(--color-muted);margin-top:3px}.language-state{display:flex;align-items:center;gap:12px}.language-state>span{color:var(--color-muted)}.language-state>span.enabled{color:var(--color-success,#17834a);font-weight:600}.language-note{margin:22px}
+.language-summary {
+  display: flex;
+  justify-content: space-between;
+  margin: 22px;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--mc-surface);
+}
+.language-settings {
+  display: grid;
+  margin: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--mc-surface);
+}
+.language-settings article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+.language-settings article:last-child {
+  border-bottom: 0;
+}
+.language-settings small {
+  display: block;
+  color: var(--color-muted);
+  margin-top: 3px;
+}
+.language-state {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.language-state > span {
+  color: var(--color-muted);
+}
+.language-state > span.enabled {
+  color: var(--color-success);
+  font-weight: 600;
+}
+.language-note {
+  margin: 22px;
+}
 @media (max-width: 700px) {
   .settings-layout {
     grid-template-columns: 1fr;
@@ -82,4 +138,32 @@
     overflow-x: auto;
   }
 }
-.article-editor{border-top:1px solid var(--color-border)}.article-admin-list{display:grid;margin:22px;border:1px solid var(--color-border);border-radius:var(--radius-sm)}.article-admin-list article{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px;border-bottom:1px solid var(--color-border)}.article-admin-list article:last-child{border-bottom:0}.article-admin-list small{display:block;color:var(--color-muted);margin-top:3px}.article-admin-list article>div:last-child{display:flex;gap:8px}
+.article-editor {
+  border-top: 1px solid var(--color-border);
+}
+.article-admin-list {
+  display: grid;
+  margin: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.article-admin-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px;
+  border-bottom: 1px solid var(--color-border);
+}
+.article-admin-list article:last-child {
+  border-bottom: 0;
+}
+.article-admin-list small {
+  display: block;
+  color: var(--color-muted);
+  margin-top: 3px;
+}
+.article-admin-list article > div:last-child {
+  display: flex;
+  gap: 8px;
+}

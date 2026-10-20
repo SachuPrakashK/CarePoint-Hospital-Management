@@ -1,7 +1,536 @@
-<div class="page-head"><div><div class="breadcrumbs">Help & Support</div><h1>Help & Support</h1><p class="muted">Find maintained guidance or send a support request.</p></div></div>
-<section class="card help-search"><h2>Knowledge base</h2><app-search-field placeholder="Search help articles..." label="Search help articles" [value]="search()" (valueChange)="query($event)" />
-@if(loading()){<div class="loading-state loading-state--section" role="status" aria-live="polite">Loading support resources...</div>}@else if(!articles().length){<app-empty-state title="No published help articles" description="Your organization has not published help content matching this search." />}@else{<div class="article-grid">@for(article of articles();track article.id){<details><summary><span>{{article.title}}</span><small>{{article.category}}</small></summary><p>{{article.content}}</p><footer>Updated {{dates.formatDate(article.updatedAt)}}</footer></details>}</div>}</section>
-<div class="support-grid"><section class="card"><h2>Report an issue</h2><form [formGroup]="form" (ngSubmit)="submit()"><div class="form-grid"><label class="field full"><span>Subject *</span><input formControlName="subject" maxlength="160" /></label><label class="field"><span>Module *</span><select formControlName="module"><option value="">Select module</option>@for(module of modules;track module){<option [value]="module">{{module}}</option>}</select></label><label class="field"><span>Issue type *</span><select formControlName="issueType"><option value="">Select issue type</option><option value="TECHNICAL">Technical</option><option value="ACCESS">Access</option><option value="WORKFLOW">Workflow</option><option value="DATA">Data</option><option value="OTHER">Other</option></select></label><label class="field"><span>Priority</span><select formControlName="priority"><option>LOW</option><option>NORMAL</option><option>HIGH</option><option>URGENT</option></select></label><label class="field full"><span>Description *</span><textarea formControlName="description" rows="6" maxlength="5000"></textarea><small>Do not include passwords, access tokens, or patient clinical information.</small></label></div><div class="form-actions"><button class="primary" [disabled]="submitting()">{{submitting()?'Submitting...':'Submit issue'}}</button></div></form></section>
-<section class="card contact-card"><h2>Contact support</h2>@if(hasContacts()){@if(contacts().email){<p><b>Email</b><a [href]="'mailto:'+contacts().email">{{contacts().email}}</a></p>}@if(contacts().phone){<p><b>Phone</b><a [href]="'tel:'+contacts().phone">{{contacts().phone}}</a></p>}@if(contacts().workingHours){<p><b>Working hours</b><span>{{contacts().workingHours}}</span></p>}@if(contacts().portalUrl){<p><b>Support portal</b><a [href]="contacts().portalUrl" target="_blank" rel="noopener">Open portal</a></p>}}@else{<app-empty-state title="Contact details unavailable" description="Support contact details have not been configured by your administrator." />}</section></div>
-<section class="card"><div class="toolbar"><div><h2>{{canManage?'All support requests':'My support requests'}}</h2><p class="muted">{{canManage?'Manage requests submitted across the organization.':'Requests visible to your account.'}}</p></div><div class="toolbar-actions"><app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" /></div></div>
-@if(!tickets().length){<app-empty-state title="No support requests" description="Submitted issues will appear here with their real status." />}@else{<div class="table-wrap"><table><thead><tr>@if(columnVisible('number')){<th [attr.aria-sort]="ariaSort('ticketNumber')"><app-table-sort-header label="Ticket number" field="ticketNumber" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}@if(columnVisible('requester')){<th>Requester</th>}@if(columnVisible('subject')){<th [attr.aria-sort]="ariaSort('subject')"><app-table-sort-header label="Subject" field="subject" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}@if(columnVisible('module')){<th [attr.aria-sort]="ariaSort('module')"><app-table-sort-header label="Module" field="module" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}@if(columnVisible('priority')){<th [attr.aria-sort]="ariaSort('priority')"><app-table-sort-header label="Priority" field="priority" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}@if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}@if(columnVisible('created')){<th [attr.aria-sort]="ariaSort('createdAt')"><app-table-sort-header label="Created" field="createdAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}@if(columnVisible('updated')){<th [attr.aria-sort]="ariaSort('updatedAt')"><app-table-sort-header label="Updated" field="updatedAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}</tr></thead><tbody>@for(ticket of tickets();track ticket.id){<tr>@if(columnVisible('number')){<td><b>{{ticket.ticketNumber}}</b></td>}@if(columnVisible('requester')){<td><b>{{ticket.requester?.firstName}} {{ticket.requester?.lastName}}</b><small class="requester-email">{{ticket.requester?.email}}</small></td>}@if(columnVisible('subject')){<td>{{ticket.subject}}</td>}@if(columnVisible('module')){<td>{{ticket.module}}</td>}@if(columnVisible('priority')){<td>{{ticket.priority}}</td>}@if(columnVisible('status')){<td>@if(canManage){<select class="status-select" [value]="ticket.status" [disabled]="updatingTicket()===ticket.id" [attr.aria-label]="'Status for '+ticket.ticketNumber" (change)="updateStatus(ticket,$any($event.target).value)"><option value="OPEN">Open</option><option value="IN_PROGRESS">In progress</option><option value="RESOLVED">Resolved</option><option value="CLOSED">Closed</option></select>}@else{<app-status-badge [value]="ticket.status" />}</td>}@if(columnVisible('created')){<td>{{dates.formatDate(ticket.createdAt)}}</td>}@if(columnVisible('updated')){<td>{{dates.formatDate(ticket.updatedAt)}}</td>}</tr>}</tbody></table></div>}<app-pagination [page]="page()" [pageSize]="pageSize()" [totalItems]="total()" [totalPages]="totalPages()" itemLabel="support requests" (pageChange)="go($event)" (pageSizeChange)="resize($event)" /></section>
+<div class="page-head support-heading">
+  <div>
+    <div class="breadcrumbs">Help & Support</div>
+    <h1>Help & Support</h1>
+    <p class="muted">Find answers, get assistance, and manage your support requests.</p>
+  </div>
+  @if (canCreate) {
+    <button type="button" class="primary button-icon" (click)="openCreate()">
+      <app-icon name="plus" [size]="17" /> Create Support Ticket
+    </button>
+  }
+</div>
+
+<nav class="support-cards" aria-label="Support options">
+  <button type="button" class="support-card" (click)="scrollTo('help-center')">
+    <span class="support-card__icon"><app-icon name="help" [size]="24" /></span>
+    <span><b>Help Center</b><small>Browse maintained help articles and FAQs.</small></span>
+  </button>
+  <button type="button" class="support-card" (click)="scrollTo('contact-support')">
+    <span class="support-card__icon"><app-icon name="mail" [size]="24" /></span>
+    <span
+      ><b>Contact Support</b
+      ><small>View your organization’s configured support contacts.</small></span
+    >
+  </button>
+  <button type="button" class="support-card" (click)="scrollTo('support-tickets')">
+    <span class="support-card__icon"><app-icon name="documents" [size]="24" /></span>
+    <span
+      ><b>{{ canManage ? 'Support Tickets' : 'My Support Tickets' }}</b
+      ><small>Track requests and their current status.</small></span
+    >
+  </button>
+</nav>
+
+<section id="help-center" class="card help-center">
+  <div class="section-heading">
+    <div>
+      <h2>Help Center</h2>
+      <p class="muted">Search approved, published guidance.</p>
+    </div>
+    <app-search-field
+      placeholder="Search help articles and FAQs..."
+      label="Search help articles and FAQs"
+      [value]="articleSearch()"
+      [disabled]="articlesLoading()"
+      (valueChange)="queryArticles($event)"
+    />
+  </div>
+  @if (articleCategories().length) {
+    <div class="category-tabs" role="tablist" aria-label="Help article categories">
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="!articleCategory()"
+        [class.active]="!articleCategory()"
+        (click)="selectCategory('')"
+      >
+        All
+      </button>
+      @for (category of articleCategories(); track category) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="articleCategory() === category"
+          [class.active]="articleCategory() === category"
+          (click)="selectCategory(category)"
+        >
+          {{ category }}
+        </button>
+      }
+    </div>
+  }
+  @if (articlesLoading()) {
+    <div class="loading-state loading-state--section" role="status" aria-live="polite">
+      Loading help articles…
+    </div>
+  } @else if (articlesError()) {
+    <div class="support-error" role="alert">
+      <span>{{ articlesError() }}</span
+      ><button type="button" class="secondary" (click)="loadArticles()">Try again</button>
+    </div>
+  } @else if (!articles().length) {
+    <app-empty-state
+      title="No matching help articles"
+      description="Try another search term or category. Only published organizational content appears here."
+    />
+  } @else {
+    <div class="article-grid">
+      @for (article of articles(); track article.id) {
+        <details>
+          <summary>
+            <span>{{ article.title }}</span
+            ><span class="article-meta"
+              >{{ article.category }} <app-icon name="chevron-down" [size]="16"
+            /></span>
+          </summary>
+          <div class="article-content">
+            <p>{{ article.content }}</p>
+            @if (article.relatedModule) {
+              <span class="related-module">Related module: {{ article.relatedModule }}</span>
+            }
+            <footer>Updated {{ dates.formatDate(article.updatedAt) }}</footer>
+          </div>
+        </details>
+      }
+    </div>
+  }
+</section>
+
+<section id="contact-support" class="card contact-card">
+  <div class="section-heading">
+    <div>
+      <h2>Contact Support</h2>
+      <p class="muted">Contact details configured by your administrator.</p>
+    </div>
+  </div>
+  @if (contactsLoading()) {
+    <div class="loading-state loading-state--compact" role="status">Loading contact details…</div>
+  } @else if (contactsError()) {
+    <div class="support-error" role="alert">
+      <span>{{ contactsError() }}</span
+      ><button type="button" class="secondary" (click)="loadContacts()">Try again</button>
+    </div>
+  } @else if (hasContacts()) {
+    <div class="contact-grid">
+      @if (contacts()?.['email']) {
+        <a class="contact-item" [href]="'mailto:' + contacts()?.['email']"
+          ><app-icon name="mail" /><span
+            ><small>Email</small><b>{{ contacts()?.['email'] }}</b></span
+          ></a
+        >
+      }
+      @if (contacts()?.['phone']) {
+        <a class="contact-item" [href]="'tel:' + contacts()?.['phone']"
+          ><app-icon name="help" /><span
+            ><small>Phone</small><b>{{ contacts()?.['phone'] }}</b></span
+          ></a
+        >
+      }
+      @if (contacts()?.['workingHours']) {
+        <div class="contact-item">
+          <app-icon name="clock" /><span
+            ><small>Working hours</small><b>{{ contacts()?.['workingHours'] }}</b></span
+          >
+        </div>
+      }
+      @if (contacts()?.['portalUrl']) {
+        <a class="contact-item" [href]="contacts()?.['portalUrl']" target="_blank" rel="noopener"
+          ><app-icon name="back" /><span
+            ><small>Support portal</small><b>Open secure portal</b></span
+          ></a
+        >
+      }
+    </div>
+  } @else {
+    <app-empty-state
+      title="Contact details unavailable"
+      description="Support contact details have not been configured by your administrator."
+    />
+  }
+</section>
+
+<section id="support-tickets" class="card ticket-card">
+  <div class="toolbar support-toolbar">
+    <div>
+      <h2>{{ canManage ? 'All support requests' : 'My support requests' }}</h2>
+      <p class="muted">
+        {{
+          canManage
+            ? 'Manage requests submitted across the organization.'
+            : 'Requests visible only to your account.'
+        }}
+      </p>
+    </div>
+    <div class="toolbar-actions">
+      <app-search-field
+        placeholder="Search tickets..."
+        label="Search support tickets"
+        [value]="ticketSearch()"
+        [disabled]="ticketsLoading()"
+        (valueChange)="queryTickets($event)"
+      />
+      <app-shared-filter
+        [activeCount]="activeTicketFilters()"
+        [loading]="ticketsLoading()"
+        (applied)="applyTicketFilters()"
+        (cleared)="clearTicketFilters()"
+      >
+        <label class="field"
+          ><span>Status</span
+          ><select [value]="draftStatus()" (change)="draftStatus.set($any($event.target).value)">
+            <option value="">All statuses</option>
+            <option value="OPEN">Open</option>
+            <option value="IN_PROGRESS">In progress</option>
+            <option value="RESOLVED">Resolved</option>
+            <option value="CLOSED">Closed</option>
+          </select></label
+        >
+        <label class="field"
+          ><span>Priority</span
+          ><select
+            [value]="draftPriority()"
+            (change)="draftPriority.set($any($event.target).value)"
+          >
+            <option value="">All priorities</option>
+            <option value="LOW">Low</option>
+            <option value="NORMAL">Normal</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+          </select></label
+        >
+      </app-shared-filter>
+      <app-column-config
+        [columns]="columns"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+    </div>
+  </div>
+  @if (ticketsLoading()) {
+    <div class="loading-state loading-state--table" role="status">Loading support requests…</div>
+  } @else if (ticketsError()) {
+    <div class="support-error" role="alert">
+      <span>{{ ticketsError() }}</span
+      ><button type="button" class="secondary" (click)="loadTickets()">Try again</button>
+    </div>
+  } @else if (!tickets().length) {
+    <app-empty-state
+      title="No support requests"
+      description="No requests match the current search and filters."
+    />
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            @if (columnVisible('number')) {
+              <th [attr.aria-sort]="ariaSort('ticketNumber')">
+                <app-table-sort-header
+                  label="Ticket number"
+                  field="ticketNumber"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('requester')) {
+              <th>Requester</th>
+            }
+            @if (columnVisible('subject')) {
+              <th [attr.aria-sort]="ariaSort('subject')">
+                <app-table-sort-header
+                  label="Subject"
+                  field="subject"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('module')) {
+              <th [attr.aria-sort]="ariaSort('module')">
+                <app-table-sort-header
+                  label="Module"
+                  field="module"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('priority')) {
+              <th [attr.aria-sort]="ariaSort('priority')">
+                <app-table-sort-header
+                  label="Priority"
+                  field="priority"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('status')) {
+              <th [attr.aria-sort]="ariaSort('status')">
+                <app-table-sort-header
+                  label="Status"
+                  field="status"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('created')) {
+              <th [attr.aria-sort]="ariaSort('createdAt')">
+                <app-table-sort-header
+                  label="Created"
+                  field="createdAt"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('updated')) {
+              <th [attr.aria-sort]="ariaSort('updatedAt')">
+                <app-table-sort-header
+                  label="Updated"
+                  field="updatedAt"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (ticket of tickets(); track ticket.id) {
+            <tr>
+              @if (columnVisible('number')) {
+                <td>
+                  <button
+                    type="button"
+                    class="ticket-link"
+                    [disabled]="detailsLoading()"
+                    (click)="viewTicket(ticket)"
+                  >
+                    {{ ticket.ticketNumber }}
+                  </button>
+                </td>
+              }
+              @if (columnVisible('requester')) {
+                <td>
+                  <b>{{ ticket.requester?.firstName }} {{ ticket.requester?.lastName }}</b
+                  ><small class="requester-email">{{ ticket.requester?.email }}</small>
+                </td>
+              }
+              @if (columnVisible('subject')) {
+                <td class="subject-cell">{{ ticket.subject }}</td>
+              }
+              @if (columnVisible('module')) {
+                <td>{{ ticket.module }}</td>
+              }
+              @if (columnVisible('priority')) {
+                <td>
+                  <span class="priority priority--{{ ticket.priority.toLowerCase() }}">{{
+                    ticket.priority
+                  }}</span>
+                </td>
+              }
+              @if (columnVisible('status')) {
+                <td>
+                  @if (canManage) {
+                    <select
+                      class="status-select"
+                      [value]="ticket.status"
+                      [disabled]="updatingTicket() === ticket.id"
+                      [attr.aria-label]="'Status for ' + ticket.ticketNumber"
+                      (change)="updateStatus(ticket, $any($event.target).value)"
+                    >
+                      <option value="OPEN">Open</option>
+                      <option value="IN_PROGRESS">In progress</option>
+                      <option value="RESOLVED">Resolved</option>
+                      <option value="CLOSED">Closed</option>
+                    </select>
+                  } @else {
+                    <app-status-badge [value]="ticket.status" />
+                  }
+                </td>
+              }
+              @if (columnVisible('created')) {
+                <td>{{ dates.formatDate(ticket.createdAt) }}</td>
+              }
+              @if (columnVisible('updated')) {
+                <td>{{ dates.formatDate(ticket.updatedAt) }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <app-pagination
+    [page]="page()"
+    [pageSize]="pageSize()"
+    [totalItems]="total()"
+    [totalPages]="totalPages()"
+    itemLabel="support requests"
+    (pageChange)="go($event)"
+    (pageSizeChange)="resize($event)"
+  />
+</section>
+
+@if (createOpen()) {
+  <app-modal
+    title="Create Support Ticket"
+    description="Describe the issue without including passwords, tokens, or patient clinical information."
+    size="lg"
+    [dirty]="form.dirty"
+    (closed)="closeCreate()"
+  >
+    <form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="crud-modal__body">
+        <div class="form-grid">
+          <label class="field full"
+            ><span>Subject *</span
+            ><input
+              formControlName="subject"
+              maxlength="160"
+              placeholder="Briefly summarize the issue"
+            />
+            @if (fieldError('subject')) {
+              <small class="error">{{ fieldError('subject') }}</small>
+            }
+          </label>
+          <label class="field"
+            ><span>Module *</span
+            ><select formControlName="module">
+              <option value="">Select module</option>
+              @for (module of modules; track module) {
+                <option [value]="module">{{ module }}</option>
+              }
+            </select>
+            @if (fieldError('module')) {
+              <small class="error">{{ fieldError('module') }}</small>
+            }
+          </label>
+          <label class="field"
+            ><span>Issue type *</span
+            ><select formControlName="issueType">
+              <option value="">Select issue type</option>
+              <option value="TECHNICAL">Technical</option>
+              <option value="ACCESS">Access</option>
+              <option value="WORKFLOW">Workflow</option>
+              <option value="DATA">Data</option>
+              <option value="OTHER">Other</option>
+            </select>
+            @if (fieldError('issueType')) {
+              <small class="error">{{ fieldError('issueType') }}</small>
+            }
+          </label>
+          <label class="field"
+            ><span>Priority</span
+            ><select formControlName="priority">
+              <option value="LOW">Low</option>
+              <option value="NORMAL">Normal</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select></label
+          >
+          <label class="field full"
+            ><span>Description *</span
+            ><textarea
+              formControlName="description"
+              rows="7"
+              maxlength="5000"
+              placeholder="Explain what happened, what you expected, and how to reproduce it"
+            ></textarea>
+            @if (fieldError('description')) {
+              <small class="error">{{ fieldError('description') }}</small>
+            }
+            <small class="privacy-note"
+              ><app-icon name="shield" [size]="15" /> Do not include passwords, access tokens, or
+              patient clinical information.</small
+            ></label
+          >
+        </div>
+      </div>
+      <footer class="crud-modal__footer">
+        <button type="button" class="secondary" [disabled]="submitting()" (click)="closeCreate()">
+          Cancel</button
+        ><button type="submit" class="primary" [disabled]="submitting()">
+          {{ submitting() ? 'Submitting…' : 'Create Ticket' }}
+        </button>
+      </footer>
+    </form>
+  </app-modal>
+}
+
+@if (selectedTicket(); as ticket) {
+  <app-modal
+    [title]="ticket.ticketNumber"
+    [description]="ticket.subject"
+    size="lg"
+    (closed)="selectedTicket.set(null)"
+  >
+    <div class="crud-modal__body ticket-details">
+      <dl class="ticket-facts">
+        <div>
+          <dt>Status</dt>
+          <dd><app-status-badge [value]="ticket.status" /></dd>
+        </div>
+        <div>
+          <dt>Priority</dt>
+          <dd>{{ ticket.priority }}</dd>
+        </div>
+        <div>
+          <dt>Module</dt>
+          <dd>{{ ticket.module }}</dd>
+        </div>
+        <div>
+          <dt>Issue type</dt>
+          <dd>{{ ticket.issueType }}</dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd>{{ dates.formatDate(ticket.createdAt) }}</dd>
+        </div>
+        <div>
+          <dt>Updated</dt>
+          <dd>{{ dates.formatDate(ticket.updatedAt) }}</dd>
+        </div>
+      </dl>
+      <section>
+        <h3>Description</h3>
+        <p class="ticket-description">{{ ticket.description }}</p>
+      </section>
+      <section>
+        <h3>Status history</h3>
+        <ol class="ticket-history">
+          @for (event of ticket.history ?? []; track event.id) {
+            <li>
+              <span></span>
+              <div>
+                <b>{{ event.status.replace('_', ' ') }}</b
+                ><small
+                  >{{ dates.formatDate(event.createdAt) }} · {{ event.actor.firstName }}
+                  {{ event.actor.lastName }}</small
+                >
+              </div>
+            </li>
+          }
+        </ol>
+      </section>
+    </div>
+    <footer class="crud-modal__footer">
+      <button type="button" class="secondary" (click)="selectedTicket.set(null)">Close</button>
+    </footer>
+  </app-modal>
+}

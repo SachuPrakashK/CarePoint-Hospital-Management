@@ -12,26 +12,98 @@ const id = z.object({
   query: z.object({}).passthrough().optional(),
   params: z.object({ id: z.uuid() }),
 });
+export const auditQuery = z
+  .object({
+    page: z.coerce.number().int().positive().default(1),
+    page_size: z.coerce.number().int().min(1).max(100).default(10),
+    search: z.string().trim().max(120).optional(),
+    module: z.string().trim().max(80).optional(),
+    action: z.string().trim().max(80).optional(),
+    user_id: z.uuid().optional(),
+    entity_type: z.string().trim().max(100).optional(),
+    created_from: z.iso.date().optional(),
+    created_to: z.iso.date().optional(),
+    sort_by: z.enum(['createdAt', 'user', 'action', 'module', 'entityType']).optional(),
+    sort_order: z.enum(['asc', 'desc']).optional(),
+  })
+  .refine(
+    (query) => !query.created_from || !query.created_to || query.created_from <= query.created_to,
+    {
+      message: 'From date must be on or before To date.',
+      path: ['created_to'],
+    },
+  );
+const auditRequest = z.object({
+  body: z.object({}).passthrough().optional(),
+  params: z.object({}).passthrough(),
+  query: auditQuery,
+});
 const send = (fn: (q: any) => any, status = 200) =>
   asyncHandler(async (q, r) => r.status(status).json(await fn(q)));
 export const phase23Routes = Router();
 phase23Routes.use(authenticate);
-const sortKeysByPath:Record<string,readonly string[]>={
-  '/inventory/items':['code','name','category','quantity','reorderLevel','unit'],
-  '/inventory/suppliers':['name','contactPerson','phone','email','taxNumber'],
-  '/ambulances':['number','vehicleNumber','driverName','phone','status'],
-  '/ambulance-bookings':['number','patient','ambulance','pickup','destination','scheduledAt','status','charges'],
-  '/billing':['number','patient','createdAt','status'],
-  '/billing-payments':['receiptNumber','invoice','paidAt','amount','method','reference'],
-  '/billing/refunds':['createdAt','payment','amount','reason','status'],
-  '/insurance/providers':['name','code','contact','address'],
-  '/insurance/policies':['patient','provider','policyNumber','memberNumber','coverageLimit','startsAt','priority'],
-  '/insurance/claims':['number','patient','invoice','claimedAmount','approvedAmount','patientResponsibility','status'],
-  '/procurement/orders':['number','supplier','item','quantity','receivedQuantity','unitPrice','status'],
-  '/audit':['createdAt','user','action','module','entityType'],
-  '/masters/departments':['name','code','status'],'/masters/specializations':['name','code','department','status'],'/masters/radiology-investigations':['name','code','modality','status'],'/masters/laboratory-tests':['name','code','category','unit','status'],
+const sortKeysByPath: Record<string, readonly string[]> = {
+  '/inventory/items': ['code', 'name', 'category', 'quantity', 'reorderLevel', 'unit'],
+  '/inventory/suppliers': ['name', 'contactPerson', 'phone', 'email', 'taxNumber'],
+  '/ambulances': ['number', 'registration', 'driver', 'driverContact', 'status'],
+  '/ambulance-bookings': [
+    'number',
+    'patient',
+    'ambulance',
+    'pickup',
+    'destination',
+    'scheduledAt',
+    'status',
+    'charges',
+  ],
+  '/billing': ['number', 'patient', 'createdAt', 'status'],
+  '/billing-payments': ['receiptNumber', 'invoice', 'paidAt', 'amount', 'method', 'reference'],
+  '/billing/refunds': ['createdAt', 'payment', 'amount', 'reason', 'status'],
+  '/insurance/providers': ['name', 'code', 'contact', 'address'],
+  '/insurance/policies': [
+    'patient',
+    'provider',
+    'policyNumber',
+    'memberNumber',
+    'coverageLimit',
+    'startsAt',
+    'priority',
+  ],
+  '/insurance/claims': [
+    'number',
+    'patient',
+    'invoice',
+    'claimedAmount',
+    'approvedAmount',
+    'patientResponsibility',
+    'status',
+  ],
+  '/procurement/orders': [
+    'number',
+    'supplier',
+    'item',
+    'quantity',
+    'receivedQuantity',
+    'unitPrice',
+    'status',
+  ],
+  '/audit': ['createdAt', 'user', 'action', 'module', 'entityType'],
+  '/masters/departments': ['name', 'code', 'status'],
+  '/masters/specializations': ['name', 'code', 'department', 'status'],
+  '/masters/radiology-investigations': ['name', 'code', 'modality', 'status'],
+  '/masters/laboratory-tests': ['name', 'code', 'category', 'unit', 'status'],
 };
-phase23Routes.use((req,_res,next)=>{if(req.method!=='GET')return next();const allowed=sortKeysByPath[req.path];const field=typeof req.query.sort_by==='string'?req.query.sort_by:'';const direction=typeof req.query.sort_order==='string'?req.query.sort_order:'';if(field&&allowed&&!allowed.includes(field))return next(new AppError(422,'Unsupported sort field.','VALIDATION_ERROR'));if(direction&&!['asc','desc'].includes(direction))return next(new AppError(422,'Unsupported sort direction.','VALIDATION_ERROR'));next();});
+phase23Routes.use((req, _res, next) => {
+  if (req.method !== 'GET') return next();
+  const allowed = sortKeysByPath[req.path];
+  const field = typeof req.query.sort_by === 'string' ? req.query.sort_by : '';
+  const direction = typeof req.query.sort_order === 'string' ? req.query.sort_order : '';
+  if (field && allowed && !allowed.includes(field))
+    return next(new AppError(422, 'Unsupported sort field.', 'VALIDATION_ERROR'));
+  if (direction && !['asc', 'desc'].includes(direction))
+    return next(new AppError(422, 'Unsupported sort direction.', 'VALIDATION_ERROR'));
+  next();
+});
 const item = z.object({
   code: z.string().max(40).optional(),
   name: z.string().trim().min(2).max(120),
@@ -42,6 +114,9 @@ const item = z.object({
   quantity: z.number().int().nonnegative().default(0),
   reorderLevel: z.number().int().nonnegative(),
   expiresAt: z.iso.datetime().optional().nullable(),
+});
+export const inventoryItemUpdateSchema = item.partial().extend({
+  quantity: z.number().int().nonnegative().optional(),
 });
 phase23Routes.get(
   '/inventory/items',
@@ -65,7 +140,7 @@ phase23Routes.put(
   requirePermissions('inventory.edit'),
   validate(
     z.object({
-      body: item.partial(),
+      body: inventoryItemUpdateSchema,
       query: z.object({}).passthrough(),
       params: z.object({ id: z.uuid() }),
     }),
@@ -154,6 +229,12 @@ phase23Routes.post(
   ),
   send(async (q) => ({ data: await service.inventory.createSupplier(q.body) }), 201),
 );
+phase23Routes.get(
+  '/inventory/suppliers/:id',
+  requirePermissions('inventory.view'),
+  validate(id),
+  send(async (q) => ({ data: await service.inventory.getSupplier(q.params.id) })),
+);
 phase23Routes.put(
   '/inventory/suppliers/:id',
   requirePermissions('inventory.edit'),
@@ -201,6 +282,12 @@ phase23Routes.post(
   requirePermissions('ambulance.create'),
   validate(shell(ambulance)),
   send(async (q) => ({ data: await service.ambulance.create(q.body) }), 201),
+);
+phase23Routes.get(
+  '/ambulances/:id',
+  requirePermissions('ambulance.view'),
+  validate(id),
+  send(async (q) => ({ data: await service.ambulance.get(q.params.id) })),
 );
 phase23Routes.put(
   '/ambulances/:id',
@@ -263,7 +350,11 @@ phase23Routes.get(
   requirePermissions('billing.view'),
   send(async (q) => service.billing.refunds(q.query)),
 );
-phase23Routes.get('/billing-payments',requirePermissions('billing.view'),send(async(q)=>service.billing.payments(q.query)));
+phase23Routes.get(
+  '/billing-payments',
+  requirePermissions('billing.view'),
+  send(async (q) => service.billing.payments(q.query)),
+);
 phase23Routes.get(
   '/billing/:id',
   requirePermissions('billing.view'),
@@ -508,7 +599,9 @@ phase23Routes.patch(
       }),
     }),
   ),
-  send(async (q) => ({ data: await service.insurance.updateClaim(q.params.id, q.body, q.auth!.userId) })),
+  send(async (q) => ({
+    data: await service.insurance.updateClaim(q.params.id, q.body, q.auth!.userId),
+  })),
 );
 const order = z.object({
   patientId: z.uuid(),
@@ -518,11 +611,40 @@ const order = z.object({
   clinicalNotes: z.string().optional(),
   sampleType: z.string().min(1),
 });
-const diagnosticList=(sortKeys:[string,...string[]])=>z.object({params:z.object({}).passthrough(),body:z.unknown(),query:z.object({page:z.coerce.number().int().min(1).default(1),page_size:z.coerce.number().int().min(1).max(100).default(10),search:z.string().trim().max(100).optional(),status:z.string().trim().max(50).optional(),priority:z.string().trim().max(20).optional(),patient_id:z.uuid().optional(),doctor_id:z.uuid().optional(),test_definition_id:z.uuid().optional(),date_from:z.iso.date().optional(),date_to:z.iso.date().optional(),investigation:z.string().trim().max(150).optional(),sort_by:z.enum(sortKeys).default(sortKeys[0]),sort_order:z.enum(['asc','desc']).default('desc')})});
+const diagnosticList = (sortKeys: [string, ...string[]]) =>
+  z.object({
+    params: z.object({}).passthrough(),
+    body: z.unknown(),
+    query: z.object({
+      page: z.coerce.number().int().min(1).default(1),
+      page_size: z.coerce.number().int().min(1).max(100).default(10),
+      search: z.string().trim().max(100).optional(),
+      status: z.string().trim().max(50).optional(),
+      priority: z.string().trim().max(20).optional(),
+      patient_id: z.uuid().optional(),
+      doctor_id: z.uuid().optional(),
+      test_definition_id: z.uuid().optional(),
+      date_from: z.iso.date().optional(),
+      date_to: z.iso.date().optional(),
+      investigation: z.string().trim().max(150).optional(),
+      sort_by: z.enum(sortKeys).default(sortKeys[0]),
+      sort_order: z.enum(['asc', 'desc']).default('desc'),
+    }),
+  });
 phase23Routes.get(
   '/laboratory/orders',
   requirePermissions('laboratory.view'),
-  validate(diagnosticList(['createdAt','number','patient','doctor','priority','sampleType','status'])),
+  validate(
+    diagnosticList([
+      'createdAt',
+      'number',
+      'patient',
+      'doctor',
+      'priority',
+      'sampleType',
+      'status',
+    ]),
+  ),
   send(async (q) => service.laboratory.list(q.query)),
 );
 phase23Routes.get(
@@ -593,7 +715,17 @@ phase23Routes.put(
 phase23Routes.get(
   '/radiology/orders',
   requirePermissions('radiology.view'),
-  validate(diagnosticList(['createdAt','number','patient','investigation','doctor','scheduledAt','status'])),
+  validate(
+    diagnosticList([
+      'createdAt',
+      'number',
+      'patient',
+      'investigation',
+      'doctor',
+      'scheduledAt',
+      'status',
+    ]),
+  ),
   send(async (q) => service.radiology.list(q.query)),
 );
 phase23Routes.post(
@@ -711,7 +843,31 @@ const batch = z.object({
   quantity: z.number().int().positive(),
   reorderLevel: z.number().int().nonnegative(),
 });
-const batchList=z.object({params:z.object({}).passthrough(),body:z.unknown(),query:z.object({page:z.coerce.number().int().min(1).default(1),page_size:z.coerce.number().int().min(1).max(100).default(10),search:z.string().trim().max(100).optional(),category:z.string().trim().max(100).optional(),low_stock:z.enum(['true']).optional(),expiry:z.enum(['expired','expiring_soon','valid']).optional(),medicine_id:z.uuid().optional(),sort_by:z.enum(['medicine','batchNumber','expiresAt','purchasePrice','sellingPrice','quantity','reorderLevel']).default('expiresAt'),sort_order:z.enum(['asc','desc']).default('asc')})});
+const batchList = z.object({
+  params: z.object({}).passthrough(),
+  body: z.unknown(),
+  query: z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    page_size: z.coerce.number().int().min(1).max(100).default(10),
+    search: z.string().trim().max(100).optional(),
+    category: z.string().trim().max(100).optional(),
+    low_stock: z.enum(['true']).optional(),
+    expiry: z.enum(['expired', 'expiring_soon', 'valid']).optional(),
+    medicine_id: z.uuid().optional(),
+    sort_by: z
+      .enum([
+        'medicine',
+        'batchNumber',
+        'expiresAt',
+        'purchasePrice',
+        'sellingPrice',
+        'quantity',
+        'reorderLevel',
+      ])
+      .default('expiresAt'),
+    sort_order: z.enum(['asc', 'desc']).default('asc'),
+  }),
+});
 phase23Routes.get(
   '/pharmacy/batches',
   requirePermissions('pharmacy.view'),
@@ -734,7 +890,9 @@ phase23Routes.put(
       body: batch.partial().extend({ quantity: z.number().int().nonnegative().optional() }),
     }),
   ),
-  send(async (q) => ({ data: await service.pharmacy.updateBatch(q.params.id, q.body, q.auth!.userId) })),
+  send(async (q) => ({
+    data: await service.pharmacy.updateBatch(q.params.id, q.body, q.auth!.userId),
+  })),
 );
 phase23Routes.get(
   '/pharmacy/stock-movements',
@@ -806,6 +964,12 @@ phase23Routes.post(
   validate(shell(purchaseOrder)),
   send(async (q) => ({ data: await service.procurement.create(q.body) }), 201),
 );
+phase23Routes.get(
+  '/procurement/orders/:id',
+  requirePermissions('inventory.view'),
+  validate(id),
+  send(async (q) => ({ data: await service.procurement.get(q.params.id) })),
+);
 phase23Routes.put(
   '/procurement/orders/:id',
   requirePermissions('inventory.edit'),
@@ -841,7 +1005,19 @@ phase23Routes.post(
 phase23Routes.get(
   '/audit',
   requirePermissions('audit.view'),
+  validate(auditRequest),
   send(async (q) => service.audit(q.query)),
+);
+phase23Routes.get(
+  '/audit/options',
+  requirePermissions('audit.view'),
+  send(async () => ({ data: await service.auditOptions() })),
+);
+phase23Routes.get(
+  '/audit/:id',
+  requirePermissions('audit.view'),
+  validate(id),
+  send(async (q) => ({ data: await service.auditDetail(q.params.id) })),
 );
 const master = z.object({
   code: z.string().trim().min(2).max(30),

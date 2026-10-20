@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private http = inject(HttpClient);
+
   forgotPassword(email: string) {
     return this.http.post<{ message: string }>(
       '/api/v1/auth/forgot-password',
@@ -23,5 +24,16 @@ export class AuthApiService {
       { current_password, new_password },
       { headers: { 'X-Handle-Error-Locally': 'true' } },
     );
+  }
+  passwordPolicy() {
+    return this.http.get<{
+      data: {
+        minimumLength: number;
+        requireUppercase: boolean;
+        requireLowercase: boolean;
+        requireNumber: boolean;
+        requireSpecial: boolean;
+      };
+    }>('/api/v1/auth/password-policy');
   }
 }

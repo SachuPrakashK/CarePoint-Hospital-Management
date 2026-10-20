@@ -1,0 +1,110 @@
+:host {
+  display: block;
+}
+.not-found-shell {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 5vw, 56px);
+  overflow: hidden;
+  background: radial-gradient(
+    circle at 50% 20%,
+    var(--mc-surface) 0,
+    var(--mc-surface-soft) 48%,
+    var(--mc-background) 100%
+  );
+  font-family: Poppins, sans-serif;
+}
+.not-found-card {
+  width: min(560px, 100%);
+  padding: clamp(28px, 5vw, 48px);
+  border: 1px solid color-mix(in srgb, var(--mc-border) 82%, transparent);
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 20px 55px rgb(15 76 117 / 12%);
+  text-align: center;
+}
+.not-found-logo {
+  display: block;
+  width: min(210px, 65%);
+  height: auto;
+  margin: 0 auto 18px;
+}
+.not-found-illustration {
+  width: 150px;
+  margin: 0 auto -4px;
+  color: var(--mc-secondary);
+}
+.not-found-illustration svg {
+  display: block;
+  width: 100%;
+}
+.illustration-halo {
+  fill: var(--mc-surface-soft);
+}
+.illustration-page {
+  fill: var(--mc-surface);
+  stroke: var(--mc-primary);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.illustration-fold,
+.illustration-line,
+.illustration-cross {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.not-found-code {
+  margin: 0;
+  color: var(--mc-secondary);
+  font-size: clamp(52px, 11vw, 76px);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+.not-found-card h1 {
+  margin: 8px 0;
+  color: var(--mc-primary);
+  font-size: clamp(25px, 5vw, 34px);
+}
+.not-found-message {
+  max-width: 410px;
+  margin: 0 auto 25px;
+  color: var(--mc-text-secondary);
+  line-height: 1.65;
+}
+.not-found-primary {
+  min-width: min(240px, 100%);
+  border-radius: 999px;
+}
+.not-found-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 14px auto 0;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--mc-primary);
+  font-weight: 650;
+}
+.not-found-back:hover {
+  background: var(--mc-surface-soft);
+  color: var(--mc-secondary);
+}
+@media (max-width: 480px) {
+  .not-found-shell {
+    padding: 14px;
+  }
+  .not-found-card {
+    padding: 26px 20px;
+  }
+  .not-found-illustration {
+    width: 125px;
+  }
+}

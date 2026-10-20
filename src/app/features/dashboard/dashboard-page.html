@@ -11,25 +11,32 @@
   </div>
 }
 @if (store.loading() && !store.summary()) {
-  <div class="card loading-state loading-state--page" role="status" aria-live="polite">Loading dashboard…</div>
+  <div class="card loading-state loading-state--page" role="status" aria-live="polite">
+    Loading dashboard…
+  </div>
 } @else {
   <section class="stats">
     @for (item of store.stats(); track item.label) {
-      <article
-        class="card stat dashboard-stat"
-        [class]="'card stat dashboard-stat dashboard-stat--' + item.variant"
-      >
-        <span class="muted">{{ item.label }}</span>
-        <div class="value">{{ item.value }}</div>
-        <span class="trend">{{ item.note }}</span>
-      </article>
+      <app-summary-card
+        [title]="item.label"
+        [value]="item.value"
+        [note]="item.note"
+        [icon]="item.icon"
+        [variant]="$any(item.variant)"
+      />
     }
   </section>
   <section class="dashboard-charts">
     <article class="card chart-card">
       <div class="section-title"><h2>Operational workload</h2></div>
       @if (store.loading()) {
-        <div class="chart-state loading-state loading-state--section" role="status" aria-live="polite">Loading chart…</div>
+        <div
+          class="chart-state loading-state loading-state--section"
+          role="status"
+          aria-live="polite"
+        >
+          Loading chart…
+        </div>
       } @else if (store.error()) {
         <div class="chart-state error" role="alert">
           Unable to load chart data. <button class="secondary" (click)="store.load()">Retry</button>
@@ -48,7 +55,13 @@
     <article class="card chart-card">
       <div class="section-title"><h2>Appointments by department</h2></div>
       @if (store.loading()) {
-        <div class="chart-state loading-state loading-state--section" role="status" aria-live="polite">Loading chart…</div>
+        <div
+          class="chart-state loading-state loading-state--section"
+          role="status"
+          aria-live="polite"
+        >
+          Loading chart…
+        </div>
       } @else if (store.error()) {
         <div class="chart-state error" role="alert">
           Unable to load chart data. <button class="secondary" (click)="store.load()">Retry</button>
@@ -67,7 +80,13 @@
     <article class="card chart-card">
       <div class="section-title"><h2>Appointment status</h2></div>
       @if (store.loading()) {
-        <div class="chart-state loading-state loading-state--section" role="status" aria-live="polite">Loading chart…</div>
+        <div
+          class="chart-state loading-state loading-state--section"
+          role="status"
+          aria-live="polite"
+        >
+          Loading chart…
+        </div>
       } @else if (store.error()) {
         <div class="chart-state error" role="alert">
           Unable to load chart data. <button class="secondary" (click)="store.load()">Retry</button>
@@ -78,7 +97,7 @@
         <div class="chart-state">
           <app-chart-empty-state
             title="No data available"
-            message="Appointment statuses will appear when records exist."
+            message="Appointment statuses will appear when appointments exist."
           />
         </div>
       }
@@ -118,9 +137,7 @@
                 ><br /><small class="muted">{{ item.number }}</small>
               </td>
               <td>{{ item.doctor_name }}</td>
-              <td>
-                <app-status-badge [value]="item.status" />
-              </td>
+              <td><app-status-badge [value]="item.status" /></td>
             </tr>
           } @empty {
             <tr>

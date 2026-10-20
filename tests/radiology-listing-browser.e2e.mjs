@@ -17,7 +17,7 @@ const browser = await chromium.launch({headless:true,executablePath:'C:/Program 
 const page = await browser.newPage({viewport:{width:1366,height:768}});
 const failures=[]; page.on('response',r=>{if(r.status()>=500)failures.push(`${r.status()} ${r.url()}`)});
 try {
-  await page.goto('http://127.0.0.1:4200/auth/sign-in');
+  await page.goto('http://127.0.0.1:4200/auth/login');
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button',{name:'Sign in'}).click(); await page.waitForURL(/dashboard/);

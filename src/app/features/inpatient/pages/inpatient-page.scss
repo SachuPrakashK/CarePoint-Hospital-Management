@@ -1,6 +1,6 @@
 .ward {
-  background: white;
-  border: 1px solid #e0e8ea;
+  background: var(--mc-surface);
+  border: 1px solid var(--mc-border);
   border-radius: 10px;
   margin-bottom: 16px;
 }
@@ -13,8 +13,8 @@
 .bed {
   display: grid;
   gap: 6px;
-  border: 1px solid #dbe5e7;
-  border-left: 4px solid #17a186;
+  border: 1px solid var(--mc-border);
+  border-left: 4px solid var(--mc-secondary);
   border-radius: 8px;
   padding: 13px;
 }
@@ -29,16 +29,25 @@
   border-left-color: #b54b43;
 }
 .bed small {
-  color: #6f8086;
+  color: var(--mc-text-secondary);
 }
 .bed-icon {
   font-size: 22px;
 }
-tr.clickable { cursor: pointer; }
-tr.clickable:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+tr.clickable {
+  cursor: pointer;
+}
+tr.clickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
 @media (max-width: 700px) {
-  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 440px) {
-  .stats { grid-template-columns: 1fr; }
+  .stats {
+    grid-template-columns: 1fr;
+  }
 }

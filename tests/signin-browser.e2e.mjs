@@ -20,7 +20,7 @@ const browser = await chromium.launch({
 
 try {
   const page = await browser.newPage();
-  await page.goto(process.env.E2E_FRONTEND_URL ?? 'http://localhost:4200/auth/sign-in');
+  await page.goto(process.env.E2E_FRONTEND_URL ?? 'http://localhost:4200/auth/login');
   await page.locator('input[type="email"]').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.locator('input[type="password"]').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: /sign in/i }).click();

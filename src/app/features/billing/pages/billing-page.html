@@ -1,17 +1,397 @@
-<div class="page-head"><div><div class="breadcrumbs">Finance / Billing</div><h1>Billing & payments</h1><p class="muted">Centralized charges, invoices, payments and refunds.</p></div><button class="primary" (click)="openInvoice()">+ New invoice</button></div>
-<section class="stats"><article class="card stat"><span class="muted">Revenue received</span><div class="value">₹{{store.revenue()}}</div></article><article class="card stat"><span class="muted">Outstanding</span><div class="value">₹{{store.outstanding()}}</div></article><article class="card stat"><span class="muted">Open invoices</span><div class="value">{{openInvoices()}}</div></article><article class="card stat"><span class="muted">Refund requests</span><div class="value">{{store.refunds().length}}</div></article></section>
-<div class="tabs"><button [class.active]="tab()==='invoices'" (click)="selectTab('invoices')">Invoices</button><button [class.active]="tab()==='payments'" (click)="selectTab('payments')">Payments</button><button [class.active]="tab()==='refunds'" (click)="selectTab('refunds')">Refunds</button></div>
-<section class="card"><div class="toolbar"><app-search-field [placeholder]="'Search '+tab()" [value]="search()" (valueChange)="query($event)"/><div class="toolbar-actions"><app-column-config [columns]="columns()" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()"/></div></div>
-@if(loading()){<div class="loading-state loading-state--table" role="status" aria-live="polite">Loading billing records...</div>}@else if(error()){<div class="error-state">{{error()}} <button (click)="loadTable()">Retry</button></div>}@else if(!rows().length){<div class="empty">No {{tab()}} found.</div>}@else{<div class="table-wrap"><table><thead><tr>
-@if(tab()==='invoices'){@if(columnVisible('number')){<th [attr.aria-sort]="ariaSort('number')"><app-table-sort-header label="Invoice" field="number" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('patient')){<th [attr.aria-sort]="ariaSort('patient')"><app-table-sort-header label="Patient" field="patient" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('date')){<th [attr.aria-sort]="ariaSort('createdAt')"><app-table-sort-header label="Date" field="createdAt" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('total')){<th>Total</th>}@if(columnVisible('paid')){<th>Paid</th>}@if(columnVisible('balance')){<th>Balance</th>}@if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('actions')){<th>Actions</th>}}
-@else if(tab()==='payments'){@if(columnVisible('receipt')){<th [attr.aria-sort]="ariaSort('receiptNumber')"><app-table-sort-header label="Receipt" field="receiptNumber" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('invoice')){<th [attr.aria-sort]="ariaSort('invoice')"><app-table-sort-header label="Invoice" field="invoice" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('date')){<th [attr.aria-sort]="ariaSort('paidAt')"><app-table-sort-header label="Date" field="paidAt" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('amount')){<th [attr.aria-sort]="ariaSort('amount')"><app-table-sort-header label="Amount" field="amount" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('method')){<th [attr.aria-sort]="ariaSort('method')"><app-table-sort-header label="Method" field="method" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('reference')){<th [attr.aria-sort]="ariaSort('reference')"><app-table-sort-header label="Reference" field="reference" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('actions')){<th>Actions</th>}}
-@else{@if(columnVisible('date')){<th [attr.aria-sort]="ariaSort('createdAt')"><app-table-sort-header label="Date" field="createdAt" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('payment')){<th [attr.aria-sort]="ariaSort('payment')"><app-table-sort-header label="Payment" field="payment" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('amount')){<th [attr.aria-sort]="ariaSort('amount')"><app-table-sort-header label="Amount" field="amount" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('reason')){<th [attr.aria-sort]="ariaSort('reason')"><app-table-sort-header label="Reason" field="reason" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)"/></th>}@if(columnVisible('approval')){<th>Approval</th>}}
-</tr></thead><tbody>@for(item of rows();track item.id){<tr>
-@if(tab()==='invoices'){@if(columnVisible('number')){<td><b>{{item.number}}</b></td>}@if(columnVisible('patient')){<td>{{item.patientName}}</td>}@if(columnVisible('date')){<td>{{format(item.createdAt)}}</td>}@if(columnVisible('total')){<td>₹{{totals(item).total}}</td>}@if(columnVisible('paid')){<td>₹{{totals(item).paid}}</td>}@if(columnVisible('balance')){<td><b>₹{{totals(item).balance}}</b></td>}@if(columnVisible('status')){<td><app-status-badge [value]="item.status"/></td>}@if(columnVisible('actions')){<td><a class="secondary button-link" [routerLink]="['invoice',item.id]">Open</a><button class="secondary" (click)="openInvoice(item)">Edit</button>@if(totals(item).balance>0){<button class="primary" (click)="paymentInvoice.set({id:item.id,amount:totals(item).balance});dirty.set(false)">Pay</button>}</td>}}
-@else if(tab()==='payments'){@if(columnVisible('receipt')){<td>{{item.receiptNumber}}</td>}@if(columnVisible('invoice')){<td>{{item.invoice?.number||item.invoiceId}}</td>}@if(columnVisible('date')){<td>{{format(item.paidAt)}}</td>}@if(columnVisible('amount')){<td>₹{{item.amount}}</td>}@if(columnVisible('method')){<td>{{item.method}}</td>}@if(columnVisible('reference')){<td>{{item.reference}}</td>}@if(columnVisible('actions')){<td><button class="secondary" (click)="refundPayment.set({id:item.id,amount:item.amount});dirty.set(false)">Refund</button></td>}}
-@else{@if(columnVisible('date')){<td>{{format(item.createdAt)}}</td>}@if(columnVisible('payment')){<td>{{item.payment?.receiptNumber||item.paymentId}}</td>}@if(columnVisible('amount')){<td>₹{{item.amount}}</td>}@if(columnVisible('reason')){<td>{{item.reason}}</td>}@if(columnVisible('status')){<td><app-status-badge [value]="item.status"/></td>}@if(columnVisible('approval')){<td>@if(item.status==='Requested'){<button class="primary" (click)="store.approveRefund(item.id,'Finance Manager');loadTable()">Approve & process</button>}@else{ {{item.approvedBy||'Processed'}} }</td>}}
-</tr>}</tbody></table></div>}<app-pagination [loading]="loading()" [page]="page()" [pageSize]="pageSize()" [totalItems]="total()" [totalPages]="totalPages()" [itemLabel]="tab()" (pageChange)="go($event)" (pageSizeChange)="resize($event)"/></section>
-@if(message()){<div class="toast" role="status">{{message()}}</div>}
-@if(invoiceModal()){<app-modal [title]="editing()?'Edit invoice':'Create invoice'" size="xl" [dirty]="dirty()" (closed)="closeInvoice()"><app-bill-form [entity]="editing()" (dirtyChanged)="dirty.set($event)" (saved)="invoiceSaved();loadTable()"/></app-modal>}
-@if(paymentInvoice();as payment){<app-modal title="Record payment" [dirty]="dirty()" (closed)="paymentInvoice.set(null)"><app-payment-form [invoiceId]="payment.id" [initialAmount]="payment.amount" (dirtyChanged)="dirty.set($event)" (saved)="paymentSaved()"/></app-modal>}
-@if(refundPayment();as payment){<app-modal title="Request refund" [dirty]="dirty()" (closed)="refundPayment.set(null)"><app-refund-form [paymentId]="payment.id" [initialAmount]="payment.amount" (dirtyChanged)="dirty.set($event)" (saved)="refundSaved()"/></app-modal>}
+<div class="page-head">
+  <div>
+    <div class="breadcrumbs">Finance / Billing</div>
+    <h1>Billing & Payments</h1>
+    <p class="muted">Centralized charges, invoices, payments and refunds.</p>
+  </div>
+  <button class="primary" (click)="openInvoice()">+ New invoice</button>
+</div>
+<section class="stats">
+  <app-summary-card
+    title="Revenue Received"
+    [value]="'₹' + store.revenue()"
+    icon="billing"
+    variant="green"
+  /><app-summary-card
+    title="Outstanding"
+    [value]="'₹' + store.outstanding()"
+    icon="billing"
+    variant="amber"
+  /><app-summary-card
+    title="Open Invoices"
+    [value]="openInvoices()"
+    icon="documents"
+    variant="blue"
+  /><app-summary-card
+    title="Refund Requests"
+    [value]="store.refunds().length"
+    icon="rotate-ccw"
+    variant="purple"
+  />
+</section>
+<div class="tabs">
+  <button [class.active]="tab() === 'invoices'" (click)="selectTab('invoices')">Invoices</button
+  ><button [class.active]="tab() === 'payments'" (click)="selectTab('payments')">Payments</button
+  ><button [class.active]="tab() === 'refunds'" (click)="selectTab('refunds')">Refunds</button>
+</div>
+<section class="card">
+  <div class="toolbar">
+    <app-search-field
+      [placeholder]="'Search ' + tab()"
+      [value]="search()"
+      (valueChange)="query($event)"
+    />
+    <div class="toolbar-actions">
+      <app-column-config
+        [columns]="columns()"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+    </div>
+  </div>
+  @if (loading()) {
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">
+      Loading billing records...
+    </div>
+  } @else if (error()) {
+    <div class="error-state">{{ error() }} <button (click)="loadTable()">Retry</button></div>
+  } @else if (!rows().length) {
+    <div class="empty">No {{ tab() }} found.</div>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            @if (tab() === 'invoices') {
+              @if (columnVisible('number')) {
+                <th [attr.aria-sort]="ariaSort('number')">
+                  <app-table-sort-header
+                    label="Invoice"
+                    field="number"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('patient')) {
+                <th [attr.aria-sort]="ariaSort('patient')">
+                  <app-table-sort-header
+                    label="Patient"
+                    field="patient"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('date')) {
+                <th [attr.aria-sort]="ariaSort('createdAt')">
+                  <app-table-sort-header
+                    label="Date"
+                    field="createdAt"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('total')) {
+                <th>Total</th>
+              }
+              @if (columnVisible('paid')) {
+                <th>Paid</th>
+              }
+              @if (columnVisible('balance')) {
+                <th>Balance</th>
+              }
+              @if (columnVisible('status')) {
+                <th [attr.aria-sort]="ariaSort('status')">
+                  <app-table-sort-header
+                    label="Status"
+                    field="status"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('actions')) {
+                <th>Actions</th>
+              }
+            } @else if (tab() === 'payments') {
+              @if (columnVisible('receipt')) {
+                <th [attr.aria-sort]="ariaSort('receiptNumber')">
+                  <app-table-sort-header
+                    label="Receipt"
+                    field="receiptNumber"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('invoice')) {
+                <th [attr.aria-sort]="ariaSort('invoice')">
+                  <app-table-sort-header
+                    label="Invoice"
+                    field="invoice"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('date')) {
+                <th [attr.aria-sort]="ariaSort('paidAt')">
+                  <app-table-sort-header
+                    label="Date"
+                    field="paidAt"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('amount')) {
+                <th [attr.aria-sort]="ariaSort('amount')">
+                  <app-table-sort-header
+                    label="Amount"
+                    field="amount"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('method')) {
+                <th [attr.aria-sort]="ariaSort('method')">
+                  <app-table-sort-header
+                    label="Method"
+                    field="method"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('reference')) {
+                <th [attr.aria-sort]="ariaSort('reference')">
+                  <app-table-sort-header
+                    label="Reference"
+                    field="reference"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('actions')) {
+                <th>Actions</th>
+              }
+            } @else {
+              @if (columnVisible('date')) {
+                <th [attr.aria-sort]="ariaSort('createdAt')">
+                  <app-table-sort-header
+                    label="Date"
+                    field="createdAt"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('payment')) {
+                <th [attr.aria-sort]="ariaSort('payment')">
+                  <app-table-sort-header
+                    label="Payment"
+                    field="payment"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('amount')) {
+                <th [attr.aria-sort]="ariaSort('amount')">
+                  <app-table-sort-header
+                    label="Amount"
+                    field="amount"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('reason')) {
+                <th [attr.aria-sort]="ariaSort('reason')">
+                  <app-table-sort-header
+                    label="Reason"
+                    field="reason"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('status')) {
+                <th [attr.aria-sort]="ariaSort('status')">
+                  <app-table-sort-header
+                    label="Status"
+                    field="status"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('approval')) {
+                <th>Approval</th>
+              }
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of rows(); track item.id) {
+            <tr>
+              @if (tab() === 'invoices') {
+                @if (columnVisible('number')) {
+                  <td>
+                    <b>{{ item.number }}</b>
+                  </td>
+                }
+                @if (columnVisible('patient')) {
+                  <td>{{ item.patientName }}</td>
+                }
+                @if (columnVisible('date')) {
+                  <td>{{ format(item.createdAt) }}</td>
+                }
+                @if (columnVisible('total')) {
+                  <td>₹{{ totals(item).total }}</td>
+                }
+                @if (columnVisible('paid')) {
+                  <td>₹{{ totals(item).paid }}</td>
+                }
+                @if (columnVisible('balance')) {
+                  <td>
+                    <b>₹{{ totals(item).balance }}</b>
+                  </td>
+                }
+                @if (columnVisible('status')) {
+                  <td><app-status-badge [value]="item.status" /></td>
+                }
+                @if (columnVisible('actions')) {
+                  <td>
+                    <a class="secondary button-link" [routerLink]="['invoice', item.id]">Open</a
+                    ><button class="secondary" (click)="openInvoice(item)">Edit</button>
+                    @if (totals(item).balance > 0) {
+                      <button
+                        class="primary"
+                        (click)="
+                          paymentInvoice.set({ id: item.id, amount: totals(item).balance });
+                          dirty.set(false)
+                        "
+                      >
+                        Pay
+                      </button>
+                    }
+                  </td>
+                }
+              } @else if (tab() === 'payments') {
+                @if (columnVisible('receipt')) {
+                  <td>{{ item.receiptNumber }}</td>
+                }
+                @if (columnVisible('invoice')) {
+                  <td>{{ item.invoice?.number || item.invoiceId }}</td>
+                }
+                @if (columnVisible('date')) {
+                  <td>{{ format(item.paidAt) }}</td>
+                }
+                @if (columnVisible('amount')) {
+                  <td>₹{{ item.amount }}</td>
+                }
+                @if (columnVisible('method')) {
+                  <td>{{ item.method }}</td>
+                }
+                @if (columnVisible('reference')) {
+                  <td>{{ item.reference }}</td>
+                }
+                @if (columnVisible('actions')) {
+                  <td>
+                    <button
+                      class="secondary"
+                      (click)="
+                        refundPayment.set({ id: item.id, amount: item.amount }); dirty.set(false)
+                      "
+                    >
+                      Refund
+                    </button>
+                  </td>
+                }
+              } @else {
+                @if (columnVisible('date')) {
+                  <td>{{ format(item.createdAt) }}</td>
+                }
+                @if (columnVisible('payment')) {
+                  <td>{{ item.payment?.receiptNumber || item.paymentId }}</td>
+                }
+                @if (columnVisible('amount')) {
+                  <td>₹{{ item.amount }}</td>
+                }
+                @if (columnVisible('reason')) {
+                  <td>{{ item.reason }}</td>
+                }
+                @if (columnVisible('status')) {
+                  <td><app-status-badge [value]="item.status" /></td>
+                }
+                @if (columnVisible('approval')) {
+                  <td>
+                    @if (item.status === 'Requested') {
+                      <button
+                        class="primary"
+                        (click)="store.approveRefund(item.id, 'Finance Manager'); loadTable()"
+                      >
+                        Approve & process
+                      </button>
+                    } @else {
+                      {{ item.approvedBy || 'Processed' }}
+                    }
+                  </td>
+                }
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  <app-pagination
+    [loading]="loading()"
+    [page]="page()"
+    [pageSize]="pageSize()"
+    [totalItems]="total()"
+    [totalPages]="totalPages()"
+    [itemLabel]="tab()"
+    (pageChange)="go($event)"
+    (pageSizeChange)="resize($event)"
+  />
+</section>
+@if (message()) {
+  <div class="toast" role="status">{{ message() }}</div>
+}
+@if (invoiceModal()) {
+  <app-modal
+    [title]="editing() ? 'Edit invoice' : 'Create invoice'"
+    size="xl"
+    [dirty]="dirty()"
+    (closed)="closeInvoice()"
+    ><app-bill-form
+      [entity]="editing()"
+      (dirtyChanged)="dirty.set($event)"
+      (saved)="invoiceSaved(); loadTable()"
+  /></app-modal>
+}
+@if (paymentInvoice(); as payment) {
+  <app-modal title="Record payment" [dirty]="dirty()" (closed)="paymentInvoice.set(null)"
+    ><app-payment-form
+      [invoiceId]="payment.id"
+      [initialAmount]="payment.amount"
+      (dirtyChanged)="dirty.set($event)"
+      (saved)="paymentSaved()"
+  /></app-modal>
+}
+@if (refundPayment(); as payment) {
+  <app-modal title="Request refund" [dirty]="dirty()" (closed)="refundPayment.set(null)"
+    ><app-refund-form
+      [paymentId]="payment.id"
+      [initialAmount]="payment.amount"
+      (dirtyChanged)="dirty.set($event)"
+      (saved)="refundSaved()"
+  /></app-modal>
+}

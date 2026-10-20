@@ -1,0 +1,42 @@
+.document-upload {
+  min-height: 0;
+}
+.document-upload__body {
+  padding: 1.25rem 1.5rem;
+}
+.document-upload__fields {
+  display: grid;
+  gap: 1.15rem;
+}
+.document-upload__restricted {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  cursor: pointer;
+}
+.document-upload__restricted input {
+  margin-top: 0.2rem;
+  accent-color: var(--color-primary);
+}
+.document-upload__restricted span {
+  display: grid;
+  gap: 0.2rem;
+}
+.document-upload__restricted small {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+@media (max-width: 700px) {
+  .document-upload__body {
+    padding: 1rem;
+  }
+  .document-upload .crud-modal__footer {
+    padding: 0.85rem 1rem;
+  }
+  .document-upload .crud-modal__footer button {
+    flex: 1;
+  }
+}

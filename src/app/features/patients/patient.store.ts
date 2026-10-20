@@ -25,7 +25,9 @@ export class PatientStore {
   readonly createdFrom = signal('');
   readonly createdTo = signal('');
   readonly sort = signal<TableSort | null>(null);
+  private requestVersion = 0;
   async load() {
+    const requestVersion = ++this.requestVersion;
     this.loading.set(true);
     this.error.set(null);
     try {
@@ -44,14 +46,16 @@ export class PatientStore {
           sortOrder: this.sort()?.direction,
         }),
       );
+      if (requestVersion !== this.requestVersion) return;
       this.patients.set(r.data);
       this.total.set(r.pagination.total);
       this.totalPages.set(r.pagination.total_pages);
       this.allTotal.set(r.pagination.all_total);
     } catch {
+      if (requestVersion !== this.requestVersion) return;
       this.error.set('Patients could not be loaded.');
     } finally {
-      this.loading.set(false);
+      if (requestVersion === this.requestVersion) this.loading.set(false);
     }
   }
   async loadDetails(id: string) {

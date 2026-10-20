@@ -1,7 +1,7 @@
 <div class="page-head">
   <div>
     <div class="breadcrumbs">Clinical / Radiology</div>
-    <h1>Radiology worklist</h1>
+    <h1>Radiology Worklist</h1>
     <p class="muted">Scheduling, imaging, reporting and verification.</p>
   </div>
   <button class="primary" (click)="open()">+ New radiology order</button>
@@ -11,16 +11,11 @@
     <app-search-field placeholder="Search radiology orders" (valueChange)="searchChanged($event)" />
     <div class="toolbar-actions">
       <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div class="filter-anchor" appClickOutside (appClickOutside)="filtersOpen.set(false)" (click)="$event.stopPropagation()">
-        <button type="button" class="secondary" (click)="filtersOpen.set(!filtersOpen())"><app-icon name="filter" [size]="17" /> Filters @if (status() || investigation()) { ({{ (status() ? 1 : 0) + (investigation() ? 1 : 0) }}) }</button>
-        @if (filtersOpen()) {
-          <div class="filter-panel"><div class="filter-grid">
+      <app-shared-filter [activeCount]="(status() ? 1 : 0) + (investigation() ? 1 : 0)" [loading]="loading()" (applied)="applyFilters()" (cleared)="clearFilters()">
             <label class="field"><span>Status</span><select aria-label="Status filter" [value]="draftStatus()" (change)="draftStatus.set($any($event.target).value)"><option value="">All statuses</option>@for (s of ['Ordered','Scheduled','Performed','Reporting','Verified','Completed','Cancelled']; track s) { <option [value]="s">{{ s }}</option> }</select></label>
             <label class="field"><span>Investigation</span><input placeholder="Search investigation" [value]="draftInvestigation()" (input)="draftInvestigation.set($any($event.target).value)" /></label>
-          </div><div class="filter-actions"><button type="button" class="secondary" (click)="clearFilters()">Clear all</button><button type="button" class="primary" (click)="applyFilters()">Apply filters</button></div></div>
-        }
-      </div>
-      <button type="button" class="secondary" [disabled]="!items().length || exporting()" (click)="exportOrders()"><app-icon name="download" [size]="17" />{{ exporting() ? 'Exporting…' : 'Export' }}</button>
+      </app-shared-filter>
+      <app-shared-export [disabled]="!items().length" [exporting]="exporting()" (exportRequested)="exportOrders()" />
     </div>
   </div>
   @if (loading()) {

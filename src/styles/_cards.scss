@@ -1,65 +1,101 @@
 .card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 .stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 15px;
-    margin-bottom: 22px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 22px;
 }
 .stat {
-    min-height: 126px;
-    padding: 18px;
+  min-height: 126px;
+  padding: 18px;
 }
 .stat .value {
-    font-size: 27px;
-    font-weight: 700;
-    margin: 8px 0;
+  font-size: 27px;
+  font-weight: 700;
+  margin: 8px 0;
 }
 .stat .trend {
-    font-size: 12px;
-    color: var(--color-blue-700);
+  font-size: 12px;
+  color: var(--color-blue-700);
 }
 .metric-card {
-    --metric-accent: #2f78a4;
-    position: relative;
-    overflow: hidden;
-    color: #173747;
-    box-shadow: 0 5px 16px rgb(31 71 92 / 8%);
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  --metric-accent: var(--mc-accent);
+  position: relative;
+  overflow: hidden;
+  color: var(--mc-text-primary);
+  box-shadow: 0 5px 16px rgb(31 71 92 / 8%);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
-.metric-card::before { position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--metric-accent); content: ''; }
-.metric-card:hover { transform: translateY(-2px); box-shadow: 0 9px 22px rgb(31 71 92 / 13%); }
-.metric-card--blue { --metric-accent:#246f9d; background:var(--card-blue-bg); }
-.metric-card--amber { --metric-accent:#92651d; background:var(--card-orange-bg); }
-.metric-card--purple { --metric-accent:#68499a; background:var(--card-purple-bg); }
-.metric-card--cyan { --metric-accent:#247b8f; background:var(--card-cyan-bg); }
-.metric-card--green { --metric-accent:#2f7652; background:var(--card-green-bg); }
-.metric-card--red { --metric-accent:#a64137; background:var(--card-red-bg); }
-@media (prefers-reduced-motion: reduce) { .metric-card { transition:none; } .metric-card:hover { transform:none; } }
+.metric-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--metric-accent);
+  content: '';
+}
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 22px rgb(31 71 92 / 13%);
+}
+.metric-card--blue {
+  --metric-accent: var(--mc-primary);
+  background: var(--card-blue-bg);
+}
+.metric-card--amber {
+  --metric-accent: #92651d;
+  background: var(--card-orange-bg);
+}
+.metric-card--purple {
+  --metric-accent: #68499a;
+  background: var(--card-purple-bg);
+}
+.metric-card--cyan {
+  --metric-accent: #247b8f;
+  background: var(--card-cyan-bg);
+}
+.metric-card--green {
+  --metric-accent: #2f7652;
+  background: var(--card-green-bg);
+}
+.metric-card--red {
+  --metric-accent: #a64137;
+  background: var(--card-red-bg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .metric-card {
+    transition: none;
+  }
+  .metric-card:hover {
+    transform: none;
+  }
+}
 .status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border-radius: 99px;
-    padding: 5px 9px;
-    font-size: 11px;
-    font-weight: 600;
-    background: #eaf5f1;
-    color: var(--color-success);
-    width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 99px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #eaf5f1;
+  color: var(--color-success);
+  width: fit-content;
 }
 .status.warn {
-    background: #fff5d9;
-    color: var(--color-warning);
+  background: #fff5d9;
+  color: var(--color-warning);
 }
 .status.danger {
-    background: #ffedeb;
-    color: var(--color-danger);
+  background: #ffedeb;
+  color: var(--color-danger);
 }
 .status.info {
-    background: #e9f2fb;
-    color: var(--color-info);
+  background: #e9f2fb;
+  color: var(--color-info);
 }

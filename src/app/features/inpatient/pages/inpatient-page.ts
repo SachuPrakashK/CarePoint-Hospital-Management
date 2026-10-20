@@ -10,13 +10,14 @@ import { StatusBadge } from '../../../shared/components/status-badge/status-badg
 import { SearchField } from '../../../shared/components/search/search-field';
 import { AppPagination } from '../../../shared/components/pagination/app-pagination';
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
-import { AppIcon } from '../../../shared/components/icon/app-icon';
 import { AppModal } from '../../../shared/components/modal/app-modal';
-import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../../shared/components/export/shared-export';
 import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
 import { ColumnConfig } from '../../../shared/components/column-config/column-config';
 import { TableColumnDefinition, TableSort } from '../../../shared/models/table.models';
 import { TablePreferencesService } from '../../../core/services/table-preferences.service';
+import { SummaryCard } from '../../../shared/components/summary-card/summary-card';
 
 @Component({
   imports: [
@@ -26,10 +27,12 @@ import { TablePreferencesService } from '../../../core/services/table-preference
     SearchField,
     AppPagination,
     EmptyState,
-    AppIcon,
     AppModal,
-    ClickOutsideDirective,
-    TableSortHeader,ColumnConfig,
+    SharedFilter,
+    SharedExport,
+    TableSortHeader,
+    ColumnConfig,
+    SummaryCard,
   ],
   templateUrl: './inpatient-page.html',
   styleUrl: './inpatient-page.scss',
@@ -42,21 +45,57 @@ export class InpatientPage {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private toast = inject(ToastService);
-  private tablePreferences=inject(TablePreferencesService);
+  private tablePreferences = inject(TablePreferencesService);
   readonly tab = signal<'admissions' | 'beds' | 'wards'>('admissions');
   readonly search = signal('');
   readonly departmentId = signal('');
   readonly status = signal('');
   readonly draftDepartmentId = signal('');
   readonly draftStatus = signal('');
-  readonly filtersOpen = signal(false);
   readonly page = signal(1);
   readonly pageSize = signal(10);
   readonly exporting = signal(false);
-  readonly sort=signal<TableSort|null>(null);
-  readonly columns:readonly TableColumnDefinition[]=[{id:'admission',header:'Admission',visibleByDefault:true,required:true,sortable:true,sortKey:'number'},{id:'patient',header:'Patient',visibleByDefault:true,required:true,sortable:true,sortKey:'patient'},{id:'care',header:'Department / Doctor',visibleByDefault:true,sortable:true,sortKey:'department'},{id:'bed',header:'Ward / Room / Bed',visibleByDefault:true},{id:'admitted',header:'Admitted',visibleByDefault:true,sortable:true,sortKey:'admittedAt'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'}];
-  readonly visibleColumns=signal(this.tablePreferences.load('admissions',this.columns));
-  constructor(){void this.tablePreferences.loadRemote('admissions',this.columns).then(ids=>this.visibleColumns.set(ids));}
+  readonly sort = signal<TableSort | null>(null);
+  readonly columns: readonly TableColumnDefinition[] = [
+    {
+      id: 'admission',
+      header: 'Admission',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'number',
+    },
+    {
+      id: 'patient',
+      header: 'Patient',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'patient',
+    },
+    {
+      id: 'care',
+      header: 'Department / Doctor',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'department',
+    },
+    { id: 'bed', header: 'Ward / Room / Bed', visibleByDefault: true },
+    {
+      id: 'admitted',
+      header: 'Admitted',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'admittedAt',
+    },
+    { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
+  ];
+  readonly visibleColumns = signal(this.tablePreferences.load('admissions', this.columns));
+  constructor() {
+    void this.tablePreferences
+      .loadRemote('admissions', this.columns)
+      .then((ids) => this.visibleColumns.set(ids));
+  }
   readonly wardOpen = signal(false);
   readonly wardSubmitting = signal(false);
   readonly wardError = signal('');
@@ -114,7 +153,8 @@ export class InpatientPage {
       search: this.search(),
       departmentId: this.departmentId(),
       status: this.status(),
-      sortBy:this.sort()?.field,sortOrder:this.sort()?.direction,
+      sortBy: this.sort()?.field,
+      sortOrder: this.sort()?.direction,
     });
   }
   onSearch(value: string) {
@@ -126,7 +166,6 @@ export class InpatientPage {
     this.departmentId.set(this.draftDepartmentId());
     this.status.set(this.draftStatus());
     this.page.set(1);
-    this.filtersOpen.set(false);
     await this.loadAdmissions();
   }
   async clearFilters() {
@@ -135,7 +174,6 @@ export class InpatientPage {
     this.departmentId.set('');
     this.status.set('');
     this.page.set(1);
-    this.filtersOpen.set(false);
     await this.loadAdmissions();
   }
   async clearCriteria() {
@@ -151,11 +189,32 @@ export class InpatientPage {
     this.page.set(1);
     await this.loadAdmissions();
   }
-  async changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);await this.loadAdmissions();}
-  ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}
-  columnVisible(id:string){return this.visibleColumns().includes(id);}
-  async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns.some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save('admissions',ids);}
-  async resetColumns(){await this.tablePreferences.reset('admissions');this.visibleColumns.set(this.tablePreferences.load('admissions',this.columns));}
+  async changeSort(value: TableSort | null) {
+    this.sort.set(value);
+    this.page.set(1);
+    await this.loadAdmissions();
+  }
+  ariaSort(field: string): 'ascending' | 'descending' | 'none' {
+    const sort = this.sort();
+    return sort?.field === field ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  }
+  columnVisible(id: string) {
+    return this.visibleColumns().includes(id);
+  }
+  async applyColumns(ids: string[]) {
+    const active = this.sort();
+    if (
+      active &&
+      !this.columns.some((column) => ids.includes(column.id) && column.sortKey === active.field)
+    )
+      this.sort.set(null);
+    this.visibleColumns.set(ids);
+    await this.tablePreferences.save('admissions', ids);
+  }
+  async resetColumns() {
+    await this.tablePreferences.reset('admissions');
+    this.visibleColumns.set(this.tablePreferences.load('admissions', this.columns));
+  }
   viewAdmission(id: string) {
     void this.router.navigate(['/inpatient', id]);
   }
@@ -163,8 +222,29 @@ export class InpatientPage {
     if (this.exporting() || !this.store.admissions().length) return;
     this.exporting.set(true);
     try {
-      const exportColumns=[{id:'admission',header:'Admission',value:(item:any)=>item.number},{id:'patient',header:'Patient',value:(item:any)=>item.patientName},{id:'care',header:'Department / Doctor',value:(item:any)=>`${item.department??''} / ${item.attendingDoctor??''}`},{id:'bed',header:'Ward / Room / Bed',value:(item:any)=>{const allocation=this.activeAllocation(item);return `${allocation?.ward??''} / ${allocation?.room??''} / ${allocation?.bedName??''}`;}},{id:'admitted',header:'Admitted',value:(item:any)=>item.admittedAt},{id:'status',header:'Status',value:(item:any)=>item.status}].filter(column=>this.columnVisible(column.id));
-      const rows=[exportColumns.map(column=>column.header),...this.store.admissions().map(item=>exportColumns.map(column=>column.value(item)))];
+      const exportColumns = [
+        { id: 'admission', header: 'Admission', value: (item: any) => item.number },
+        { id: 'patient', header: 'Patient', value: (item: any) => item.patientName },
+        {
+          id: 'care',
+          header: 'Department / Doctor',
+          value: (item: any) => `${item.department ?? ''} / ${item.attendingDoctor ?? ''}`,
+        },
+        {
+          id: 'bed',
+          header: 'Ward / Room / Bed',
+          value: (item: any) => {
+            const allocation = this.activeAllocation(item);
+            return `${allocation?.ward ?? ''} / ${allocation?.room ?? ''} / ${allocation?.bedName ?? ''}`;
+          },
+        },
+        { id: 'admitted', header: 'Admitted', value: (item: any) => item.admittedAt },
+        { id: 'status', header: 'Status', value: (item: any) => item.status },
+      ].filter((column) => this.columnVisible(column.id));
+      const rows = [
+        exportColumns.map((column) => column.header),
+        ...this.store.admissions().map((item) => exportColumns.map((column) => column.value(item))),
+      ];
       const blob = new Blob(
         [
           rows

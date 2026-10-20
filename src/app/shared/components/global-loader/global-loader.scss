@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0 0 auto;
   height: 3px;
-  background: #d7e8f4;
+  background: var(--mc-border);
   z-index: 120;
   overflow: hidden;
 }

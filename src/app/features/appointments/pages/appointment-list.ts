@@ -15,7 +15,8 @@ import { AppPagination } from '../../../shared/components/pagination/app-paginat
 import { EmptyState } from '../../../shared/components/empty-state/empty-state';
 import { AppIcon } from '../../../shared/components/icon/app-icon';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
-import { ClickOutsideDirective } from '../../../shared/directives/click-outside.directive';
+import { SharedFilter } from '../../../shared/components/filters/shared-filter';
+import { SharedExport } from '../../../shared/components/export/shared-export';
 import { TableSortHeader } from '../../../shared/components/table-sort-header/table-sort-header';
 import { ColumnConfig } from '../../../shared/components/column-config/column-config';
 import { TableColumnDefinition, TableSort } from '../../../shared/models/table.models';
@@ -32,7 +33,7 @@ const sundayOf = (key: string) => {
 };
 
 @Component({
-  imports: [AppointmentForm, AppModal, SearchField, AppActionsMenu, AppPagination, EmptyState, AppIcon, StatusBadge, ClickOutsideDirective, TableSortHeader, ColumnConfig],
+  imports: [AppointmentForm, AppModal, SearchField, AppActionsMenu, AppPagination, EmptyState, AppIcon, StatusBadge, SharedFilter, SharedExport, TableSortHeader, ColumnConfig],
   templateUrl: './appointment-list.html',
   styleUrl: './appointment-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,7 +65,6 @@ export class AppointmentList {
   readonly draftDepartmentId = signal('');
   readonly draftDoctorId = signal('');
   readonly draftStatus = signal('');
-  readonly filtersOpen = signal(false);
   readonly view = signal<'list' | 'calendar'>('list');
   readonly createOpen = signal(false);
   readonly editing = signal<ApiAppointment | null>(null);
@@ -142,11 +142,11 @@ export class AppointmentList {
   }
   async applyFilters() {
     this.departmentId.set(this.draftDepartmentId()); this.doctorId.set(this.draftDoctorId()); this.status.set(this.draftStatus());
-    this.page.set(1); this.filtersOpen.set(false); await this.load();
+    this.page.set(1); await this.load();
   }
   async clearFilters() {
     this.draftDepartmentId.set(''); this.draftDoctorId.set(''); this.draftStatus.set('');
-    this.departmentId.set(''); this.doctorId.set(''); this.status.set(''); this.page.set(1); this.filtersOpen.set(false); await this.load();
+    this.departmentId.set(''); this.doctorId.set(''); this.status.set(''); this.page.set(1); await this.load();
   }
   async clearCriteria() { this.search.set(''); await this.clearFilters(); }
   async changePage(page: number) { this.page.set(page); await this.load(); }

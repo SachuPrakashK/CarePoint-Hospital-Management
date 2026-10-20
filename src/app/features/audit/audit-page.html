@@ -1,116 +1,209 @@
-<div class="page-head">
+<div class="page-head audit-page-head">
   <div>
     <div class="breadcrumbs">Administration / Audit Logs</div>
     <h1>Audit Logs</h1>
-    <p class="muted">
-      Immutable history of sensitive clinical, financial and administrative activity.
-    </p>
+    <p class="muted">Review immutable system activity and security events.</p>
   </div>
-  <button class="secondary" [disabled]="!events().length || exporting()" (click)="export()">
-    <app-icon name="download" [size]="17" /> {{ exporting() ? 'Exporting...' : 'Export' }}
-  </button>
 </div>
-<section class="card">
-  <div class="toolbar">
-    <app-search-field placeholder="Search audit logs" (valueChange)="query($event)" />
+
+<section class="card audit-card">
+  <div class="toolbar audit-toolbar">
+    <app-search-field placeholder="Search audit logs…" (valueChange)="query($event)" />
     <div class="toolbar-actions">
-      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <div
-        class="filter-anchor"
-        appClickOutside
-        (appClickOutside)="filtersOpen.set(false)"
-        (click)="$event.stopPropagation()"
+      <app-column-config
+        [columns]="columns"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+      <app-shared-filter
+        [activeCount]="activeFilterCount()"
+        [loading]="store.loading()"
+        [applyDisabled]="dateRangeInvalid()"
+        (applied)="apply()"
+        (cleared)="clear()"
       >
-        <button class="secondary" type="button" (click)="filtersOpen.set(!filtersOpen())">
-          <app-icon name="filter" [size]="17" /> Filters
-        </button>
-        @if (filtersOpen()) {
-          <div class="filter-panel">
-            <div class="filter-grid">
-              <label class="field"
-                ><span>Module</span
-                ><select [value]="module()" (change)="module.set($any($event.target).value)">
-                  <option value="">All modules</option>
-                  @for (x of modules; track x) {
-                    <option [value]="x">{{ x }}</option>
-                  }
-                </select></label
-              ><label class="field"
-                ><span>Action</span
-                ><select [value]="action()" (change)="action.set($any($event.target).value)">
-                  <option value="">All actions</option>
-                  @for (
-                    x of [
-                      'CREATE',
-                      'UPDATE',
-                      'DELETE',
-                      'UPLOAD',
-                      'DOWNLOAD',
-                      'LOGIN',
-                      'PASSWORD_RESET',
-                    ];
-                    track x
-                  ) {
-                    <option [value]="x">{{ x }}</option>
-                  }
-                </select></label
-              ><label class="field"
-                ><span>From</span
-                ><input
-                  type="date"
-                  [value]="from()"
-                  (change)="from.set($any($event.target).value)" /></label
-              ><label class="field"
-                ><span>To</span
-                ><input type="date" [value]="to()" (change)="to.set($any($event.target).value)"
-              /></label>
-            </div>
-            <div class="filter-actions">
-              <button class="ghost" type="button" (click)="clear()">Clear</button
-              ><button class="primary" type="button" (click)="apply()">Apply</button>
-            </div>
-          </div>
-        }
-      </div>
+        <label class="field">
+          <span>Actor</span>
+          <select [value]="userId()" (change)="userId.set($any($event.target).value)">
+            <option value="">All actors</option>
+            @for (actor of store.options().actors; track actor.id) {
+              <option [value]="actor.id">{{ actor.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span>Module</span>
+          <select [value]="module()" (change)="module.set($any($event.target).value)">
+            <option value="">All modules</option>
+            @for (value of store.options().modules; track value) {
+              <option [value]="value">{{ label(value) }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span>Action</span>
+          <select [value]="action()" (change)="action.set($any($event.target).value)">
+            <option value="">All actions</option>
+            @for (value of store.options().actions; track value) {
+              <option [value]="value">{{ label(value) }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span>Entity type</span>
+          <select [value]="entityType()" (change)="entityType.set($any($event.target).value)">
+            <option value="">All entity types</option>
+            @for (value of store.options().entityTypes; track value) {
+              <option [value]="value">{{ label(value) }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          <span>From date</span>
+          <input type="date" [value]="from()" (change)="from.set($any($event.target).value)" />
+        </label>
+        <label class="field">
+          <span>To date</span>
+          <input type="date" [value]="to()" (change)="to.set($any($event.target).value)" />
+          @if (dateRangeInvalid()) {
+            <span class="error">To date must be on or after From date.</span>
+          }
+        </label>
+      </app-shared-filter>
     </div>
   </div>
+
   @if (store.loading()) {
-    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading audit logs...</div>
+    <div
+      class="loading-state loading-state--table audit-table-state"
+      role="status"
+      aria-live="polite"
+    >
+      Loading audit logs…
+    </div>
   } @else if (store.error()) {
-    <div class="error-state">{{ store.error() }} <button (click)="load()">Retry</button></div>
-  } @else if (!events().length) {
+    <div class="error-state audit-table-state">
+      {{ store.error() }} <button type="button" class="secondary" (click)="load()">Retry</button>
+    </div>
+  } @else if (!store.events().length) {
     <app-empty-state
       title="No audit logs found"
       description="No immutable events match your search or filters."
     />
   } @else {
-    <div class="table-wrap">
-      <table>
+    <div class="table-wrap audit-table-wrap">
+      <table class="audit-table">
         <thead>
           <tr>
-            @if(columnVisible('date')){<th [attr.aria-sort]="ariaSort('createdAt')"><app-table-sort-header label="Date & time" field="createdAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('user')){<th [attr.aria-sort]="ariaSort('user')"><app-table-sort-header label="User" field="user" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('action')){<th [attr.aria-sort]="ariaSort('action')"><app-table-sort-header label="Action" field="action" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('module')){<th [attr.aria-sort]="ariaSort('module')"><app-table-sort-header label="Module" field="module" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('target')){<th [attr.aria-sort]="ariaSort('entityType')"><app-table-sort-header label="Target" field="entityType" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('description')){<th>Description</th>}
+            @if (columnVisible('date')) {
+              <th class="audit-col-date" [attr.aria-sort]="ariaSort('createdAt')">
+                <app-table-sort-header
+                  label="Date & time"
+                  field="createdAt"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('user')) {
+              <th class="audit-col-user" [attr.aria-sort]="ariaSort('user')">
+                <app-table-sort-header
+                  label="User"
+                  field="user"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('module')) {
+              <th [attr.aria-sort]="ariaSort('module')">
+                <app-table-sort-header
+                  label="Module"
+                  field="module"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('action')) {
+              <th [attr.aria-sort]="ariaSort('action')">
+                <app-table-sort-header
+                  label="Action"
+                  field="action"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('target')) {
+              <th [attr.aria-sort]="ariaSort('entityType')">
+                <app-table-sort-header
+                  label="Affected resource"
+                  field="entityType"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('description')) {
+              <th class="audit-col-details">Details</th>
+            }
           </tr>
         </thead>
         <tbody>
-          @for (e of events(); track e.id) {
-            <tr class="clickable-row" (click)="selected.set(e)">
-              @if(columnVisible('date')){<td>{{ format(e.at) }}</td>}
-              @if(columnVisible('user')){<td>{{ e.actor }}</td>}
-              @if(columnVisible('action')){<td><app-status-badge [value]="e.action" /></td>}
-              @if(columnVisible('module')){<td>{{ e.module }}</td>}
-              @if(columnVisible('target')){<td>{{ e.entityType }} / {{ e.entityId || 'Not available' }}</td>}
-              @if(columnVisible('description')){<td>{{ e.detail }}</td>}
+          @for (event of store.events(); track event.id) {
+            <tr
+              class="clickable-row"
+              tabindex="0"
+              (click)="open(event)"
+              (keydown.enter)="open(event)"
+              (keydown.space)="$event.preventDefault(); open(event)"
+            >
+              @if (columnVisible('date')) {
+                <td class="audit-date">{{ format(event.createdAt) }}</td>
+              }
+              @if (columnVisible('user')) {
+                <td>
+                  <span class="audit-primary-text" [title]="event.actor">{{ event.actor }}</span>
+                  @if (event.actorEmail) {
+                    <small [title]="event.actorEmail">{{ event.actorEmail }}</small>
+                  }
+                </td>
+              }
+              @if (columnVisible('module')) {
+                <td>
+                  <span class="audit-module">{{ label(event.module) }}</span>
+                </td>
+              }
+              @if (columnVisible('action')) {
+                <td><app-status-badge [value]="event.action" /></td>
+              }
+              @if (columnVisible('target')) {
+                <td>
+                  <span class="audit-primary-text" [title]="event.entityType">{{
+                    label(event.entityType)
+                  }}</span
+                  ><small [title]="event.entityId || 'No entity reference'">{{
+                    event.entityId || 'No reference'
+                  }}</small>
+                </td>
+              }
+              @if (columnVisible('description')) {
+                <td>
+                  <span class="audit-detail-preview" [title]="metadataSummary(event.metadata)">{{
+                    metadataSummary(event.metadata)
+                  }}</span
+                  ><app-icon name="chevron-right" [size]="17" />
+                </td>
+              }
             </tr>
           }
         </tbody>
       </table>
     </div>
   }
+
   <app-pagination
     [loading]="store.loading()"
     [page]="page()"
@@ -121,43 +214,8 @@
     (pageChange)="go($event)"
     (pageSizeChange)="resize($event)"
   />
-  <p class="muted">Audit records are append-only and cannot be edited or deleted.</p>
+  <p class="audit-readonly-note">
+    <app-icon name="shield" [size]="16" />Audit records are read-only and cannot be edited or
+    deleted.
+  </p>
 </section>
-@if (selected(); as e) {
-  <div class="drawer-overlay" (click)="selected.set(null)">
-    <aside class="details-drawer" (click)="$event.stopPropagation()">
-      <button class="icon-button" aria-label="Close" (click)="selected.set(null)">×</button>
-      <h2>Audit Log Details</h2>
-      <dl class="details-grid">
-        <div>
-          <dt>Timestamp</dt>
-          <dd>{{ format(e.at) }}</dd>
-        </div>
-        <div>
-          <dt>User</dt>
-          <dd>{{ e.actor }}</dd>
-        </div>
-        <div>
-          <dt>Action</dt>
-          <dd>{{ e.action }}</dd>
-        </div>
-        <div>
-          <dt>Module</dt>
-          <dd>{{ e.module }}</dd>
-        </div>
-        <div>
-          <dt>Target</dt>
-          <dd>{{ e.entityType }} / {{ e.entityId || 'Not available' }}</dd>
-        </div>
-        <div>
-          <dt>Source IP</dt>
-          <dd>{{ e.ipAddress || 'Not available' }}</dd>
-        </div>
-        <div>
-          <dt>Description</dt>
-          <dd>{{ e.detail }}</dd>
-        </div>
-      </dl>
-    </aside>
-  </div>
-}

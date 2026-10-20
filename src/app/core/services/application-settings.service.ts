@@ -1,3 +1,33 @@
-import { HttpClient } from '@angular/common/http';import { inject,Injectable,signal } from '@angular/core';import { firstValueFrom } from 'rxjs';
-export interface ApplicationConfiguration{applicationName:string;dateFormat:'DD-MM-YYYY'|'MM-DD-YYYY'|'YYYY-MM-DD';timeFormat:'12-hour'|'24-hour';timezone:'Asia/Kolkata';defaultRowsPerPage:10|25|50|100;}
-@Injectable({providedIn:'root'})export class ApplicationSettingsService{private http=inject(HttpClient);readonly value=signal<ApplicationConfiguration>({applicationName:'CarePoint Hospital Management',dateFormat:'DD-MM-YYYY',timeFormat:'12-hour',timezone:'Asia/Kolkata',defaultRowsPerPage:10});async load(){try{const r=await firstValueFrom(this.http.get<{data:ApplicationConfiguration}>('/api/v1/settings/application-config'));this.value.set(r.data);}catch{}}set(value:ApplicationConfiguration){this.value.set(value);}readonly defaultRowsPerPage=()=>this.value().defaultRowsPerPage;}
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+export interface ApplicationConfiguration {
+  applicationName: string;
+  dateFormat: 'DD-MM-YYYY' | 'MM-DD-YYYY' | 'YYYY-MM-DD';
+  timeFormat: '12-hour' | '24-hour';
+  timezone: 'Asia/Kolkata';
+  defaultRowsPerPage: 10 | 25 | 50 | 100;
+}
+@Injectable({ providedIn: 'root' })
+export class ApplicationSettingsService {
+  private http = inject(HttpClient);
+  readonly value = signal<ApplicationConfiguration>({
+    applicationName: 'MediCare+',
+    dateFormat: 'DD-MM-YYYY',
+    timeFormat: '12-hour',
+    timezone: 'Asia/Kolkata',
+    defaultRowsPerPage: 10,
+  });
+  async load() {
+    try {
+      const r = await firstValueFrom(
+        this.http.get<{ data: ApplicationConfiguration }>('/api/v1/settings/application-config'),
+      );
+      this.value.set(r.data);
+    } catch {}
+  }
+  set(value: ApplicationConfiguration) {
+    this.value.set(value);
+  }
+  readonly defaultRowsPerPage = () => this.value().defaultRowsPerPage;
+}
