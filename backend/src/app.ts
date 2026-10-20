@@ -84,3 +84,5 @@ export const createApp = () => {
   app.use(errorHandler);
   return app;
 };
+
+export default createApp();
