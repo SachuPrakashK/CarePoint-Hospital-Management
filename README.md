@@ -99,6 +99,35 @@ Deploy only behind HTTPS with an appropriate CSP, HSTS, CORS and CSRF policy. Se
 
 Serve the generated SPA from a hardened web server and route unknown application paths to `index.html`.
 
+### Vercel
+
+The repository includes `vercel.json` and a serverless Express entry point under `api/`. Vercel serves the Angular application and keeps the existing same-origin `/api/v1` requests working through a Node.js function.
+
+Configure these environment variables for Production, Preview and Development before deploying:
+
+- `NODE_ENV=production`
+- `DATABASE_URL` using a pooled, serverless-compatible PostgreSQL connection string
+- `ACCESS_TOKEN_SECRET` and `REFRESH_TOKEN_SECRET`, each at least 32 characters
+- `FRONTEND_URL` set to the production Vercel URL or custom domain
+- `FRONTEND_RESET_URL` set to `<FRONTEND_URL>/auth/reset-password`
+- Optional mail variables: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
+- Optional notification variable: `NOTIFICATION_WEBHOOK_URL`
+
+Apply the checked-in database migrations to the production database before first use:
+
+```bash
+cd backend
+npm run prisma:deploy
+```
+
+Then deploy from the repository root:
+
+```bash
+vercel --prod
+```
+
+Vercel Functions have ephemeral local storage. Profile images, hospital logos and uploaded documents currently use `FILE_UPLOAD_PATH`, so those uploads must be moved to durable object storage (such as Vercel Blob or S3) before relying on them in production.
+
 ## Troubleshooting
 
 - `NG05104`: ensure `src/index.html` contains `<hms-root>`.
