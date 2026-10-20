@@ -1,6 +1,6 @@
 # Hospital Management Application
 
-CarePoint is an Angular 22 hospital operations application with a Node.js/Express REST API, Prisma ORM, PostgreSQL, and amCharts 5 dashboards.
+MediCare+ is an Angular 22 hospital operations application with a Node.js/Express REST API, Prisma ORM, PostgreSQL, and amCharts 5 dashboards.
 
 ## Technology
 

@@ -161,7 +161,7 @@ const medicine = (
   await call('/pharmacy/medicines', token, 'POST', {
     name: `E2E Medicine ${stamp}`,
     genericName: 'E2E Generic',
-    brand: 'CarePoint',
+    brand: 'MediCare+',
     category: 'General',
     strength: '10 mg',
     form: 'Tablet',
