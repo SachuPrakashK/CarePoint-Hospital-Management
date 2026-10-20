@@ -7,6 +7,68 @@ beforeAll(() => {
   process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret-that-is-at-least-32-chars';
 });
 describe('security and validation', () => {
+  it('escapes CSV syntax and neutralizes spreadsheet formulas', async () => {
+    const { escapeCsvCell } = await import('../src/services/reports.service.js');
+    expect(escapeCsvCell('General, Medicine')).toBe('"General, Medicine"');
+    expect(escapeCsvCell('A "quoted" value')).toBe('"A ""quoted"" value"');
+    expect(escapeCsvCell('=SUM(A1:A2)')).toBe("'=SUM(A1:A2)");
+    expect(escapeCsvCell('  +cmd')).toBe("'  +cmd");
+  });
+  it('validates reports date ranges and department identifiers', async () => {
+    const { reportQuerySchema } = await import('../src/routes/reports.routes.js');
+    expect(
+      reportQuerySchema.safeParse({
+        body: {},
+        params: {},
+        query: { from: '2026-10-01', to: '2026-10-19' },
+      }).success,
+    ).toBe(true);
+    expect(
+      reportQuerySchema.safeParse({
+        body: {},
+        params: {},
+        query: { from: '2026-10-19', to: '2026-10-01' },
+      }).success,
+    ).toBe(false);
+    expect(
+      reportQuerySchema.safeParse({ body: {}, params: {}, query: { department_id: 'not-an-id' } })
+        .success,
+    ).toBe(false);
+  });
+  it('does not inject a zero quantity into partial inventory updates', async () => {
+    const { inventoryItemUpdateSchema } = await import('../src/routes/phase23.routes.js');
+    expect(inventoryItemUpdateSchema.parse({ store: 'Main Store' })).toEqual({
+      store: 'Main Store',
+    });
+  });
+  it('validates bounded audit queries and chronological date ranges', async () => {
+    const { auditQuery } = await import('../src/routes/phase23.routes.js');
+    expect(
+      auditQuery.safeParse({ page: '1', page_size: '100', sort_by: 'createdAt' }).success,
+    ).toBe(true);
+    expect(auditQuery.safeParse({ page_size: '101' }).success).toBe(false);
+    expect(auditQuery.safeParse({ sort_by: 'metadata' }).success).toBe(false);
+    expect(
+      auditQuery.safeParse({ created_from: '2026-10-18', created_to: '2026-10-01' }).success,
+    ).toBe(false);
+  });
+
+  it('redacts sensitive values in nested audit metadata without changing safe fields', async () => {
+    const { sanitizeAuditMetadata } = await import('../src/services/phase23.service.js');
+    expect(
+      sanitizeAuditMetadata({
+        patientId: 'patient-1',
+        password: 'unsafe',
+        request: { authorization: 'Bearer secret', reason: 'updated' },
+        changes: [{ refreshToken: 'token', field: 'email' }],
+      }),
+    ).toEqual({
+      patientId: 'patient-1',
+      password: '[REDACTED]',
+      request: { authorization: '[REDACTED]', reason: 'updated' },
+      changes: [{ refreshToken: '[REDACTED]', field: 'email' }],
+    });
+  });
   it('rejects weak reset passwords', async () => {
     const { resetPasswordSchema } = await import('../src/validators/auth.validator.js');
     expect(

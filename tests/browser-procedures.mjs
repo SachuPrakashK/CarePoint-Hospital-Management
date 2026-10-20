@@ -18,7 +18,7 @@ try {
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
   page.on('response', (response) => { if (response.status() >= 500) errors.push(`${response.status()} ${response.url()}`); });
   page.on('request', (request) => { if (request.method() === 'GET' && request.url().includes('/api/v1/procedures?')) listRequests.push(request.url()); });
-  await page.goto('http://127.0.0.1:4200/auth/sign-in', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:4200/auth/login', { waitUntil: 'networkidle' });
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL); await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD); await page.getByRole('button', { name: 'Sign in' }).click(); await page.waitForURL('**/dashboard');
   await page.goto('http://127.0.0.1:4200/procedures', { waitUntil: 'networkidle' }); await page.getByRole('heading', { name: 'Procedures & operation theatre' }).waitFor();
   const widgets = page.locator('.procedure-stats .metric-card'); if (await widgets.count() !== 5) throw new Error('Procedure widgets are missing.');

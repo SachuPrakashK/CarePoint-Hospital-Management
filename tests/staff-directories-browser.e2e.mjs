@@ -108,7 +108,7 @@ try {
   });
   try {
     const page = await browser.newPage();
-    await page.goto(`${front}/auth/sign-in`);
+    await page.goto(`${front}/auth/login`);
     await page.locator('input[type="email"]').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
     await page.locator('input[type="password"]').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
     await page.getByRole('button', { name: /sign in/i }).click();

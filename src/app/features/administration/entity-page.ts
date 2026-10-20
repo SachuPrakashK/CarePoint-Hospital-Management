@@ -29,7 +29,7 @@ export class EntityPage {
   private toast = inject(ToastService);
   private tablePreferences=inject(TablePreferencesService);
   readonly key = computed(
-    () => this.route.snapshot.parent?.paramMap.get('entity') ?? 'departments',
+    () => this.route.snapshot.parent?.data['entity'] ?? 'departments',
   );
   readonly supported = computed(() =>
     ['departments', 'specializations', 'radiology-investigations', 'laboratory-tests'].includes(

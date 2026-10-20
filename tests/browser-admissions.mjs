@@ -13,7 +13,7 @@ const errors = [];
 page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 page.on('response', (response) => { if (response.status() >= 500) errors.push(`${response.status()} ${response.url()}`); });
 try {
-  await page.goto('http://localhost:4302/auth/sign-in', { waitUntil: 'networkidle' });
+  await page.goto('http://localhost:4302/auth/login', { waitUntil: 'networkidle' });
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();

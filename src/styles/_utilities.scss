@@ -89,6 +89,28 @@ td > .loading-state {
 }
 .tab-panel {
   min-height: 220px;
+  min-width: 0;
+  padding: var(--mc-tab-padding-desktop);
+}
+.mc-tab-content,
+[role='tabpanel'] {
+  min-width: 0;
+  box-sizing: border-box;
+  padding: var(--mc-tab-padding-desktop);
+}
+@media (max-width: 1024px) {
+  .tab-panel,
+  .mc-tab-content,
+  [role='tabpanel'] {
+    padding: var(--mc-tab-padding-tablet);
+  }
+}
+@media (max-width: 640px) {
+  .tab-panel,
+  .mc-tab-content,
+  [role='tabpanel'] {
+    padding: var(--mc-tab-padding-mobile);
+  }
 }
 .tab-state {
   min-height: 220px;

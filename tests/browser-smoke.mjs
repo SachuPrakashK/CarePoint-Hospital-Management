@@ -4,7 +4,7 @@ const env=Object.fromEntries(fs.readFileSync('backend/.env','utf8').split(/\r?\n
 const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'});
 const page=await browser.newPage({viewport:{width:1440,height:900}});const errors=[];page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});page.on('response',r=>{if(r.status()>=500)errors.push(`${r.status()} ${r.url()}`)});
 try{
- await page.goto('http://localhost:4200/auth/sign-in',{waitUntil:'networkidle'});
+ await page.goto('http://localhost:4200/auth/login',{waitUntil:'networkidle'});
  await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
  await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
  await page.getByRole('button',{name:'Sign in'}).click();

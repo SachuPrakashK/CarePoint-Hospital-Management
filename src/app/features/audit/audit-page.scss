@@ -1,0 +1,117 @@
+.audit-page-head {
+  margin-bottom: 18px;
+}
+.audit-card {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  overflow: visible;
+}
+.audit-toolbar {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.audit-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 0;
+}
+.audit-table {
+  table-layout: fixed;
+  min-width: 980px;
+}
+.audit-table th {
+  color: var(--mc-primary);
+  background: var(--mc-surface-soft);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.audit-table th,
+.audit-table td {
+  padding: 12px 14px;
+  vertical-align: middle;
+}
+.audit-table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+.audit-table tbody tr:hover,
+.audit-table tbody tr:focus-visible {
+  background: rgb(230 244 249 / 65%);
+}
+.audit-table tbody tr:focus-visible {
+  outline: 2px solid var(--mc-secondary);
+  outline-offset: -2px;
+}
+.audit-col-date {
+  width: 170px;
+}
+.audit-col-user {
+  width: 190px;
+}
+.audit-col-details {
+  width: 220px;
+}
+.audit-date {
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+.audit-primary-text,
+.audit-detail-preview {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.audit-table td small {
+  display: block;
+  max-width: 100%;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.audit-module {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--mc-surface-soft);
+  color: var(--mc-primary);
+  font-size: 12px;
+  font-weight: 650;
+}
+.audit-table td:last-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-secondary);
+}
+.audit-detail-preview {
+  flex: 1;
+}
+.audit-table-state {
+  min-height: 280px;
+}
+.audit-readonly-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 12px 20px 18px;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .audit-toolbar {
+    align-items: stretch;
+    padding: 14px;
+  }
+  .audit-toolbar .toolbar-actions {
+    justify-content: flex-end;
+  }
+  .audit-table th,
+  .audit-table td {
+    padding: 10px 12px;
+  }
+}

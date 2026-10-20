@@ -20,3 +20,14 @@
 @use 'filters';
 @use 'utilities';
 @use 'responsive';
+
+// Keep routed content inside the viewport when the fixed sidebar becomes a mobile drawer.
+@media (max-width: 850px) {
+  .app-shell .workspace,
+  .app-shell.collapsed .workspace {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0 !important;
+    overflow-x: clip;
+  }
+}

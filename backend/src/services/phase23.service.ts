@@ -31,12 +31,32 @@ const paged = async (
   };
 };
 const missing = (name: string) => new AppError(404, `${name} was not found.`, 'NOT_FOUND');
+const sensitiveAuditKey = /password|token|secret|authorization|cookie|session/i;
+export const sanitizeAuditMetadata = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(sanitizeAuditMetadata);
+  if (value && typeof value === 'object')
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        sensitiveAuditKey.test(key) ? '[REDACTED]' : sanitizeAuditMetadata(item),
+      ]),
+    );
+  return value;
+};
 const code = (prefix: string) => `${prefix}-${randomUUID().slice(0, 8).toUpperCase()}`;
 const PHARMACY_EXPIRY_SOON_DAYS = 90;
 export const phase23Service = {
   inventory: {
     list: (q: any) => {
-      const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={code:{code:direction},name:{name:direction},category:{category:{name:direction}},quantity:{quantity:direction},reorderLevel:{reorderLevel:direction},unit:{unit:direction}};
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        code: { code: direction },
+        name: { name: direction },
+        category: { category: { name: direction } },
+        quantity: { quantity: direction },
+        reorderLevel: { reorderLevel: direction },
+        unit: { unit: direction },
+      };
       return paged(
         db.inventoryItem,
         q,
@@ -52,7 +72,8 @@ export const phase23Service = {
             : {}),
           ...(q.category_id ? { categoryId: q.category_id } : {}),
         },
-        { category: true, supplier: true },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
+        { category: true, supplier: true },
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
       );
     },
     get: async (id: string) =>
@@ -110,24 +131,139 @@ export const phase23Service = {
     updateCategory: (id: string, v: any) => db.inventoryCategory.update({ where: { id }, data: v }),
     removeCategory: (id: string) =>
       db.inventoryCategory.update({ where: { id }, data: { isActive: false } }),
-    suppliers: (q:any={}) => {const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={name:{name:direction},contactPerson:{contactPerson:direction},phone:{phone:direction},email:{email:direction},taxNumber:{taxNumber:direction}};return paged(db.supplier,q,{isActive:true,...(q.search?{OR:[{name:{contains:q.search,mode:'insensitive'}},{contactPerson:{contains:q.search,mode:'insensitive'}},{phone:{contains:q.search,mode:'insensitive'}},{email:{contains:q.search,mode:'insensitive'}}]}:{})},undefined,[sorts[q.sort_by]??{name:'asc'},{id:'asc'}]);},
+    suppliers: (q: any = {}) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        name: { name: direction },
+        contactPerson: { contactPerson: direction },
+        phone: { phone: direction },
+        email: { email: direction },
+        taxNumber: { taxNumber: direction },
+      };
+      return paged(
+        db.supplier,
+        q,
+        {
+          isActive: true,
+          ...(q.search
+            ? {
+                OR: [
+                  { name: { contains: q.search, mode: 'insensitive' } },
+                  { contactPerson: { contains: q.search, mode: 'insensitive' } },
+                  { phone: { contains: q.search, mode: 'insensitive' } },
+                  { email: { contains: q.search, mode: 'insensitive' } },
+                ],
+              }
+            : {}),
+        },
+        undefined,
+        [sorts[q.sort_by] ?? { name: 'asc' }, { id: 'asc' }],
+      );
+    },
+    getSupplier: async (id: string) =>
+      db.supplier
+        .findUnique({
+          where: { id },
+          include: {
+            items: { where: { deletedAt: null }, select: { id: true, code: true, name: true } },
+            purchaseOrders: {
+              orderBy: { requestedAt: 'desc' },
+              take: 10,
+              include: { inventoryItem: true, medicine: true },
+            },
+          },
+        })
+        .then((value: any) => value ?? Promise.reject(missing('Supplier'))),
     createSupplier: (v: any) => db.supplier.create({ data: v }),
     updateSupplier: (id: string, v: any) => db.supplier.update({ where: { id }, data: v }),
     removeSupplier: (id: string) =>
       db.supplier.update({ where: { id }, data: { isActive: false } }),
   },
   ambulance: {
-    list: (q: any) => {const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={number:{number:direction},vehicleNumber:{vehicleNumber:direction},driverName:{driverName:direction},phone:{phone:direction},status:{status:direction}};return paged(db.ambulance, q, { isActive: true, ...(q.status ? { status: q.status } : {}) },undefined,[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}]);},
+    list: (q: any) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        number: { number: direction },
+        registration: { registration: direction },
+        driver: { driver: direction },
+        driverContact: { driverContact: direction },
+        status: { status: direction },
+      };
+      return paged(
+        db.ambulance,
+        q,
+        {
+          isActive: true,
+          ...(q.status ? { status: q.status } : {}),
+          ...(q.search
+            ? {
+                OR: [
+                  { number: { contains: q.search, mode: 'insensitive' } },
+                  { registration: { contains: q.search, mode: 'insensitive' } },
+                  { vehicleType: { contains: q.search, mode: 'insensitive' } },
+                  { driver: { contains: q.search, mode: 'insensitive' } },
+                  { driverContact: { contains: q.search, mode: 'insensitive' } },
+                ],
+              }
+            : {}),
+        },
+        undefined,
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
+      );
+    },
     create: (v: any) => db.ambulance.create({ data: v }),
+    get: async (id: string) =>
+      db.ambulance
+        .findUnique({
+          where: { id },
+          include: {
+            bookings: {
+              orderBy: { requestedAt: 'desc' },
+              take: 10,
+              include: { patient: true },
+            },
+          },
+        })
+        .then((value: any) => value ?? Promise.reject(missing('Ambulance'))),
     update: (id: string, v: any) => db.ambulance.update({ where: { id }, data: v }),
     remove: (id: string) => db.ambulance.update({ where: { id }, data: { isActive: false } }),
     bookings: (q: any) => {
-      const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={number:{number:direction},patient:{patient:{firstName:direction}},ambulance:{ambulance:{number:direction}},pickup:{pickup:direction},destination:{destination:direction},scheduledAt:{scheduledAt:direction},status:{status:direction},charges:{charges:direction}};
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        number: { number: direction },
+        patient: { patient: { firstName: direction } },
+        ambulance: { ambulance: { number: direction } },
+        pickup: { pickup: direction },
+        destination: { destination: direction },
+        scheduledAt: { scheduledAt: direction },
+        status: { status: direction },
+        charges: { charges: direction },
+      };
       return paged(
         db.ambulanceBooking,
         q,
-        { ...(q.patient_id ? { patientId: q.patient_id } : {}),...(q.search?{OR:[{number:{contains:q.search,mode:'insensitive'}},{patient:{is:{OR:[{firstName:{contains:q.search,mode:'insensitive'}},{lastName:{contains:q.search,mode:'insensitive'}}]}}}]}:{}) },
-        { patient: true, ambulance: true },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
+        {
+          ...(q.patient_id ? { patientId: q.patient_id } : {}),
+          ...(q.search
+            ? {
+                OR: [
+                  { number: { contains: q.search, mode: 'insensitive' } },
+                  {
+                    patient: {
+                      is: {
+                        OR: [
+                          { firstName: { contains: q.search, mode: 'insensitive' } },
+                          { lastName: { contains: q.search, mode: 'insensitive' } },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
+        { patient: true, ambulance: true },
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
       );
     },
     book: async (v: any) => {
@@ -164,15 +300,66 @@ export const phase23Service = {
   },
   billing: {
     list: (q: any) => {
-      const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={number:{number:direction},patient:{patient:{firstName:direction}},createdAt:{createdAt:direction},status:{status:direction}};
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        number: { number: direction },
+        patient: { patient: { firstName: direction } },
+        createdAt: { createdAt: direction },
+        status: { status: direction },
+      };
       return paged(
         db.invoice,
         q,
-        { ...(q.patient_id ? { patientId: q.patient_id } : {}),...(q.search?{OR:[{number:{contains:q.search,mode:'insensitive'}},{status:{contains:q.search,mode:'insensitive'}},{patient:{is:{OR:[{firstName:{contains:q.search,mode:'insensitive'}},{lastName:{contains:q.search,mode:'insensitive'}}]}}}]}:{}) },
-        { patient: true, items: true, payments: true },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
+        {
+          ...(q.patient_id ? { patientId: q.patient_id } : {}),
+          ...(q.search
+            ? {
+                OR: [
+                  { number: { contains: q.search, mode: 'insensitive' } },
+                  { status: { contains: q.search, mode: 'insensitive' } },
+                  {
+                    patient: {
+                      is: {
+                        OR: [
+                          { firstName: { contains: q.search, mode: 'insensitive' } },
+                          { lastName: { contains: q.search, mode: 'insensitive' } },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              }
+            : {}),
+        },
+        { patient: true, items: true, payments: true },
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
       );
     },
-    payments:(q:any)=>{const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={receiptNumber:{receiptNumber:direction},invoice:{invoice:{number:direction}},paidAt:{paidAt:direction},amount:{amount:direction},method:{method:direction},reference:{reference:direction}};const where=q.search?{OR:[{receiptNumber:{contains:q.search,mode:'insensitive'}},{method:{contains:q.search,mode:'insensitive'}},{reference:{contains:q.search,mode:'insensitive'}},{invoice:{is:{number:{contains:q.search,mode:'insensitive'}}}}]}:{};return paged(db.payment,q,where, {invoice:true},[sorts[q.sort_by]??{paidAt:'desc'},{id:'asc'}]);},
+    payments: (q: any) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        receiptNumber: { receiptNumber: direction },
+        invoice: { invoice: { number: direction } },
+        paidAt: { paidAt: direction },
+        amount: { amount: direction },
+        method: { method: direction },
+        reference: { reference: direction },
+      };
+      const where = q.search
+        ? {
+            OR: [
+              { receiptNumber: { contains: q.search, mode: 'insensitive' } },
+              { method: { contains: q.search, mode: 'insensitive' } },
+              { reference: { contains: q.search, mode: 'insensitive' } },
+              { invoice: { is: { number: { contains: q.search, mode: 'insensitive' } } } },
+            ],
+          }
+        : {};
+      return paged(db.payment, q, where, { invoice: true }, [
+        sorts[q.sort_by] ?? { paidAt: 'desc' },
+        { id: 'asc' },
+      ]);
+    },
     get: (id: string) =>
       db.invoice.findUnique({
         where: { id },
@@ -265,7 +452,16 @@ export const phase23Service = {
           where: { id },
           data: { status: paid.plus(amount).eq(total) ? 'Paid' : 'Partially Paid' },
         });
-        await tx.auditLog.create({ data: { userId: actorId, action: 'PAYMENT', module: 'billing', entityType: 'Payment', entityId: result.id, metadata: { invoiceId: id, amount: amount.toString() } } });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: 'PAYMENT',
+            module: 'billing',
+            entityType: 'Payment',
+            entityId: result.id,
+            metadata: { invoiceId: id, amount: amount.toString() },
+          },
+        });
         return result;
       });
       await notificationService.notifyRoles(['HOSPITAL_ADMIN', 'BILLING_STAFF'], {
@@ -277,7 +473,29 @@ export const phase23Service = {
       });
       return payment;
     },
-    refunds: (q: any) => {const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={createdAt:{createdAt:direction},payment:{payment:{receiptNumber:direction}},amount:{amount:direction},reason:{reason:direction},status:{status:direction}};const where=q.search?{OR:[{reason:{contains:q.search,mode:'insensitive'}},{status:{contains:q.search,mode:'insensitive'}},{payment:{is:{receiptNumber:{contains:q.search,mode:'insensitive'}}}}]}:{};return paged(db.refund, q, where, { payment: { include: { invoice: true } } },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}]);},
+    refunds: (q: any) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        createdAt: { createdAt: direction },
+        payment: { payment: { receiptNumber: direction } },
+        amount: { amount: direction },
+        reason: { reason: direction },
+        status: { status: direction },
+      };
+      const where = q.search
+        ? {
+            OR: [
+              { reason: { contains: q.search, mode: 'insensitive' } },
+              { status: { contains: q.search, mode: 'insensitive' } },
+              { payment: { is: { receiptNumber: { contains: q.search, mode: 'insensitive' } } } },
+            ],
+          }
+        : {};
+      return paged(db.refund, q, where, { payment: { include: { invoice: true } } }, [
+        sorts[q.sort_by] ?? { createdAt: 'desc' },
+        { id: 'asc' },
+      ]);
+    },
     requestRefund: (paymentId: string, v: any, actorId: string) =>
       prisma.$transaction(async (tx: any) => {
         const payment = await tx.payment.findUnique({
@@ -304,7 +522,16 @@ export const phase23Service = {
             requestedById: actorId,
           },
         });
-        await tx.auditLog.create({ data: { userId: actorId, action: 'REFUND_REQUEST', module: 'billing', entityType: 'Refund', entityId: result.id, metadata: { paymentId, amount: amount.toString() } } });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: 'REFUND_REQUEST',
+            module: 'billing',
+            entityType: 'Refund',
+            entityId: result.id,
+            metadata: { paymentId, amount: amount.toString() },
+          },
+        });
         return result;
       }),
     approveRefund: (id: string, status: 'Approved' | 'Rejected', actorId: string) =>
@@ -313,29 +540,93 @@ export const phase23Service = {
         if (!refund) throw missing('Refund');
         if (refund.status !== 'Requested')
           throw new AppError(409, 'This refund request is already resolved.', 'CONFLICT');
-        const result = await tx.refund.update({ where: { id }, data: { status, approvedById: actorId } });
-        await tx.auditLog.create({ data: { userId: actorId, action: status === 'Approved' ? 'REFUND_APPROVE' : 'REFUND_REJECT', module: 'billing', entityType: 'Refund', entityId: id } });
+        const result = await tx.refund.update({
+          where: { id },
+          data: { status, approvedById: actorId },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: status === 'Approved' ? 'REFUND_APPROVE' : 'REFUND_REJECT',
+            module: 'billing',
+            entityType: 'Refund',
+            entityId: id,
+          },
+        });
         return result;
       }),
   },
   insurance: {
-    providers: (q: any) => {const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={name:{name:direction},code:{code:direction},contact:{contact:direction},address:{address:direction}};return paged(db.insuranceProvider, q, {
-        isActive: true,
-        ...(q.search ? { name: { contains: q.search, mode: 'insensitive' } } : {}),
-      },undefined,[sorts[q.sort_by]??{name:'asc'},{id:'asc'}]);},
+    providers: (q: any) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        name: { name: direction },
+        code: { code: direction },
+        contact: { contact: direction },
+        address: { address: direction },
+      };
+      return paged(
+        db.insuranceProvider,
+        q,
+        {
+          isActive: true,
+          ...(q.search ? { name: { contains: q.search, mode: 'insensitive' } } : {}),
+        },
+        undefined,
+        [sorts[q.sort_by] ?? { name: 'asc' }, { id: 'asc' }],
+      );
+    },
     createProvider: (v: any) => db.insuranceProvider.create({ data: v }),
     updateProvider: (id: string, v: any) => db.insuranceProvider.update({ where: { id }, data: v }),
     removeProvider: (id: string) =>
       db.insuranceProvider.update({ where: { id }, data: { isActive: false } }),
-    policies: (q: any) => {const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={patient:{patient:{firstName:direction}},provider:{provider:{name:direction}},policyNumber:{policyNumber:direction},memberNumber:{memberNumber:direction},coverageLimit:{coverageLimit:direction},startsAt:{startsAt:direction},priority:{priority:direction}};return paged(
+    policies: (q: any) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        patient: { patient: { firstName: direction } },
+        provider: { provider: { name: direction } },
+        policyNumber: { policyNumber: direction },
+        memberNumber: { memberNumber: direction },
+        coverageLimit: { coverageLimit: direction },
+        startsAt: { startsAt: direction },
+        priority: { priority: direction },
+      };
+      return paged(
         db.patientInsurance,
         q,
-        { ...(q.patient_id ? { patientId: q.patient_id } : {}),...(q.search?{OR:[{policyNumber:{contains:q.search,mode:'insensitive'}},{memberNumber:{contains:q.search,mode:'insensitive'}},{patient:{is:{OR:[{firstName:{contains:q.search,mode:'insensitive'}},{lastName:{contains:q.search,mode:'insensitive'}}]} }},{provider:{is:{name:{contains:q.search,mode:'insensitive'}}}}]}:{}) },
-        { patient: true, provider: true },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
-      );},
+        {
+          ...(q.patient_id ? { patientId: q.patient_id } : {}),
+          ...(q.search
+            ? {
+                OR: [
+                  { policyNumber: { contains: q.search, mode: 'insensitive' } },
+                  { memberNumber: { contains: q.search, mode: 'insensitive' } },
+                  {
+                    patient: {
+                      is: {
+                        OR: [
+                          { firstName: { contains: q.search, mode: 'insensitive' } },
+                          { lastName: { contains: q.search, mode: 'insensitive' } },
+                        ],
+                      },
+                    },
+                  },
+                  { provider: { is: { name: { contains: q.search, mode: 'insensitive' } } } },
+                ],
+              }
+            : {}),
+        },
+        { patient: true, provider: true },
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
+      );
+    },
     createPolicy: async (v: any) => {
       if (new Date(v.endsAt) < new Date(v.startsAt))
-        throw new AppError(422, 'Policy end date must be on or after its start date.', 'VALIDATION_ERROR');
+        throw new AppError(
+          422,
+          'Policy end date must be on or after its start date.',
+          'VALIDATION_ERROR',
+        );
       return db.patientInsurance.create({
         data: {
           ...v,
@@ -351,7 +642,11 @@ export const phase23Service = {
       const startsAt = v.startsAt ? new Date(v.startsAt) : current.startsAt;
       const endsAt = v.endsAt ? new Date(v.endsAt) : current.endsAt;
       if (endsAt < startsAt)
-        throw new AppError(422, 'Policy end date must be on or after its start date.', 'VALIDATION_ERROR');
+        throw new AppError(
+          422,
+          'Policy end date must be on or after its start date.',
+          'VALIDATION_ERROR',
+        );
       return db.patientInsurance.update({
         where: { id },
         data: {
@@ -366,25 +661,93 @@ export const phase23Service = {
     },
     deactivatePolicy: (id: string) =>
       db.patientInsurance.update({ where: { id }, data: { isActive: false } }),
-    claims: (q: any) => {const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={number:{number:direction},patient:{patient:{firstName:direction}},invoice:{invoice:{number:direction}},claimedAmount:{claimedAmount:direction},approvedAmount:{approvedAmount:direction},patientResponsibility:{patientResponsibility:direction},status:{status:direction}};return paged(
+    claims: (q: any) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        number: { number: direction },
+        patient: { patient: { firstName: direction } },
+        invoice: { invoice: { number: direction } },
+        claimedAmount: { claimedAmount: direction },
+        approvedAmount: { approvedAmount: direction },
+        patientResponsibility: { patientResponsibility: direction },
+        status: { status: direction },
+      };
+      return paged(
         db.insuranceClaim,
         q,
-        { ...(q.patient_id ? { patientId: q.patient_id } : {}),...(q.search?{OR:[{number:{contains:q.search,mode:'insensitive'}},{status:{contains:q.search,mode:'insensitive'}},{patient:{is:{OR:[{firstName:{contains:q.search,mode:'insensitive'}},{lastName:{contains:q.search,mode:'insensitive'}}]} }},{invoice:{is:{number:{contains:q.search,mode:'insensitive'}}}}]}:{}) },
-        { patient: true, insurance: { include: { provider: true } }, invoice: true },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
-      );},
-    createClaim: (v: any, actorId: string) => prisma.$transaction(async (tx: any) => {
-      const policy = await tx.patientInsurance.findFirst({ where: { id: v.insuranceId, patientId: v.patientId, isActive: true } });
-      const invoice = await tx.invoice.findFirst({ where: { id: v.invoiceId, patientId: v.patientId, status: { not: 'Cancelled' } }, include: { items: true } });
-      if (!policy || !invoice) throw new AppError(422, 'Policy, patient and invoice must belong to the same valid claim context.', 'VALIDATION_ERROR');
-      const now = new Date();
-      if (policy.startsAt > now || policy.endsAt < now) throw new AppError(422, 'The selected policy is not currently valid.', 'VALIDATION_ERROR');
-      const total = invoice.items.reduce((s: any, i: any) => s.plus(i.quantity.mul(i.unitPrice)), new Prisma.Decimal(0));
-      const amount = new Prisma.Decimal(v.claimedAmount);
-      if (amount.gt(total) || amount.gt(policy.coverageLimit)) throw new AppError(422, 'Claim amount exceeds the invoice total or policy coverage limit.', 'VALIDATION_ERROR');
-      const result = await tx.insuranceClaim.create({ data: { ...v, number: code('CLM'), claimedAmount: amount } });
-      await tx.auditLog.create({ data: { userId: actorId, action: 'CREATE', module: 'insurance', entityType: 'InsuranceClaim', entityId: result.id } });
-      return result;
-    }),
+        {
+          ...(q.patient_id ? { patientId: q.patient_id } : {}),
+          ...(q.search
+            ? {
+                OR: [
+                  { number: { contains: q.search, mode: 'insensitive' } },
+                  { status: { contains: q.search, mode: 'insensitive' } },
+                  {
+                    patient: {
+                      is: {
+                        OR: [
+                          { firstName: { contains: q.search, mode: 'insensitive' } },
+                          { lastName: { contains: q.search, mode: 'insensitive' } },
+                        ],
+                      },
+                    },
+                  },
+                  { invoice: { is: { number: { contains: q.search, mode: 'insensitive' } } } },
+                ],
+              }
+            : {}),
+        },
+        { patient: true, insurance: { include: { provider: true } }, invoice: true },
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
+      );
+    },
+    createClaim: (v: any, actorId: string) =>
+      prisma.$transaction(async (tx: any) => {
+        const policy = await tx.patientInsurance.findFirst({
+          where: { id: v.insuranceId, patientId: v.patientId, isActive: true },
+        });
+        const invoice = await tx.invoice.findFirst({
+          where: { id: v.invoiceId, patientId: v.patientId, status: { not: 'Cancelled' } },
+          include: { items: true },
+        });
+        if (!policy || !invoice)
+          throw new AppError(
+            422,
+            'Policy, patient and invoice must belong to the same valid claim context.',
+            'VALIDATION_ERROR',
+          );
+        const now = new Date();
+        if (policy.startsAt > now || policy.endsAt < now)
+          throw new AppError(
+            422,
+            'The selected policy is not currently valid.',
+            'VALIDATION_ERROR',
+          );
+        const total = invoice.items.reduce(
+          (s: any, i: any) => s.plus(i.quantity.mul(i.unitPrice)),
+          new Prisma.Decimal(0),
+        );
+        const amount = new Prisma.Decimal(v.claimedAmount);
+        if (amount.gt(total) || amount.gt(policy.coverageLimit))
+          throw new AppError(
+            422,
+            'Claim amount exceeds the invoice total or policy coverage limit.',
+            'VALIDATION_ERROR',
+          );
+        const result = await tx.insuranceClaim.create({
+          data: { ...v, number: code('CLM'), claimedAmount: amount },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: 'CREATE',
+            module: 'insurance',
+            entityType: 'InsuranceClaim',
+            entityId: result.id,
+          },
+        });
+        return result;
+      }),
     updateClaim: async (id: string, v: any, actorId: string) => {
       const claim = await db.insuranceClaim.findUnique({ where: { id } });
       if (!claim) throw missing('Insurance claim');
@@ -416,7 +779,16 @@ export const phase23Service = {
           ...(v.status === 'Settled' ? { settledAt: new Date() } : {}),
         },
       });
-      await db.auditLog.create({ data: { userId: actorId, action: 'STATUS_CHANGE', module: 'insurance', entityType: 'InsuranceClaim', entityId: id, metadata: { status: v.status ?? claim.status } } });
+      await db.auditLog.create({
+        data: {
+          userId: actorId,
+          action: 'STATUS_CHANGE',
+          module: 'insurance',
+          entityType: 'InsuranceClaim',
+          entityId: id,
+          metadata: { status: v.status ?? claim.status },
+        },
+      });
       if (v.status)
         await notificationService.notifyRoles(['HOSPITAL_ADMIN', 'BILLING_STAFF'], {
           type: 'INSURANCE_CLAIM_STATUS',
@@ -430,26 +802,47 @@ export const phase23Service = {
   },
   laboratory: {
     list: (q: any) => {
-      const direction=q.sort_order==='asc'?'asc':'desc';const sorts:Record<string,any>={createdAt:{createdAt:direction},number:{number:direction},patient:{patient:{firstName:direction}},doctor:{doctor:direction},priority:{priority:direction},sampleType:{sampleType:direction},status:{status:direction}};
+      const direction = q.sort_order === 'asc' ? 'asc' : 'desc';
+      const sorts: Record<string, any> = {
+        createdAt: { createdAt: direction },
+        number: { number: direction },
+        patient: { patient: { firstName: direction } },
+        doctor: { doctor: direction },
+        priority: { priority: direction },
+        sampleType: { sampleType: direction },
+        status: { status: direction },
+      };
       return paged(
         db.labOrder,
         q,
         {
           ...(q.patient_id ? { patientId: q.patient_id } : {}),
           ...(q.doctor_id ? { doctorId: q.doctor_id } : {}),
-          ...(q.test_definition_id ? { orderTests: { some: { testDefinitionId: q.test_definition_id } } } : {}),
+          ...(q.test_definition_id
+            ? { orderTests: { some: { testDefinitionId: q.test_definition_id } } }
+            : {}),
           ...(q.status ? { status: q.status } : {}),
           ...(q.priority ? { priority: q.priority } : {}),
-          ...((q.date_from || q.date_to) ? { createdAt: {
-            ...(q.date_from ? { gte: new Date(`${q.date_from}T00:00:00+05:30`) } : {}),
-            ...(q.date_to ? { lte: new Date(`${q.date_to}T23:59:59.999+05:30`) } : {}),
-          } } : {}),
+          ...(q.date_from || q.date_to
+            ? {
+                createdAt: {
+                  ...(q.date_from ? { gte: new Date(`${q.date_from}T00:00:00+05:30`) } : {}),
+                  ...(q.date_to ? { lte: new Date(`${q.date_to}T23:59:59.999+05:30`) } : {}),
+                },
+              }
+            : {}),
           ...(q.search
             ? {
                 OR: [
                   { number: { contains: q.search, mode: 'insensitive' } },
                   { doctor: { contains: q.search, mode: 'insensitive' } },
-                  { orderTests: { some: { testDefinition: { name: { contains: q.search, mode: 'insensitive' } } } } },
+                  {
+                    orderTests: {
+                      some: {
+                        testDefinition: { name: { contains: q.search, mode: 'insensitive' } },
+                      },
+                    },
+                  },
                   {
                     patient: {
                       is: {
@@ -465,12 +858,24 @@ export const phase23Service = {
               }
             : {}),
         },
-        { patient: true, orderingDoctor: true, orderTests: { include: { testDefinition: true } }, results: true },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
-      );},
+        {
+          patient: true,
+          orderingDoctor: true,
+          orderTests: { include: { testDefinition: true } },
+          results: true,
+        },
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
+      );
+    },
     get: async (id: string) => {
       const item = await db.labOrder.findUnique({
         where: { id },
-        include: { patient: true, orderingDoctor: true, orderTests: { include: { testDefinition: true } }, results: { orderBy: { enteredAt: 'desc' } } },
+        include: {
+          patient: true,
+          orderingDoctor: true,
+          orderTests: { include: { testDefinition: true } },
+          results: { orderBy: { enteredAt: 'desc' } },
+        },
       });
       if (!item) throw missing('Laboratory order');
       return item;
@@ -478,24 +883,46 @@ export const phase23Service = {
     create: async (v: any) => {
       const [patient, doctor, definitions] = await Promise.all([
         db.patient.findFirst({ where: { id: v.patientId, deletedAt: null } }),
-        db.user.findFirst({ where: { id: v.doctorId, deletedAt: null, status: 'ACTIVE', roles: { some: { role: { code: 'DOCTOR' } } } } }),
+        db.user.findFirst({
+          where: {
+            id: v.doctorId,
+            deletedAt: null,
+            status: 'ACTIVE',
+            roles: { some: { role: { code: 'DOCTOR' } } },
+          },
+        }),
         db.laboratoryTestDefinition.findMany({
           where: { id: { in: v.testDefinitionIds }, status: 'Active' },
           select: { id: true, name: true },
         }),
       ]);
       if (!patient) throw missing('Patient');
-      if (!doctor) throw new AppError(422, 'Select a valid active ordering doctor.', 'VALIDATION_ERROR');
+      if (!doctor)
+        throw new AppError(422, 'Select a valid active ordering doctor.', 'VALIDATION_ERROR');
       if (definitions.length !== new Set(v.testDefinitionIds).size)
-        throw new AppError(422, 'One or more laboratory tests are invalid or inactive.', 'VALIDATION_ERROR');
+        throw new AppError(
+          422,
+          'One or more laboratory tests are invalid or inactive.',
+          'VALIDATION_ERROR',
+        );
       return db.labOrder.create({
         data: {
-          number: code('LAB'), patientId: v.patientId, doctorId: doctor.id,
-          doctor: `${doctor.firstName} ${doctor.lastName}`, tests: definitions.map((x: any) => x.name),
-          priority: v.priority, clinicalNotes: v.clinicalNotes, sampleType: v.sampleType,
+          number: code('LAB'),
+          patientId: v.patientId,
+          doctorId: doctor.id,
+          doctor: `${doctor.firstName} ${doctor.lastName}`,
+          tests: definitions.map((x: any) => x.name),
+          priority: v.priority,
+          clinicalNotes: v.clinicalNotes,
+          sampleType: v.sampleType,
           orderTests: { create: definitions.map((x: any) => ({ testDefinitionId: x.id })) },
         },
-        include: { patient: true, orderingDoctor: true, orderTests: { include: { testDefinition: true } }, results: true },
+        include: {
+          patient: true,
+          orderingDoctor: true,
+          orderTests: { include: { testDefinition: true } },
+          results: true,
+        },
       });
     },
     update: async (id: string, v: any) => {
@@ -507,24 +934,58 @@ export const phase23Service = {
         const patient = await db.patient.findFirst({ where: { id: v.patientId, deletedAt: null } });
         if (!patient) throw missing('Patient');
       }
-      const doctor = v.doctorId ? await db.user.findFirst({ where: { id: v.doctorId, deletedAt: null, status: 'ACTIVE', roles: { some: { role: { code: 'DOCTOR' } } } } }) : null;
-      if (v.doctorId && !doctor) throw new AppError(422, 'Select a valid active ordering doctor.', 'VALIDATION_ERROR');
-      const definitions = v.testDefinitionIds ? await db.laboratoryTestDefinition.findMany({ where: { id: { in: v.testDefinitionIds }, status: 'Active' }, select: { id: true, name: true } }) : null;
-      if (definitions && definitions.length !== new Set(v.testDefinitionIds).size) throw new AppError(422, 'One or more laboratory tests are invalid or inactive.', 'VALIDATION_ERROR');
+      const doctor = v.doctorId
+        ? await db.user.findFirst({
+            where: {
+              id: v.doctorId,
+              deletedAt: null,
+              status: 'ACTIVE',
+              roles: { some: { role: { code: 'DOCTOR' } } },
+            },
+          })
+        : null;
+      if (v.doctorId && !doctor)
+        throw new AppError(422, 'Select a valid active ordering doctor.', 'VALIDATION_ERROR');
+      const definitions = v.testDefinitionIds
+        ? await db.laboratoryTestDefinition.findMany({
+            where: { id: { in: v.testDefinitionIds }, status: 'Active' },
+            select: { id: true, name: true },
+          })
+        : null;
+      if (definitions && definitions.length !== new Set(v.testDefinitionIds).size)
+        throw new AppError(
+          422,
+          'One or more laboratory tests are invalid or inactive.',
+          'VALIDATION_ERROR',
+        );
       return prisma.$transaction(async (tx: any) => {
-        if (definitions) { await tx.labOrderTest.deleteMany({ where: { orderId: id } }); }
+        if (definitions) {
+          await tx.labOrderTest.deleteMany({ where: { orderId: id } });
+        }
         return tx.labOrder.update({
           where: { id },
           data: {
             ...(v.patientId ? { patientId: v.patientId } : {}),
-            ...(doctor ? { doctorId: doctor.id, doctor: `${doctor.firstName} ${doctor.lastName}` } : {}),
-            ...(definitions ? { tests: definitions.map((x: any) => x.name), orderTests: { create: definitions.map((x: any) => ({ testDefinitionId: x.id })) } } : {}),
+            ...(doctor
+              ? { doctorId: doctor.id, doctor: `${doctor.firstName} ${doctor.lastName}` }
+              : {}),
+            ...(definitions
+              ? {
+                  tests: definitions.map((x: any) => x.name),
+                  orderTests: { create: definitions.map((x: any) => ({ testDefinitionId: x.id })) },
+                }
+              : {}),
             ...(v.priority ? { priority: v.priority } : {}),
             ...(v.sampleType ? { sampleType: v.sampleType } : {}),
             ...(v.clinicalNotes !== undefined ? { clinicalNotes: v.clinicalNotes } : {}),
             version: { increment: 1 },
           },
-          include: { patient: true, orderingDoctor: true, orderTests: { include: { testDefinition: true } }, results: true },
+          include: {
+            patient: true,
+            orderingDoctor: true,
+            orderTests: { include: { testDefinition: true } },
+            results: true,
+          },
         });
       });
     },
@@ -585,7 +1046,16 @@ export const phase23Service = {
   },
   radiology: {
     list: (q: any) => {
-      const direction=q.sort_order==='asc'?'asc':'desc';const sorts:Record<string,any>={createdAt:{createdAt:direction},number:{number:direction},patient:{patient:{firstName:direction}},investigation:{investigation:direction},doctor:{doctor:direction},scheduledAt:{scheduledAt:direction},status:{status:direction}};
+      const direction = q.sort_order === 'asc' ? 'asc' : 'desc';
+      const sorts: Record<string, any> = {
+        createdAt: { createdAt: direction },
+        number: { number: direction },
+        patient: { patient: { firstName: direction } },
+        investigation: { investigation: direction },
+        doctor: { doctor: direction },
+        scheduledAt: { scheduledAt: direction },
+        status: { status: direction },
+      };
       return paged(
         db.radiologyOrder,
         q,
@@ -614,8 +1084,10 @@ export const phase23Service = {
               }
             : {}),
         },
-        { patient: true },[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
-      );},
+        { patient: true },
+        [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
+      );
+    },
     get: (id: string) =>
       db.radiologyOrder.findUnique({ where: { id }, include: { patient: true } }),
     create: (v: any) =>
@@ -631,7 +1103,11 @@ export const phase23Service = {
       const current = await db.radiologyOrder.findUnique({ where: { id } });
       if (!current) throw new AppError(404, 'Radiology order not found.', 'NOT_FOUND');
       if (['Verified', 'Completed', 'Cancelled'].includes(current.status))
-        throw new AppError(409, 'This radiology order is clinically locked and cannot be edited.', 'CONFLICT');
+        throw new AppError(
+          409,
+          'This radiology order is clinically locked and cannot be edited.',
+          'CONFLICT',
+        );
       const result = await db.radiologyOrder.update({
         where: { id },
         data: { ...v, ...(v.scheduledAt ? { scheduledAt: new Date(v.scheduledAt) } : {}) },
@@ -713,38 +1189,88 @@ export const phase23Service = {
               ? { expiresAt: { gt: soon } }
               : {}),
       };
-      const direction=q.sort_order==='desc'?'desc':'asc';
-      const sortMap:Record<string,any>={medicine:{medicine:{name:direction}},batchNumber:{batchNumber:direction},expiresAt:{expiresAt:direction},purchasePrice:{purchasePrice:direction},sellingPrice:{sellingPrice:direction},quantity:{quantity:direction},reorderLevel:{reorderLevel:direction}};
-      const result = await paged(db.medicineBatch, q, where, { medicine: true }, [sortMap[q.sort_by]??{expiresAt:'asc'},{id:'asc'}]);
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sortMap: Record<string, any> = {
+        medicine: { medicine: { name: direction } },
+        batchNumber: { batchNumber: direction },
+        expiresAt: { expiresAt: direction },
+        purchasePrice: { purchasePrice: direction },
+        sellingPrice: { sellingPrice: direction },
+        quantity: { quantity: direction },
+        reorderLevel: { reorderLevel: direction },
+      };
+      const result = await paged(db.medicineBatch, q, where, { medicine: true }, [
+        sortMap[q.sort_by] ?? { expiresAt: 'asc' },
+        { id: 'asc' },
+      ]);
       const [baseTotal, lowStockTotal, expiringTotal, categories] = await prisma.$transaction([
         db.medicineBatch.count(),
-        db.medicineBatch.count({ where: { quantity: { lte: prisma.medicineBatch.fields.reorderLevel } } }),
+        db.medicineBatch.count({
+          where: { quantity: { lte: prisma.medicineBatch.fields.reorderLevel } },
+        }),
         db.medicineBatch.count({ where: { expiresAt: { gte: now, lte: soon } } }),
-        db.medicine.findMany({ where: { batches: { some: {} } }, distinct: ['category'], select: { category: true }, orderBy: { category: 'asc' } }),
+        db.medicine.findMany({
+          where: { batches: { some: {} } },
+          distinct: ['category'],
+          select: { category: true },
+          orderBy: { category: 'asc' },
+        }),
       ]);
       return {
         ...result,
         data: result.data.map((item: any) => ({
           ...item,
-          expiryStatus: item.expiresAt < now ? 'Expired' : item.expiresAt <= soon ? 'Expiring Soon' : 'Valid',
+          expiryStatus:
+            item.expiresAt < now ? 'Expired' : item.expiresAt <= soon ? 'Expiring Soon' : 'Valid',
           lowStock: item.quantity <= item.reorderLevel,
         })),
-        meta: { base_total: baseTotal, low_stock_total: lowStockTotal, expiring_total: expiringTotal, categories: categories.map((item: any) => item.category), expiry_soon_days: PHARMACY_EXPIRY_SOON_DAYS },
+        meta: {
+          base_total: baseTotal,
+          low_stock_total: lowStockTotal,
+          expiring_total: expiringTotal,
+          categories: categories.map((item: any) => item.category),
+          expiry_soon_days: PHARMACY_EXPIRY_SOON_DAYS,
+        },
       };
     },
     createBatch: async (v: any, actorId: string) => {
       const expiresAt = new Date(v.expiresAt);
-      if (expiresAt <= new Date()) throw new AppError(422, 'Expiry date must be in the future.', 'VALIDATION_ERROR');
+      if (expiresAt <= new Date())
+        throw new AppError(422, 'Expiry date must be in the future.', 'VALIDATION_ERROR');
       return prisma.$transaction(async (tx: any) => {
         const medicine = await tx.medicine.findUnique({ where: { id: v.medicineId } });
-        if (!medicine || medicine.status !== 'Active') throw new AppError(422, 'Select an active medicine.', 'VALIDATION_ERROR');
+        if (!medicine || medicine.status !== 'Active')
+          throw new AppError(422, 'Select an active medicine.', 'VALIDATION_ERROR');
         const batch = await tx.medicineBatch.create({
-          data: { ...v, expiresAt, purchasePrice: new Prisma.Decimal(v.purchasePrice), sellingPrice: new Prisma.Decimal(v.sellingPrice) },
+          data: {
+            ...v,
+            expiresAt,
+            purchasePrice: new Prisma.Decimal(v.purchasePrice),
+            sellingPrice: new Prisma.Decimal(v.sellingPrice),
+          },
           include: { medicine: true },
         });
         const receiptNumber = code('RCV');
-        await tx.stockTransaction.create({ data: { batchId: batch.id, type: 'Stock Receipt', quantity: batch.quantity, referenceType: 'StockReceipt', referenceId: receiptNumber, actorId } });
-        await tx.auditLog.create({ data: { userId: actorId, action: 'CREATE', module: 'pharmacy', entityType: 'MedicineBatch', entityId: batch.id, metadata: { receiptNumber, quantity: batch.quantity } } });
+        await tx.stockTransaction.create({
+          data: {
+            batchId: batch.id,
+            type: 'Stock Receipt',
+            quantity: batch.quantity,
+            referenceType: 'StockReceipt',
+            referenceId: receiptNumber,
+            actorId,
+          },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: 'CREATE',
+            module: 'pharmacy',
+            entityType: 'MedicineBatch',
+            entityId: batch.id,
+            metadata: { receiptNumber, quantity: batch.quantity },
+          },
+        });
         return batch;
       });
     },
@@ -753,36 +1279,83 @@ export const phase23Service = {
         const current = await tx.medicineBatch.findUnique({ where: { id } });
         if (!current) throw missing('Medicine batch');
         const expiresAt = v.expiresAt ? new Date(v.expiresAt) : current.expiresAt;
-        if (expiresAt <= new Date()) throw new AppError(422, 'Expiry date must be in the future.', 'VALIDATION_ERROR');
-        const updated = await tx.medicineBatch.update({ where: { id }, data: {
-          ...v,
-          ...(v.expiresAt ? { expiresAt } : {}),
-          ...(v.purchasePrice != null ? { purchasePrice: new Prisma.Decimal(v.purchasePrice) } : {}),
-          ...(v.sellingPrice != null ? { sellingPrice: new Prisma.Decimal(v.sellingPrice) } : {}),
-          version: { increment: 1 },
-        }, include: { medicine: true } });
+        if (expiresAt <= new Date())
+          throw new AppError(422, 'Expiry date must be in the future.', 'VALIDATION_ERROR');
+        const updated = await tx.medicineBatch.update({
+          where: { id },
+          data: {
+            ...v,
+            ...(v.expiresAt ? { expiresAt } : {}),
+            ...(v.purchasePrice != null
+              ? { purchasePrice: new Prisma.Decimal(v.purchasePrice) }
+              : {}),
+            ...(v.sellingPrice != null ? { sellingPrice: new Prisma.Decimal(v.sellingPrice) } : {}),
+            version: { increment: 1 },
+          },
+          include: { medicine: true },
+        });
         const delta = updated.quantity - current.quantity;
-        if (delta) await tx.stockTransaction.create({ data: { batchId: id, type: 'Adjustment', quantity: delta, referenceType: 'MedicineBatch', referenceId: id, actorId } });
-        await tx.auditLog.create({ data: { userId: actorId, action: 'UPDATE', module: 'pharmacy', entityType: 'MedicineBatch', entityId: id, metadata: { quantityDelta: delta } } });
+        if (delta)
+          await tx.stockTransaction.create({
+            data: {
+              batchId: id,
+              type: 'Adjustment',
+              quantity: delta,
+              referenceType: 'MedicineBatch',
+              referenceId: id,
+              actorId,
+            },
+          });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: 'UPDATE',
+            module: 'pharmacy',
+            entityType: 'MedicineBatch',
+            entityId: id,
+            metadata: { quantityDelta: delta },
+          },
+        });
         return updated;
       }),
     ledger: async (q: any) => {
-      const result = await paged(db.stockTransaction, q, { ...(q.batch_id ? { batchId: q.batch_id } : {}) }, { batch: { include: { medicine: true } } });
+      const result = await paged(
+        db.stockTransaction,
+        q,
+        { ...(q.batch_id ? { batchId: q.batch_id } : {}) },
+        { batch: { include: { medicine: true } } },
+      );
       const actorIds = [...new Set(result.data.map((item: any) => item.actorId))] as string[];
-      const dispenseIds = result.data.filter((item: any) => item.referenceType === 'PharmacyDispense').map((item: any) => item.referenceId);
+      const dispenseIds = result.data
+        .filter((item: any) => item.referenceType === 'PharmacyDispense')
+        .map((item: any) => item.referenceId);
       const [actors, dispenses] = await prisma.$transaction([
-        db.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, firstName: true, lastName: true, employeeCode: true } }),
-        db.pharmacyDispense.findMany({ where: { id: { in: dispenseIds } }, select: { id: true, number: true } }),
+        db.user.findMany({
+          where: { id: { in: actorIds } },
+          select: { id: true, firstName: true, lastName: true, employeeCode: true },
+        }),
+        db.pharmacyDispense.findMany({
+          where: { id: { in: dispenseIds } },
+          select: { id: true, number: true },
+        }),
       ]);
-      const actorMap = new Map(actors.map((item: any) => [item.id, `${item.firstName} ${item.lastName}`.trim()]));
+      const actorMap = new Map(
+        actors.map((item: any) => [item.id, `${item.firstName} ${item.lastName}`.trim()]),
+      );
       const referenceMap = new Map(dispenses.map((item: any) => [item.id, item.number]));
-      return { ...result, data: result.data.map((item: any) => ({
-        id: item.id, type: item.type, quantity: item.quantity, createdAt: item.createdAt,
-        medicine: { id: item.batch.medicine.id, name: item.batch.medicine.name },
-        batch: { id: item.batch.id, batchNumber: item.batch.batchNumber },
-        reference: referenceMap.get(item.referenceId) ?? item.referenceId,
-        createdBy: { id: item.actorId, displayName: actorMap.get(item.actorId) ?? 'System user' },
-      })) };
+      return {
+        ...result,
+        data: result.data.map((item: any) => ({
+          id: item.id,
+          type: item.type,
+          quantity: item.quantity,
+          createdAt: item.createdAt,
+          medicine: { id: item.batch.medicine.id, name: item.batch.medicine.name },
+          batch: { id: item.batch.id, batchNumber: item.batch.batchNumber },
+          reference: referenceMap.get(item.referenceId) ?? item.referenceId,
+          createdBy: { id: item.actorId, displayName: actorMap.get(item.actorId) ?? 'System user' },
+        })),
+      };
     },
     dispenses: (q: any) =>
       paged(
@@ -819,9 +1392,21 @@ export const phase23Service = {
           throw new AppError(409, 'This prescription is not available for dispensing.', 'CONFLICT');
         const selections = new Map(v.items.map((i: any) => [i.itemId, i.quantity]));
         if (![...selections.values()].some((quantity: any) => Number(quantity) > 0))
-          throw new AppError(422, 'At least one medicine quantity must be dispensed.', 'VALIDATION_ERROR');
-        if ([...selections.keys()].some((itemId) => !request.items.some((item: any) => item.id === itemId)))
-          throw new AppError(422, 'A selected dispense item does not belong to this prescription.', 'VALIDATION_ERROR');
+          throw new AppError(
+            422,
+            'At least one medicine quantity must be dispensed.',
+            'VALIDATION_ERROR',
+          );
+        if (
+          [...selections.keys()].some(
+            (itemId) => !request.items.some((item: any) => item.id === itemId),
+          )
+        )
+          throw new AppError(
+            422,
+            'A selected dispense item does not belong to this prescription.',
+            'VALIDATION_ERROR',
+          );
         for (const item of request.items.filter((candidate: any) => selections.has(candidate.id))) {
           const quantity = Number(selections.get(item.id) ?? 0);
           if (quantity < 0 || quantity > item.prescribedQuantity - item.dispensedQuantity)
@@ -872,18 +1457,39 @@ export const phase23Service = {
           (i: any) => i.dispensedQuantity === i.prescribedQuantity,
         );
         const invoiceItems = request.items
-                .filter((i: any) => Number(selections.get(i.id) ?? 0) > 0)
-                .map((i: any) => ({
-                  source: 'Pharmacy',
-                  sourceId: `${id}:${i.id}:${i.dispensedQuantity}`,
-                  description: 'Medicine dispense',
-                  quantity: new Prisma.Decimal(Number(selections.get(i.id))),
-                  unitPrice: i.unitPrice,
-                }));
+          .filter((i: any) => Number(selections.get(i.id) ?? 0) > 0)
+          .map((i: any) => ({
+            source: 'Pharmacy',
+            sourceId: `${id}:${i.id}:${i.dispensedQuantity}`,
+            description: 'Medicine dispense',
+            quantity: new Prisma.Decimal(Number(selections.get(i.id))),
+            unitPrice: i.unitPrice,
+          }));
         const invoice = request.invoiceId
-          ? await tx.invoice.update({ where: { id: request.invoiceId }, data: { items: { create: invoiceItems } }, include: { items: true } })
-          : await tx.invoice.create({ data: { number: code('INV'), patientId: request.patientId, status: 'Pending', items: { create: invoiceItems } }, include: { items: true } });
-        await tx.auditLog.create({ data: { userId: actorId, action: 'DISPENSE', module: 'pharmacy', entityType: 'PharmacyDispense', entityId: id, metadata: { invoiceId: invoice.id } } });
+          ? await tx.invoice.update({
+              where: { id: request.invoiceId },
+              data: { items: { create: invoiceItems } },
+              include: { items: true },
+            })
+          : await tx.invoice.create({
+              data: {
+                number: code('INV'),
+                patientId: request.patientId,
+                status: 'Pending',
+                items: { create: invoiceItems },
+              },
+              include: { items: true },
+            });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: 'DISPENSE',
+            module: 'pharmacy',
+            entityType: 'PharmacyDispense',
+            entityId: id,
+            metadata: { invoiceId: invoice.id },
+          },
+        });
         return tx.pharmacyDispense.update({
           where: { id },
           data: {
@@ -910,13 +1516,44 @@ export const phase23Service = {
     },
   },
   procurement: {
-    list: (q: any) => {const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={number:{number:direction},supplier:{supplier:{name:direction}},item:{inventoryItem:{name:direction}},quantity:{quantity:direction},receivedQuantity:{receivedQuantity:direction},unitPrice:{unitPrice:direction},status:{status:direction}};return paged(
+    list: (q: any) => {
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        number: { number: direction },
+        supplier: { supplier: { name: direction } },
+        item: { inventoryItem: { name: direction } },
+        quantity: { quantity: direction },
+        receivedQuantity: { receivedQuantity: direction },
+        unitPrice: { unitPrice: direction },
+        status: { status: direction },
+      };
+      return paged(
         db.purchaseOrder,
         q,
-        { ...(q.status ? { status: q.status } : {}),...(q.search?{OR:[{number:{contains:q.search,mode:'insensitive'}},{supplier:{is:{name:{contains:q.search,mode:'insensitive'}}}},{inventoryItem:{is:{name:{contains:q.search,mode:'insensitive'}}}},{medicine:{is:{name:{contains:q.search,mode:'insensitive'}}}}]}:{}) },
+        {
+          ...(q.status ? { status: q.status } : {}),
+          ...(q.search
+            ? {
+                OR: [
+                  { number: { contains: q.search, mode: 'insensitive' } },
+                  { supplier: { is: { name: { contains: q.search, mode: 'insensitive' } } } },
+                  { inventoryItem: { is: { name: { contains: q.search, mode: 'insensitive' } } } },
+                  { medicine: { is: { name: { contains: q.search, mode: 'insensitive' } } } },
+                ],
+              }
+            : {}),
+        },
         { supplier: true, inventoryItem: true, medicine: true },
-        [sorts[q.sort_by]??{requestedAt:'desc'},{id:'asc'}],
-      );},
+        [sorts[q.sort_by] ?? { requestedAt: 'desc' }, { id: 'asc' }],
+      );
+    },
+    get: async (id: string) =>
+      db.purchaseOrder
+        .findUnique({
+          where: { id },
+          include: { supplier: true, inventoryItem: true, medicine: true },
+        })
+        .then((value: any) => value ?? Promise.reject(missing('Purchase order'))),
     create: (v: any) => {
       if (
         (v.itemType === 'Medicine') === !v.medicineId ||
@@ -932,16 +1569,27 @@ export const phase23Service = {
         include: { supplier: true, inventoryItem: true, medicine: true },
       });
     },
-    update: (id: string, v: any) =>
-      db.purchaseOrder.update({
+    update: async (id: string, v: any) => {
+      const current = await db.purchaseOrder.findUnique({ where: { id } });
+      if (!current) throw missing('Purchase order');
+      if (current.status !== 'Ordered' || current.receivedQuantity > 0)
+        throw new AppError(409, 'Only unreceived ordered requests can be edited.', 'CONFLICT');
+      return db.purchaseOrder.update({
         where: { id },
         data: {
           ...v,
           ...(v.unitPrice != null ? { unitPrice: new Prisma.Decimal(v.unitPrice) } : {}),
         },
-      }),
-    cancel: (id: string) =>
-      db.purchaseOrder.update({ where: { id }, data: { status: 'Cancelled' } }),
+        include: { supplier: true, inventoryItem: true, medicine: true },
+      });
+    },
+    cancel: async (id: string) => {
+      const current = await db.purchaseOrder.findUnique({ where: { id } });
+      if (!current) throw missing('Purchase order');
+      if (!['Ordered', 'Partially Received'].includes(current.status))
+        throw new AppError(409, 'This purchase order can no longer be cancelled.', 'CONFLICT');
+      return db.purchaseOrder.update({ where: { id }, data: { status: 'Cancelled' } });
+    },
     receive: (id: string, v: any, actorId: string) =>
       prisma.$transaction(async (tx: any) => {
         const po = await tx.purchaseOrder.findUnique({ where: { id } });
@@ -1006,34 +1654,117 @@ export const phase23Service = {
         });
       }),
   },
-  audit: (q: any) => {
-    const direction=q.sort_order==='asc'?'asc':'desc';
-    const sorts:Record<string,any>={createdAt:{createdAt:direction},user:{user:{firstName:direction}},action:{action:direction},module:{module:direction},entityType:{entityType:direction}};
-    return paged(
+  audit: async (q: any) => {
+    const direction = q.sort_order === 'asc' ? 'asc' : 'desc';
+    const sorts: Record<string, any> = {
+      createdAt: { createdAt: direction },
+      user: { user: { firstName: direction } },
+      action: { action: direction },
+      module: { module: direction },
+      entityType: { entityType: direction },
+    };
+    const result = await paged(
       db.auditLog,
       q,
       {
         ...(q.module ? { module: q.module } : {}),
         ...(q.action ? { action: q.action } : {}),
         ...(q.user_id ? { userId: q.user_id } : {}),
-        ...(q.created_from || q.created_to ? { createdAt: { ...(q.created_from ? { gte: new Date(`${q.created_from}T00:00:00.000Z`) } : {}), ...(q.created_to ? { lte: new Date(`${q.created_to}T23:59:59.999Z`) } : {}) } } : {}),
+        ...(q.entity_type ? { entityType: q.entity_type } : {}),
+        ...(q.created_from || q.created_to
+          ? {
+              createdAt: {
+                ...(q.created_from ? { gte: new Date(`${q.created_from}T00:00:00.000Z`) } : {}),
+                ...(q.created_to ? { lte: new Date(`${q.created_to}T23:59:59.999Z`) } : {}),
+              },
+            }
+          : {}),
         ...(q.search
           ? {
               OR: [
                 { action: { contains: q.search, mode: 'insensitive' } },
                 { module: { contains: q.search, mode: 'insensitive' } },
                 { entityType: { contains: q.search, mode: 'insensitive' } },
+                { entityId: { contains: q.search, mode: 'insensitive' } },
+                {
+                  user: {
+                    is: {
+                      OR: [
+                        { firstName: { contains: q.search, mode: 'insensitive' } },
+                        { lastName: { contains: q.search, mode: 'insensitive' } },
+                        { email: { contains: q.search, mode: 'insensitive' } },
+                      ],
+                    },
+                  },
+                },
               ],
             }
           : {}),
       },
       { user: true },
-      [sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}],
+      [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
     );
+    return {
+      ...result,
+      data: result.data.map((item: any) => ({
+        ...item,
+        metadata: sanitizeAuditMetadata(item.metadata),
+      })),
+    };
+  },
+  auditDetail: async (id: string) => {
+    const item = await db.auditLog.findUnique({ where: { id }, include: { user: true } });
+    if (!item) throw missing('Audit log');
+    return { ...item, metadata: sanitizeAuditMetadata(item.metadata) };
+  },
+  auditOptions: async () => {
+    const [modules, actions, entityTypes, actors] = await prisma.$transaction([
+      db.auditLog.findMany({
+        distinct: ['module'],
+        select: { module: true },
+        orderBy: { module: 'asc' },
+      }),
+      db.auditLog.findMany({
+        distinct: ['action'],
+        select: { action: true },
+        orderBy: { action: 'asc' },
+      }),
+      db.auditLog.findMany({
+        distinct: ['entityType'],
+        select: { entityType: true },
+        orderBy: { entityType: 'asc' },
+      }),
+      db.auditLog.findMany({
+        where: { userId: { not: null } },
+        distinct: ['userId'],
+        select: {
+          userId: true,
+          user: { select: { firstName: true, lastName: true, email: true } },
+        },
+        orderBy: { userId: 'asc' },
+      }),
+    ]);
+    return {
+      modules: modules.map((item: any) => item.module),
+      actions: actions.map((item: any) => item.action),
+      entityTypes: entityTypes.map((item: any) => item.entityType),
+      actors: actors.map((item: any) => ({
+        id: item.userId,
+        name: item.user
+          ? `${item.user.firstName} ${item.user.lastName}`.trim()
+          : 'Unavailable user',
+        email: item.user?.email ?? null,
+      })),
+    };
   },
   masters: {
     departments: (q: any) => {
-      const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={name:{name:direction},code:{code:direction},status:{status:direction}};
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        name: { name: direction },
+        code: { code: direction },
+        status: { status: direction },
+      };
       return paged(
         db.department,
         q,
@@ -1049,7 +1780,7 @@ export const phase23Service = {
             : {}),
         },
         { _count: { select: { appointments: true, admissions: true, specializations: true } } },
-        [sorts[q.sort_by]??{name:'asc'},{id:'asc'}],
+        [sorts[q.sort_by] ?? { name: 'asc' }, { id: 'asc' }],
       );
     },
     department: (id: string) =>
@@ -1059,7 +1790,13 @@ export const phase23Service = {
     deactivateDepartment: (id: string) =>
       db.department.update({ where: { id }, data: { status: 'Inactive' } }),
     specializations: (q: any) => {
-      const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={name:{name:direction},code:{code:direction},department:{department:{name:direction}},status:{status:direction}};
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        name: { name: direction },
+        code: { code: direction },
+        department: { department: { name: direction } },
+        status: { status: direction },
+      };
       return paged(
         db.specialization,
         q,
@@ -1076,7 +1813,7 @@ export const phase23Service = {
             : {}),
         },
         { department: true },
-        [sorts[q.sort_by]??{name:'asc'},{id:'asc'}],
+        [sorts[q.sort_by] ?? { name: 'asc' }, { id: 'asc' }],
       );
     },
     specialization: (id: string) =>
@@ -1087,7 +1824,13 @@ export const phase23Service = {
     deactivateSpecialization: (id: string) =>
       db.specialization.update({ where: { id }, data: { status: 'Inactive' } }),
     radiologyInvestigations: (q: any) => {
-      const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={name:{name:direction},code:{code:direction},modality:{modality:direction},status:{status:direction}};
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        name: { name: direction },
+        code: { code: direction },
+        modality: { modality: direction },
+        status: { status: direction },
+      };
       return paged(
         db.radiologyInvestigation,
         q,
@@ -1104,7 +1847,7 @@ export const phase23Service = {
             : {}),
         },
         undefined,
-        [sorts[q.sort_by]??{name:'asc'},{id:'asc'}],
+        [sorts[q.sort_by] ?? { name: 'asc' }, { id: 'asc' }],
       );
     },
     radiologyInvestigation: (id: string) => db.radiologyInvestigation.findUnique({ where: { id } }),
@@ -1114,7 +1857,14 @@ export const phase23Service = {
     deactivateRadiologyInvestigation: (id: string) =>
       db.radiologyInvestigation.update({ where: { id }, data: { status: 'Inactive' } }),
     laboratoryTests: (q: any) => {
-      const direction=q.sort_order==='desc'?'desc':'asc';const sorts:Record<string,any>={name:{name:direction},code:{code:direction},category:{category:direction},unit:{unit:direction},status:{status:direction}};
+      const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
+      const sorts: Record<string, any> = {
+        name: { name: direction },
+        code: { code: direction },
+        category: { category: direction },
+        unit: { unit: direction },
+        status: { status: direction },
+      };
       return paged(
         db.laboratoryTestDefinition,
         q,
@@ -1132,7 +1882,7 @@ export const phase23Service = {
             : {}),
         },
         undefined,
-        [sorts[q.sort_by]??{name:'asc'},{id:'asc'}],
+        [sorts[q.sort_by] ?? { name: 'asc' }, { id: 'asc' }],
       );
     },
     laboratoryTest: (id: string) => db.laboratoryTestDefinition.findUnique({ where: { id } }),

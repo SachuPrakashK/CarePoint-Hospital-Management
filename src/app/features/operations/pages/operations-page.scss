@@ -1,5 +1,66 @@
-.vehicle {
-  font-size: 20px !important;
+.tabs {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+}
+.toolbar {
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.toolbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  min-width: 760px;
+}
+th {
+  color: var(--mc-primary);
+  white-space: nowrap;
+}
+td {
+  vertical-align: middle;
+}
+tbody tr {
+  transition: background-color 150ms ease;
+}
+tbody tr:hover {
+  background: var(--mc-surface-soft);
+}
+.actions-column {
+  width: 76px;
+  text-align: center;
+}
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.contact-value {
+  max-width: 240px;
+  overflow-wrap: anywhere;
+}
+.record-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.record-details > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--mc-border);
+  border-radius: 9px;
+}
+.record-details span {
+  color: var(--mc-text-secondary);
+  font-size: 12px;
+  text-transform: capitalize;
 }
 .booking {
   margin-top: 18px;
@@ -38,4 +99,13 @@
   color: var(--mc-surface);
   padding: 13px;
   border-radius: 8px;
+}
+@media (max-width: 640px) {
+  .toolbar-actions,
+  .toolbar-actions > * {
+    width: 100%;
+  }
+  .record-details {
+    grid-template-columns: 1fr;
+  }
 }

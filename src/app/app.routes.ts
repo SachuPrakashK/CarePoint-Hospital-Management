@@ -1,11 +1,10 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   {
     path: 'auth',
-    canActivate: [guestGuard],
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
@@ -58,7 +57,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/settings/settings-page').then((m) => m.SettingsPage),
       },
-      {path:'help-support',canActivate:[permissionGuard],data:{permission:'support.view'},loadComponent:()=>import('./features/support/help-support-page').then(m=>m.HelpSupportPage)},
+      {
+        path: 'help-support',
+        canActivate: [permissionGuard],
+        data: { permission: 'support.view' },
+        loadComponent: () =>
+          import('./features/support/help-support-page').then((m) => m.HelpSupportPage),
+      },
       {
         path: 'notifications',
         loadComponent: () =>
@@ -134,7 +139,15 @@ export const routes: Routes = [
       },
       {
         path: 'audit-logs',
+        canActivate: [permissionGuard],
+        data: { permission: 'audit.view' },
         loadComponent: () => import('./features/audit/audit-page').then((m) => m.AuditPage),
+      },
+      {
+        path: 'audit-logs/:id',
+        canActivate: [permissionGuard],
+        data: { permission: 'audit.view' },
+        loadComponent: () => import('./features/audit/audit-details').then((m) => m.AuditDetails),
       },
       {
         path: 'documents',
@@ -169,12 +182,20 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/staff-directory/staff-details').then((m) => m.StaffDetails),
       },
-      {
-        path: ':entity',
-        loadChildren: () =>
-          import('./features/administration/entity.routes').then((m) => m.ENTITY_ROUTES),
-      },
+      ...['departments', 'specializations', 'radiology-investigations', 'laboratory-tests'].map(
+        (path) => ({
+          path,
+          data: { entity: path },
+          loadChildren: () =>
+            import('./features/administration/entity.routes').then((m) => m.ENTITY_ROUTES),
+        }),
+      ),
     ],
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    data: { pageTitle: '404 - Page Not Found' },
+    loadComponent: () =>
+      import('./shared/pages/not-found/not-found-page').then((m) => m.NotFoundPage),
+  },
 ];

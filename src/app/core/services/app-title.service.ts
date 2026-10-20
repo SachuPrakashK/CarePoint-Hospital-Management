@@ -42,6 +42,7 @@ const DETAIL_TITLES: Record<string, string> = {
   procedures: 'Procedure Details',
   doctors: 'Doctor Details',
   employees: 'Employee Details',
+  'audit-logs': 'Audit Log Details',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -75,7 +76,11 @@ export class AppTitleService {
         ? 'MediCare+'
         : configuredName;
     let pageTitle = '';
-    if (root === 'auth') {
+    let activeRoute = this.router.routerState?.snapshot.root;
+    while (activeRoute?.firstChild) activeRoute = activeRoute.firstChild;
+    const explicitTitle = activeRoute?.data['pageTitle'] as string | undefined;
+    if (explicitTitle) pageTitle = explicitTitle;
+    else if (root === 'auth') {
       pageTitle =
         segments[1] === 'forgot-password'
           ? 'Forgot Password'

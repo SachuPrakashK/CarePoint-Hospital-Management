@@ -40,6 +40,9 @@
         @if (tab() === 'suppliers') {
           <button class="primary" (click)="open('supplier')">+ Add supplier</button>
         }
+        @if (tab() === 'ambulance') {
+          <button class="primary" (click)="open('ambulance')">+ Add ambulance</button>
+        }
       </div>
     </div>
     @if (tableLoading()) {
@@ -111,6 +114,9 @@
                 }
                 @if (columnVisible('alert')) {
                   <th>Alert</th>
+                }
+                @if (columnVisible('actions')) {
+                  <th class="actions-column">Actions</th>
                 }
               } @else if (tab() === 'procurement') {
                 @if (columnVisible('po')) {
@@ -186,7 +192,7 @@
                 @if (columnVisible('actions')) {
                   <th>Actions</th>
                 }
-              } @else {
+              } @else if (tab() === 'suppliers') {
                 @if (columnVisible('supplier')) {
                   <th [attr.aria-sort]="ariaSort('name')">
                     <app-table-sort-header
@@ -240,20 +246,50 @@
                 @if (columnVisible('status')) {
                   <th>Status</th>
                 }
+                @if (columnVisible('actions')) {
+                  <th class="actions-column">Actions</th>
+                }
+              } @else {
+                @if (columnVisible('number')) {
+                  <th>Fleet number</th>
+                }
+                @if (columnVisible('registration')) {
+                  <th>Registration</th>
+                }
+                @if (columnVisible('type')) {
+                  <th>Vehicle type</th>
+                }
+                @if (columnVisible('driver')) {
+                  <th>Driver</th>
+                }
+                @if (columnVisible('contact')) {
+                  <th>Contact</th>
+                }
+                @if (columnVisible('status')) {
+                  <th>Status</th>
+                }
+                @if (columnVisible('actions')) {
+                  <th class="actions-column">Actions</th>
+                }
               }
             </tr>
           </thead>
           <tbody>
             @for (item of rows(); track item.id) {
               @if (tab() === 'inventory') {
-                <tr class="clickable-row" (click)="open('inventory', item)">
+                <tr
+                  class="clickable-row"
+                  tabindex="0"
+                  (click)="view(item)"
+                  (keydown.enter)="view(item)"
+                >
                   @if (columnVisible('item')) {
                     <td>
                       <b>{{ item.name }}</b>
                     </td>
                   }
                   @if (columnVisible('category')) {
-                    <td>{{ item.category }}</td>
+                    <td>{{ dash(item.categoryName) }}</td>
                   }
                   @if (columnVisible('store')) {
                     <td>{{ item.store }}</td>
@@ -274,17 +310,37 @@
                       }}</span>
                     </td>
                   }
+                  @if (columnVisible('actions')) {
+                    <td class="actions-column" (click)="$event.stopPropagation()">
+                      <app-actions-menu
+                        [id]="item.id"
+                        label="Inventory item actions"
+                        [canView]="true"
+                        [canEdit]="auth.has('inventory.edit')"
+                        [canDelete]="auth.has('inventory.delete')"
+                        deleteLabel="Deactivate"
+                        (view)="view(item)"
+                        (edit)="open('inventory', item)"
+                        (delete)="remove('inventory', item)"
+                      />
+                    </td>
+                  }
                 </tr>
               } @else if (tab() === 'procurement') {
-                <tr>
+                <tr
+                  class="clickable-row"
+                  tabindex="0"
+                  (click)="view(item)"
+                  (keydown.enter)="view(item)"
+                >
                   @if (columnVisible('po')) {
                     <td>{{ item.number }}</td>
                   }
                   @if (columnVisible('supplier')) {
-                    <td>{{ item.supplier?.name }}</td>
+                    <td>{{ dash(item.supplier?.name) }}</td>
                   }
                   @if (columnVisible('item')) {
-                    <td>{{ item.medicine?.name || item.inventoryItem?.name }}</td>
+                    <td>{{ dash(item.medicine?.name || item.inventoryItem?.name) }}</td>
                   }
                   @if (columnVisible('ordered')) {
                     <td>{{ item.quantity }}</td>
@@ -299,39 +355,113 @@
                     <td><app-status-badge [value]="item.status" /></td>
                   }
                   @if (columnVisible('actions')) {
-                    <td>
-                      @if (item.status === 'Ordered' || item.status === 'Partially Received') {
-                        <button
-                          class="primary"
-                          (click)="receive(item.id, item.quantity - item.receivedQuantity)"
-                        >
-                          Receive goods
-                        </button>
-                      }
+                    <td class="actions-column">
+                      <app-actions-menu
+                        [id]="item.id"
+                        label="Purchase request actions"
+                        [canView]="true"
+                        [canEdit]="auth.has('inventory.edit')"
+                        [editDisabled]="!canEditPurchase(item)"
+                        editDisabledReason="Only unreceived ordered requests can be edited."
+                        [canDelete]="auth.has('inventory.delete') && canCancelPurchase(item)"
+                        deleteLabel="Cancel"
+                        [canStatus]="
+                          auth.has('inventory.stock') &&
+                          (item.status === 'Ordered' || item.status === 'Partially Received')
+                        "
+                        statusLabel="Receive goods"
+                        (view)="view(item)"
+                        (edit)="open('purchase', item)"
+                        (delete)="remove('purchase', item)"
+                        (statusChange)="receive(item.id, item.quantity - item.receivedQuantity)"
+                      />
                     </td>
                   }
                 </tr>
-              } @else {
-                <tr class="clickable-row" (click)="open('supplier', item)">
+              } @else if (tab() === 'suppliers') {
+                <tr
+                  class="clickable-row"
+                  tabindex="0"
+                  (click)="view(item)"
+                  (keydown.enter)="view(item)"
+                >
                   @if (columnVisible('supplier')) {
                     <td>
                       <b>{{ item.name }}</b>
                     </td>
                   }
                   @if (columnVisible('contact')) {
-                    <td>{{ item.contactPerson }}</td>
+                    <td>{{ dash(item.contactPerson) }}</td>
                   }
                   @if (columnVisible('phone')) {
-                    <td>{{ item.phone }}</td>
+                    <td>{{ dash(item.phone) }}</td>
                   }
                   @if (columnVisible('email')) {
-                    <td>{{ item.email }}</td>
+                    <td class="contact-value">{{ dash(item.email) }}</td>
                   }
                   @if (columnVisible('tax')) {
-                    <td>{{ item.taxNumber }}</td>
+                    <td>{{ dash(item.taxNumber) }}</td>
                   }
                   @if (columnVisible('status')) {
-                    <td><app-status-badge value="Active" /></td>
+                    <td><app-status-badge [value]="item.status" /></td>
+                  }
+                  @if (columnVisible('actions')) {
+                    <td class="actions-column" (click)="$event.stopPropagation()">
+                      <app-actions-menu
+                        [id]="item.id"
+                        label="Supplier actions"
+                        [canView]="true"
+                        [canEdit]="auth.has('inventory.edit')"
+                        [canDelete]="auth.has('inventory.delete')"
+                        deleteLabel="Deactivate"
+                        (view)="view(item)"
+                        (edit)="open('supplier', item)"
+                        (delete)="remove('supplier', item)"
+                      />
+                    </td>
+                  }
+                </tr>
+              } @else {
+                <tr
+                  class="clickable-row"
+                  tabindex="0"
+                  (click)="view(item)"
+                  (keydown.enter)="view(item)"
+                >
+                  @if (columnVisible('number')) {
+                    <td>
+                      <b>{{ item.number }}</b>
+                    </td>
+                  }
+                  @if (columnVisible('registration')) {
+                    <td>{{ item.registration }}</td>
+                  }
+                  @if (columnVisible('type')) {
+                    <td>{{ item.vehicleType }}</td>
+                  }
+                  @if (columnVisible('driver')) {
+                    <td>{{ dash(item.driver) }}</td>
+                  }
+                  @if (columnVisible('contact')) {
+                    <td>{{ dash(item.driverContact) }}</td>
+                  }
+                  @if (columnVisible('status')) {
+                    <td><app-status-badge [value]="item.status" /></td>
+                  }
+                  @if (columnVisible('actions')) {
+                    <td class="actions-column">
+                      <app-actions-menu
+                        [id]="item.id"
+                        label="Ambulance actions"
+                        [canView]="true"
+                        [canEdit]="auth.has('ambulance.edit')"
+                        [canDelete]="auth.has('ambulance.delete')"
+                        deleteLabel="Deactivate"
+                        (view)="view(item)"
+                        (edit)="open('ambulance', item)"
+                        (delete)="remove('ambulance', item)"
+                      />
+                    </td>
                   }
                 </tr>
               }
@@ -340,31 +470,20 @@
         </table>
       </div>
     }
-    <app-pagination
-      [loading]="tableLoading()"
-      [page]="page()"
-      [pageSize]="pageSize()"
-      [totalItems]="total()"
-      [totalPages]="totalPages()"
-      [itemLabel]="tab()"
-      (pageChange)="go($event)"
-      (pageSizeChange)="resize($event)"
-    />
-  </section>
-} @else if (tab() === 'ambulance') {
-  <div class="page-actions">
-    <button class="primary" (click)="open('ambulance')">+ Add ambulance</button>
-  </div>
-  <section class="stats">
-    @for (a of store.ambulances(); track a.id) {
-      <article class="card stat" (click)="open('ambulance', a)">
-        <span class="muted">{{ a.vehicleType }}</span>
-        <div class="value vehicle">{{ a.number }}</div>
-        <p>{{ a.registration }} · {{ a.driver }}</p>
-        <app-status-badge [value]="a.status" />
-      </article>
+    @if (!tableLoading() && total() > 0) {
+      <app-pagination
+        [page]="page()"
+        [pageSize]="pageSize()"
+        [totalItems]="total()"
+        [totalPages]="totalPages()"
+        [itemLabel]="tab()"
+        (pageChange)="go($event)"
+        (pageSizeChange)="resize($event)"
+      />
     }
   </section>
+}
+@if (tab() === 'ambulance') {
   <section class="card booking">
     <div class="section-title"><h2>New ambulance booking</h2></div>
     <div class="form-grid">
@@ -386,15 +505,21 @@
             }
           }
         </select></label
-      ><label class="field"><span>Pickup</span><input [(ngModel)]="pickup" /></label
-      ><label class="field"><span>Destination</span><input [(ngModel)]="destination" /></label
       ><label class="field"
-        ><span>Charges</span><input type="number" [(ngModel)]="charges"
+        ><span>Pickup</span
+        ><input [(ngModel)]="pickup" placeholder="Enter pickup location" /></label
+      ><label class="field"
+        ><span>Destination</span
+        ><input [(ngModel)]="destination" placeholder="Enter destination" /></label
+      ><label class="field"
+        ><span>Charges</span
+        ><input type="number" min="0" [(ngModel)]="charges" placeholder="Enter charges"
       /></label>
     </div>
     <div class="form-actions"><button class="primary" (click)="book()">Book ambulance</button></div>
   </section>
-} @else {
+}
+@if (tab() === 'notifications') {
   <section class="card">
     <div class="section-title"><h2>Notification center</h2></div>
     @for (n of notifications.notifications(); track n.id) {
@@ -420,6 +545,7 @@
       [kind]="formKind()!"
       [entity]="editing()"
       (dirtyChanged)="formDirty.set($event)"
-      (saved)="saved(); loadTable()"
+      (cancelled)="close()"
+      (saved)="saved()"
   /></app-modal>
 }

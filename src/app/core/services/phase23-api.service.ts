@@ -15,6 +15,9 @@ export class Phase23ApiService {
   inventory(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/inventory/items', { params: this.params(q) });
   }
+  inventoryItem(id: string) {
+    return this.http.get<{ data: any }>(`/api/v1/inventory/items/${id}`);
+  }
   inventoryOptions() {
     return Promise.all([]);
   }
@@ -33,8 +36,11 @@ export class Phase23ApiService {
   categories() {
     return this.http.get<{ data: any[] }>('/api/v1/inventory/categories');
   }
-  suppliers(q:Record<string,unknown>={}) {
-    return this.http.get<Page<any>>('/api/v1/inventory/suppliers',{params:this.params(q)});
+  suppliers(q: Record<string, unknown> = {}) {
+    return this.http.get<Page<any>>('/api/v1/inventory/suppliers', { params: this.params(q) });
+  }
+  supplier(id: string) {
+    return this.http.get<{ data: any }>(`/api/v1/inventory/suppliers/${id}`);
   }
   createSupplier(v: any) {
     return this.http.post<{ data: any }>('/api/v1/inventory/suppliers', v);
@@ -48,11 +54,17 @@ export class Phase23ApiService {
   ambulances(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/ambulances', { params: this.params(q) });
   }
+  ambulance(id: string) {
+    return this.http.get<{ data: any }>(`/api/v1/ambulances/${id}`);
+  }
   createAmbulance(v: any) {
     return this.http.post<{ data: any }>('/api/v1/ambulances', v);
   }
   updateAmbulance(id: string, v: any) {
     return this.http.put<{ data: any }>(`/api/v1/ambulances/${id}`, v);
+  }
+  removeAmbulance(id: string) {
+    return this.http.delete<{ data: any }>(`/api/v1/ambulances/${id}`);
   }
   ambulanceBookings(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/ambulance-bookings', { params: this.params(q) });
@@ -86,7 +98,9 @@ export class Phase23ApiService {
   refunds(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/billing/refunds', { params: this.params(q) });
   }
-  payments(q:Record<string,unknown>={}){return this.http.get<Page<any>>('/api/v1/billing-payments',{params:this.params(q)});}
+  payments(q: Record<string, unknown> = {}) {
+    return this.http.get<Page<any>>('/api/v1/billing-payments', { params: this.params(q) });
+  }
   requestRefund(paymentId: string, v: any) {
     return this.http.post<{ data: any }>(`/api/v1/billing/payments/${paymentId}/refunds`, v);
   }
@@ -164,6 +178,9 @@ export class Phase23ApiService {
   }
   purchaseOrders(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/procurement/orders', { params: this.params(q) });
+  }
+  purchaseOrder(id: string) {
+    return this.http.get<{ data: any }>(`/api/v1/procurement/orders/${id}`);
   }
   createPurchaseOrder(v: any) {
     return this.http.post<{ data: any }>('/api/v1/procurement/orders', v);

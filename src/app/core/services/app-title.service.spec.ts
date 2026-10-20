@@ -55,4 +55,19 @@ describe('AppTitleService', () => {
     events.next(new NavigationEnd(5, '/auth/login', '/auth/login'));
     expect(title.getTitle()).toBe('Login | MediCare+');
   });
+
+  it('uses the dedicated not-found title without exposing the unknown URL', () => {
+    const router = TestBed.inject(Router) as Router & { routerState: unknown };
+    Object.defineProperty(router, 'routerState', {
+      configurable: true,
+      value: {
+        snapshot: {
+          root: { data: {}, firstChild: { data: { pageTitle: '404 - Page Not Found' } } },
+        },
+      },
+    });
+    events.next(new NavigationEnd(6, '/private-unknown-value', '/private-unknown-value'));
+    expect(title.getTitle()).toBe('404 - Page Not Found | MediCare+');
+    expect(title.getTitle()).not.toContain('private-unknown-value');
+  });
 });

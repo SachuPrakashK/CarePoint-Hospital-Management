@@ -15,7 +15,7 @@ try {
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
   page.on('response', (response) => { if (response.status() >= 500) errors.push(`${response.status()} ${response.url()}`); });
   page.on('request', (request) => { if (request.method() === 'GET' && request.url().includes('/api/v1/pharmacy/batches?')) stockRequests.push(request.url()); if (request.method() === 'POST' && request.url().endsWith('/api/v1/pharmacy/batches')) receiptPosts += 1; });
-  await page.goto(`${frontend}/auth/sign-in`, { waitUntil: 'networkidle' });
+  await page.goto(`${frontend}/auth/login`, { waitUntil: 'networkidle' });
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL); await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD); await page.getByRole('button', { name: 'Sign in' }).click(); await page.waitForURL('**/dashboard');
   await page.goto(`${frontend}/pharmacy`, { waitUntil: 'networkidle' }); await page.getByRole('heading', { name: 'Pharmacy' }).waitFor();
   const actions = page.locator('.pharmacy-actions'); const actionButtons = actions.locator('button'); if (await actionButtons.count() !== 2) throw new Error('Pharmacy actions are missing.');

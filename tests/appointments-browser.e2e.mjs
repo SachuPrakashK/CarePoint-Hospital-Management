@@ -10,7 +10,7 @@ const env = Object.fromEntries(
 const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
 try {
   const page = await browser.newPage();
-  await page.goto('http://localhost:4200/auth/sign-in');
+  await page.goto('http://localhost:4200/auth/login');
   await page.locator('input[type="email"]').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.locator('input[type="password"]').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: /sign in/i }).click();

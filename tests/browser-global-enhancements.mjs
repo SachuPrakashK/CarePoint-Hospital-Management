@@ -26,7 +26,7 @@ page.on('response', (response) => {
   if (response.status() >= 500) errors.push(`${response.status()} ${response.url()}`);
 });
 try {
-  await page.goto('http://localhost:4200/auth/sign-in', { waitUntil: 'networkidle' });
+  await page.goto('http://localhost:4200/auth/login', { waitUntil: 'networkidle' });
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.getByRole('textbox', { name: 'Password' }).fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();

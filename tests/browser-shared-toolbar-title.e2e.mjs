@@ -8,7 +8,7 @@ const env = Object.fromEntries(fs.readFileSync('backend/.env', 'utf8').split(/\r
 const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 try {
-  await page.goto('http://127.0.0.1:4200/auth/sign-in');
+  await page.goto('http://127.0.0.1:4200/auth/login');
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();

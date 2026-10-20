@@ -1,0 +1,97 @@
+<a class="audit-back-link" routerLink="/audit-logs"
+  ><span aria-hidden="true">&#8592;</span> Audit logs</a
+>
+
+@if (loading()) {
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">
+    Loading audit event...
+  </div>
+} @else if (error()) {
+  <section class="card audit-detail-state" role="alert">
+    <app-icon name="audit" [size]="30" />
+    <h1>Audit event unavailable</h1>
+    <p>{{ error() }}</p>
+    <div class="audit-state-actions">
+      <button type="button" class="secondary" (click)="load()">Retry</button>
+      <a class="primary button-link" routerLink="/audit-logs">Back to audit logs</a>
+    </div>
+  </section>
+} @else if (event(); as item) {
+  <header class="page-head audit-details-head">
+    <div>
+      <p class="audit-eyebrow">Read-only audit record</p>
+      <h1>{{ label(item.action) }}</h1>
+      <p class="muted">Event ID: {{ item.id }}</p>
+    </div>
+    <app-status-badge [value]="item.action" />
+  </header>
+
+  <div class="audit-detail-grid">
+    <section class="card audit-detail-card">
+      <div class="section-title"><h2>Event summary</h2></div>
+      <dl class="audit-fields">
+        <div>
+          <dt>Date and time</dt>
+          <dd>{{ dates.formatDateTime(item.createdAt) }}</dd>
+        </div>
+        <div>
+          <dt>Module</dt>
+          <dd>{{ label(item.module) }}</dd>
+        </div>
+        <div>
+          <dt>Action</dt>
+          <dd>{{ label(item.action) }}</dd>
+        </div>
+        <div>
+          <dt>Event ID</dt>
+          <dd class="audit-mono">{{ item.id }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card audit-detail-card">
+      <div class="section-title"><h2>Actor</h2></div>
+      <dl class="audit-fields">
+        <div>
+          <dt>Name</dt>
+          <dd>{{ item.actor }}</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{{ item.actorEmail || 'Not available' }}</dd>
+        </div>
+        <div>
+          <dt>User ID</dt>
+          <dd class="audit-mono">{{ item.userId || 'System event' }}</dd>
+        </div>
+        <div>
+          <dt>IP address</dt>
+          <dd class="audit-mono">{{ item.ipAddress || 'Not recorded' }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card audit-detail-card">
+      <div class="section-title"><h2>Affected resource</h2></div>
+      <dl class="audit-fields">
+        <div>
+          <dt>Resource type</dt>
+          <dd>{{ label(item.entityType) }}</dd>
+        </div>
+        <div>
+          <dt>Resource ID</dt>
+          <dd class="audit-mono">{{ item.entityId || 'Not recorded' }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card audit-detail-card audit-metadata-card">
+      <div class="section-title"><h2>Recorded metadata</h2></div>
+      @if (item.metadata != null) {
+        <pre>{{ metadata(item.metadata) }}</pre>
+      } @else {
+        <p class="muted">No additional metadata was recorded for this event.</p>
+      }
+    </section>
+  </div>
+}

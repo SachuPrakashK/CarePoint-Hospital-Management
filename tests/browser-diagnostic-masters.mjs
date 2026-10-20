@@ -104,7 +104,7 @@ async function createEditDeactivate(
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
 }
 try {
-  await page.goto('http://127.0.0.1:4200/auth/sign-in', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:4200/auth/login', { waitUntil: 'networkidle' });
   await page.getByLabel('Email address').fill(env.SEED_HOSPITAL_ADMIN_EMAIL);
   await page.getByLabel('Password').fill(env.SEED_HOSPITAL_ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();

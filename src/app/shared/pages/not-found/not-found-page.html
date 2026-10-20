@@ -1,0 +1,28 @@
+<main class="not-found-shell">
+  <section class="not-found-card" aria-labelledby="not-found-title">
+    <img class="not-found-logo" src="logo-full.svg" alt="MediCare+ Hospital Management System" />
+
+    <div class="not-found-illustration" aria-hidden="true">
+      <svg viewBox="0 0 180 150" role="img">
+        <path class="illustration-halo" d="M90 8a66 66 0 1 1 0 132A66 66 0 0 1 90 8Z" />
+        <path class="illustration-page" d="M54 36h54l22 22v57H54z" />
+        <path class="illustration-fold" d="M108 36v23h22" />
+        <path class="illustration-line" d="M70 76h42M70 89h31" />
+        <path class="illustration-cross" d="M86 101v22M75 112h22" />
+      </svg>
+    </div>
+
+    <p class="not-found-code">404</p>
+    <h1 id="not-found-title">Page Not Found</h1>
+    <p class="not-found-message">
+      The page you're looking for doesn't exist or may have been moved.
+    </p>
+
+    <button type="button" class="primary not-found-primary" (click)="goPrimary()">
+      {{ primaryLabel() }}
+    </button>
+    <button type="button" class="not-found-back" (click)="goBack()">
+      <span aria-hidden="true">&#8592;</span> Go Back
+    </button>
+  </section>
+</main>
