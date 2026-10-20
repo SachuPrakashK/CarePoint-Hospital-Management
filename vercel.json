@@ -1,21 +1,36 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "angular",
-  "installCommand": "npm install --include=dev && npm --prefix backend install --include=dev && npm --prefix backend run prisma:generate",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/hospital-management/browser",
-  "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 60
+  "services": {
+    "frontend": {
+      "root": ".",
+      "framework": "angular",
+      "installCommand": "npm install --include=dev",
+      "buildCommand": "npm run build",
+      "outputDirectory": "dist/hospital-management/browser"
+    },
+    "backend": {
+      "root": "backend",
+      "runtime": "container"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "handle": "filesystem"
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "backend"
+      }
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/health",
+      "destination": {
+        "service": "backend"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "frontend"
+      }
     }
   ]
 }
