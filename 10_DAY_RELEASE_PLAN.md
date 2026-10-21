@@ -182,3 +182,12 @@ Every completed task must record:
 - Tests executed: backend build passed; backend Vitest passed (6 files, 32 tests); Angular production build passed; full frontend suite passed (48 files, 141 tests). The password-page spec was also rerun separately after an earlier resource-contention timeout and passed (6 tests).
 - Actual result: identical retries return the original payment without a duplicate; key reuse with a different request is rejected; approved refunds reduce net collections, increase receivables, and recalculate invoice status.
 - Remaining risk: the migration and updated E2E payment workflow must run against isolated PostgreSQL before production. The migration must not be applied while an older API version is still accepting payments.
+
+### Continuous-integration release gate — 2026-10-21
+
+- Root cause: frontend and backend verification depended on local manual commands, so regressions could reach `develop` without a consistent automated gate.
+- Files changed: `.github/workflows/ci.yml` and this release plan.
+- API/database impact: none. The backend job uses a non-routable placeholder PostgreSQL URL only to validate and generate the Prisma client; it does not run migrations or connect to production.
+- Tests executed: the exact frontend build/test and backend Prisma validation/build/test commands were run locally before the workflow was added; workflow syntax and clean-install behavior were checked locally where practical.
+- Actual result: pushes and pull requests targeting `develop` or `main` now run isolated frontend and backend jobs with read-only repository permissions, locked dependency installs, timeouts, and cancellation of superseded runs.
+- Remaining risk: the first hosted GitHub Actions run must be observed and branch protection must require both jobs before merging. Database-backed E2E remains a separate staging gate.
