@@ -1,9 +1,8 @@
 import { prisma } from '../config/prisma.js';
 import { calendarRangeBounds } from '../utils/date-time.js';
+import { invoiceFinancials } from '../utils/invoice-financials.js';
 
 type ReportQuery = { from?: string; to?: string; department_id?: string };
-
-const money = (value: unknown) => Number(value ?? 0);
 
 export const escapeCsvCell = (value: unknown) => {
   const text = value == null ? '' : String(value);
@@ -146,27 +145,13 @@ export const reportsService = {
     let outstanding: number | null = null;
     if (canViewFinance) {
       revenue = invoices.reduce(
-        (sum, invoice) =>
-          sum +
-          invoice.payments.reduce(
-            (paid, payment) =>
-              paid +
-              money(payment.amount) -
-              payment.refunds
-                .filter((refund) => !['Rejected', 'Cancelled'].includes(refund.status))
-                .reduce((refunded, refund) => refunded + money(refund.amount), 0),
-            0,
-          ),
+        (sum, invoice) => sum + invoiceFinancials(invoice).netPaid.toNumber(),
         0,
       );
-      outstanding = invoices.reduce((sum, invoice) => {
-        const billed = invoice.items.reduce(
-          (total, item) => total + money(item.quantity) * money(item.unitPrice),
-          0,
-        );
-        const paid = invoice.payments.reduce((total, payment) => total + money(payment.amount), 0);
-        return sum + Math.max(0, billed - paid);
-      }, 0);
+      outstanding = invoices.reduce(
+        (sum, invoice) => sum + invoiceFinancials(invoice).balance.toNumber(),
+        0,
+      );
     }
 
     return {

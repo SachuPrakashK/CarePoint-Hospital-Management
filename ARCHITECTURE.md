@@ -1,4 +1,4 @@
-# CarePoint Phase 1 architecture
+# MediCare+ Phase 1 architecture
 
 The application uses Angular 22 standalone components, lazy feature routes, strict TypeScript, signal stores, reactive forms and functional guards/interceptors. `ClinicalStore` is an in-memory development adapter: replace it with feature API services and keep the public store API stable when the backend is connected.
 

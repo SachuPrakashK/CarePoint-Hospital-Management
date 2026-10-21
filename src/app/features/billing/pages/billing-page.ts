@@ -232,10 +232,12 @@ export class BillingPage {
       (sum: number, item: any) => sum + Number(item.quantity) * Number(item.unitPrice),
       0,
     );
-    const paid = (invoice.payments ?? []).reduce(
-      (sum: number, item: any) => sum + Number(item.amount),
-      0,
-    );
+    const paid = (invoice.payments ?? []).reduce((sum: number, item: any) => {
+      const refunded = (item.refunds ?? [])
+        .filter((refund: any) => refund.status === 'Approved')
+        .reduce((value: number, refund: any) => value + Number(refund.amount), 0);
+      return sum + Number(item.amount) - refunded;
+    }, 0);
     return { total, paid, balance: total - paid };
   }
   openInvoice(item: any = null) {

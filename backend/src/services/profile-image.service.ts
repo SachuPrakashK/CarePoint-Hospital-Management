@@ -1,10 +1,8 @@
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
-import { extname, resolve, sep } from 'node:path';
+import { extname } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { env } from '../config/env.js';
 import { authRepository } from '../repositories/auth.repository.js';
 import { AppError } from '../utils/app-error.js';
-const uploadRoot = resolve(env.FILE_UPLOAD_PATH, 'profiles');
+import { fileStorage } from './file-storage.service.js';
 const signatures = [
   {
     mime: 'image/jpeg',
@@ -23,11 +21,7 @@ const signatures = [
     ext: '.webp',
   },
 ];
-const safePath = (key: string) => {
-  const value = resolve(uploadRoot, key);
-  if (!value.startsWith(uploadRoot + sep)) throw new AppError(400, 'Invalid file reference.');
-  return value;
-};
+const storageKey = (key: string) => `profiles/${key}`;
 export const profileImageService = {
   async upload(userId: string, file?: Express.Multer.File) {
     if (!file)
@@ -39,26 +33,30 @@ export const profileImageService = {
       throw new AppError(422, 'Validation failed.', 'VALIDATION_ERROR', {
         image: ['Only valid JPEG, PNG or WebP images are allowed.'],
       });
-    await mkdir(uploadRoot, { recursive: true });
     const user = await authRepository.findUserById(userId);
     if (!user) throw new AppError(404, 'User was not found.');
     const key = `${randomUUID()}${kind.ext}`;
-    await writeFile(safePath(key), file.buffer, { flag: 'wx' });
-    await authRepository.updateAvatar(userId, key);
-    if (user.avatarKey) await unlink(safePath(user.avatarKey)).catch(() => undefined);
+    await fileStorage.put(storageKey(key), file.buffer);
+    try {
+      await authRepository.updateAvatar(userId, key);
+    } catch (error) {
+      await fileStorage.remove(storageKey(key)).catch(() => undefined);
+      throw error;
+    }
+    if (user.avatarKey) await fileStorage.remove(storageKey(user.avatarKey)).catch(() => undefined);
     return { url: '/api/v1/profile/image' };
   },
   async remove(userId: string) {
     const user = await authRepository.findUserById(userId);
     if (!user) throw new AppError(404, 'User was not found.');
     await authRepository.updateAvatar(userId, null);
-    if (user.avatarKey) await unlink(safePath(user.avatarKey)).catch(() => undefined);
+    if (user.avatarKey) await fileStorage.remove(storageKey(user.avatarKey)).catch(() => undefined);
   },
   async read(userId: string) {
     const user = await authRepository.findUserById(userId);
     if (!user?.avatarKey) throw new AppError(404, 'Profile image was not found.');
     return {
-      buffer: await readFile(safePath(user.avatarKey)),
+      buffer: await fileStorage.get(storageKey(user.avatarKey)),
       type:
         extname(user.avatarKey) === '.png'
           ? 'image/png'

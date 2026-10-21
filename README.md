@@ -1,6 +1,6 @@
 # Hospital Management Application
 
-CarePoint is an Angular 22 hospital operations application with a Node.js/Express REST API, Prisma ORM, PostgreSQL, and amCharts 5 dashboards.
+MediCare+ is an Angular 22 hospital operations application with a Node.js/Express REST API, Prisma ORM, PostgreSQL, and amCharts 5 dashboards.
 
 ## Technology
 
@@ -110,6 +110,8 @@ Configure these environment variables for Production, Preview and Development be
 - `ACCESS_TOKEN_SECRET` and `REFRESH_TOKEN_SECRET`, each at least 32 characters
 - `FRONTEND_URL` set to the production Vercel URL or custom domain
 - `FRONTEND_RESET_URL` set to `<FRONTEND_URL>/auth/reset-password`
+- `STORAGE_DRIVER=vercel-blob` so production uploads cannot fall back to ephemeral disk
+- A private Vercel Blob connection using `BLOB_READ_WRITE_TOKEN`, or `BLOB_STORE_ID` with Vercel OIDC
 - Optional mail variables: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
 - Optional notification variable: `NOTIFICATION_WEBHOOK_URL`
 
@@ -126,7 +128,7 @@ Then deploy from the repository root:
 vercel --prod
 ```
 
-Vercel Functions have ephemeral local storage. Profile images, hospital logos and uploaded documents currently use `FILE_UPLOAD_PATH`, so those uploads must be moved to durable object storage (such as Vercel Blob or S3) before relying on them in production.
+Documents, profile images and hospital logos use the shared storage adapter. Development defaults to `FILE_UPLOAD_PATH`; production fails closed unless `STORAGE_DRIVER=vercel-blob` and private Blob credentials are configured. Existing local objects are not automatically migrated—reconcile and copy them before enabling the affected production workflows.
 
 ## Troubleshooting
 
