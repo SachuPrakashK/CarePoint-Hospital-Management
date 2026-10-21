@@ -28,6 +28,7 @@ import { preferenceRoutes } from './routes/preference.routes.js';
 import { languageRoutes } from './routes/language.routes.js';
 import { supportRoutes } from './routes/support.routes.js';
 import { reportsRoutes } from './routes/reports.routes.js';
+import { prisma } from './config/prisma.js';
 
 export const createApp = () => {
   const app = express();
@@ -59,7 +60,22 @@ export const createApp = () => {
       legacyHeaders: false,
     }),
   );
-  app.get('/health', (_req, res) => res.json({ data: { status: 'ok' } }));
+  const live = (_req: express.Request, res: express.Response) =>
+    res.json({ data: { status: 'ok' } });
+  app.get('/health', live);
+  app.get('/health/live', live);
+  app.get('/health/ready', async (_req, res) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      res.json({ data: { status: 'ready' } });
+    } catch (error) {
+      logger.error({ err: error, event: 'readiness-check-failed' }, 'Readiness check failed');
+      res.status(503).json({
+        message: 'The service is temporarily unavailable.',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+  });
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/dashboard', dashboardRoutes);
   app.use('/api/v1/patients', patientRoutes);
