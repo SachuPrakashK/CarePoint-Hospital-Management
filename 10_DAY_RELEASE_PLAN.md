@@ -165,3 +165,11 @@ Every completed task must record:
 - Actual result: liveness remains infrastructure-independent; readiness now detects database failure without returning its internal error to the client.
 - Remaining risk: an external monitor/alert must still be configured to poll readiness and notify an operator.
 
+### Private durable-storage adapter — 2026-10-21
+
+- Root cause: documents, profile images, and hospital logos wrote to ephemeral container storage, allowing database references to survive after their files disappeared.
+- Files changed: shared storage/configuration, profile-image and hospital-logo services, backend dependency manifests, environment example, README, and storage safety tests.
+- API/database impact: existing API routes and database keys remain compatible. Production now requires `STORAGE_DRIVER=vercel-blob`; private Blob objects are stored under `medicare-private/`. No schema change.
+- Tests executed: backend TypeScript build passed; backend Vitest passed (5 files, 29 tests), including unsafe storage-key rejection.
+- Actual result: all three upload types use one adapter; production cannot silently select local disk; provider SDK loading is lazy so liveness remains fast.
+- Remaining risk: the Blob store and environment binding must be created, new-object persistence must be tested across redeployment, and existing database keys must be reconciled against/copy available local objects before this release gate is closed.
