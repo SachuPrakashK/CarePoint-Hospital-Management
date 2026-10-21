@@ -159,10 +159,10 @@ Every completed task must record:
 ### Database-aware readiness — 2026-10-21
 
 - Root cause: the only health endpoint returned `ok` without verifying PostgreSQL connectivity, allowing an unavailable API to appear healthy.
-- Files changed: `backend/src/app.ts`, `backend/tests/app.test.ts`.
+- Files changed: `backend/src/app.ts`, `backend/tests/app.test.ts`, `vercel.json`.
 - API/database impact: added `GET /health/live` and `GET /health/ready`; retained `GET /health` for compatibility. Readiness executes `SELECT 1` and returns a generic `503` on failure. No schema change.
 - Tests executed: backend TypeScript build passed; backend Vitest passed (4 files, 25 tests), including ready, unavailable, and response-redaction cases.
-- Actual result: liveness remains infrastructure-independent; readiness now detects database failure without returning its internal error to the client.
+- Actual result: liveness remains infrastructure-independent; readiness now detects database failure without returning its internal error to the client. Vercel routes the exact and nested health paths to the backend service.
 - Remaining risk: an external monitor/alert must still be configured to poll readiness and notify an operator.
 
 ### Private durable-storage adapter — 2026-10-21
