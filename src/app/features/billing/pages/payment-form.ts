@@ -16,6 +16,7 @@ export class PaymentForm {
   readonly dirtyChanged = output<boolean>();
   submitting = false;
   error = '';
+  private readonly idempotencyKey = crypto.randomUUID();
   readonly form = this.fb.nonNullable.group({
     amount: [0, [Validators.required, Validators.min(0.01)]],
     method: ['Cash', Validators.required],
@@ -38,7 +39,13 @@ export class PaymentForm {
     this.error = '';
     try {
       const value = this.form.getRawValue();
-      await this.store.pay(this.invoiceId(), value.amount, value.method, value.reference.trim());
+      await this.store.pay(
+        this.invoiceId(),
+        value.amount,
+        value.method,
+        value.reference.trim(),
+        this.idempotencyKey,
+      );
       this.form.markAsPristine();
       this.dirtyChanged.emit(false);
       this.saved.emit();

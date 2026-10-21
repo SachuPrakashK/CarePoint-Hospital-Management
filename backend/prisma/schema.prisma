@@ -943,6 +943,7 @@ model Payment {
   method        String
   reference     String?
   actorId       String
+  idempotencyKey String  @unique
   createdAt     DateTime @default(now())
   invoice       Invoice  @relation(fields: [invoiceId], references: [id])
   refunds       Refund[]

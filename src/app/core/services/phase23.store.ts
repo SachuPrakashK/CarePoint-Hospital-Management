@@ -107,7 +107,12 @@ export class Phase23Store {
     );
     const paid = this.payments()
       .filter((x) => x.invoiceId === invoiceId)
-      .reduce((s, x) => s + Number(x.amount), 0);
+      .reduce((sum, payment) => {
+        const refunded = this.refunds()
+          .filter((refund) => refund.paymentId === payment.id && refund.status === 'Approved')
+          .reduce((value, refund) => value + Number(refund.amount), 0);
+        return sum + Number(payment.amount) - refunded;
+      }, 0);
     return { subtotal, discount: 0, tax: 0, total: subtotal, paid, balance: subtotal - paid };
   }
   paid(invoiceId: string) {
@@ -126,8 +131,14 @@ export class Phase23Store {
     await this.loadAll();
     this.dashboard.invalidate(...domains);
   }
-  async pay(invoiceId: string, amount: number, method: string, reference: string) {
-    await firstValueFrom(this.api.pay(invoiceId, { amount, method, reference }));
+  async pay(
+    invoiceId: string,
+    amount: number,
+    method: string,
+    reference: string,
+    idempotencyKey: string,
+  ) {
+    await firstValueFrom(this.api.pay(invoiceId, { amount, method, reference }, idempotencyKey));
     await this.changed('billing');
   }
   async requestRefund(paymentId: string, amount: number, reason: string) {

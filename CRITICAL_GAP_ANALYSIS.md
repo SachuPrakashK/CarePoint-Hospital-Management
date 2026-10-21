@@ -17,8 +17,8 @@ Audit date: **2026-10-21**
 | Lab/radiology | Implemented | Persisted routes/services and browser/API scripts | Verify order/result permissions and audit coverage |
 | Admissions, beds and discharge | Implemented | Admission service/routes and E2E scripts | Verify concurrent bed assignment, discharge and bed release |
 | Pharmacy and inventory | Implemented | Batch/stock transactions, dispensing/procurement flows and E2E scripts | Verify atomic stock movement and duplicate completion rejection |
-| Billing and refunds | Implemented but high-risk defects likely | Decimal arithmetic and transactions exist; no request idempotency; payment calculation does not lock invoice/payments; invoice status ignores later approved refunds | Add concurrency/idempotency and reconciliation tests before release |
-| Receivables reporting | Implemented but calculation requires correction | Reports calculate billed minus gross payments and do not subtract approved refunds | Correct definition and add verification tests; aging requires a due-date rule/schema decision |
+| Billing and refunds | Code fix implemented; database E2E pending | Required unique idempotency key, per-invoice transaction lock, serializable transaction, shared refund-aware calculations | Apply migration and run duplicate/concurrent/refund staging tests before closing gate |
+| Receivables reporting | Net balance correction implemented; aging deferred | Reports now use charges minus net payments after approved refunds | Verify totals against staging source rows; aging still requires a due-date rule/schema decision |
 | Management reporting | Implemented | Persisted counts, date/department filters, finance permission gate, CSV formula neutralization | Reconcile selected KPIs to source records |
 | Internal notifications | Implemented | Database notifications and user-scoped reads | Verify isolation and failure behavior |
 | Patient appointment delivery | Missing but potentially feasible | Existing provider only sends password-reset email/webhook; no reminder model, consent or delivery log | Implement only if provider and consent decisions are supplied |

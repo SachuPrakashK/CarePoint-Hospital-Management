@@ -173,3 +173,12 @@ Every completed task must record:
 - Tests executed: backend TypeScript build passed; backend Vitest passed (5 files, 29 tests), including unsafe storage-key rejection.
 - Actual result: all three upload types use one adapter; production cannot silently select local disk; provider SDK loading is lazy so liveness remains fast.
 - Remaining risk: the Blob store and environment binding must be created, new-object persistence must be tested across redeployment, and existing database keys must be reconciled against/copy available local objects before this release gate is closed.
+
+### Payment idempotency and refund reconciliation — 2026-10-21
+
+- Root cause: concurrent payment requests could validate against the same pre-payment balance, retries had no stable idempotency key, and approved refunds did not recalculate invoice status or receivables.
+- Files changed: Prisma schema/migration, billing routes/service, shared invoice financial calculation, reports, Angular API/store/payment form and billing totals, plus unit/E2E coverage.
+- API/database impact: `POST /api/v1/billing/:id/payments` now requires a UUID `Idempotency-Key` header. `Payment.idempotencyKey` is unique and required; legacy rows receive deterministic `legacy-<payment-id>` values during migration. Payment processing serializes by invoice inside a serializable transaction.
+- Tests executed: backend build passed; backend Vitest passed (6 files, 32 tests); Angular production build passed; full frontend suite passed (48 files, 141 tests). The password-page spec was also rerun separately after an earlier resource-contention timeout and passed (6 tests).
+- Actual result: identical retries return the original payment without a duplicate; key reuse with a different request is rejected; approved refunds reduce net collections, increase receivables, and recalculate invoice status.
+- Remaining risk: the migration and updated E2E payment workflow must run against isolated PostgreSQL before production. The migration must not be applied while an older API version is still accepting payments.

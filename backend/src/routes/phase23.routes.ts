@@ -398,10 +398,18 @@ phase23Routes.post(
       }),
     }),
   ),
-  send(
-    async (q) => ({ data: await service.billing.payment(q.params.id, q.body, q.auth!.userId) }),
-    201,
-  ),
+  send(async (q) => {
+    const idempotencyKey = z.uuid().safeParse(q.get('idempotency-key'));
+    if (!idempotencyKey.success)
+      throw new AppError(
+        422,
+        'A valid Idempotency-Key header is required.',
+        'IDEMPOTENCY_KEY_REQUIRED',
+      );
+    return {
+      data: await service.billing.payment(q.params.id, q.body, q.auth!.userId, idempotencyKey.data),
+    };
+  }, 201),
 );
 phase23Routes.put(
   '/billing/:id',

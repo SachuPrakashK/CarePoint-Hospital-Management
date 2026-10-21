@@ -1,15 +1,17 @@
 import 'dotenv/config';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const api = `http://localhost:${process.env.PORT || 3000}/api/v1`;
-const call = async (path, token, method = 'GET', body) => {
+const call = async (path, token, method = 'GET', body, extraHeaders = {}) => {
   const response = await fetch(`${api}${path}`, {
     method,
     headers: {
       'content-type': 'application/json',
       ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...extraHeaders,
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
@@ -97,11 +99,31 @@ const invoice = (
     ],
   })
 ).data;
-await call(`/billing/${invoice.id}/payments`, token, 'POST', {
-  amount: 251,
-  method: 'Cash',
-  reference: `E2E-${stamp}`,
-});
+const paymentKey = randomUUID();
+const payment = await call(
+  `/billing/${invoice.id}/payments`,
+  token,
+  'POST',
+  {
+    amount: 251,
+    method: 'Cash',
+    reference: `E2E-${stamp}`,
+  },
+  { 'idempotency-key': paymentKey },
+);
+const retriedPayment = await call(
+  `/billing/${invoice.id}/payments`,
+  token,
+  'POST',
+  {
+    amount: 251,
+    method: 'Cash',
+    reference: `E2E-${stamp}`,
+  },
+  { 'idempotency-key': paymentKey },
+);
+assert.equal(retriedPayment.data.id, payment.data.id);
+assert.equal(await prisma.payment.count({ where: { idempotencyKey: paymentKey } }), 1);
 assert.equal((await prisma.invoice.findUnique({ where: { id: invoice.id } })).status, 'Paid');
 
 const policy = (

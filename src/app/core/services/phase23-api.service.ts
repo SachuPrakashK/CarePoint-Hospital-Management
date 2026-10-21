@@ -92,8 +92,10 @@ export class Phase23ApiService {
   cancelInvoice(id: string) {
     return this.http.delete<{ data: any }>(`/api/v1/billing/${id}`);
   }
-  pay(id: string, v: any) {
-    return this.http.post<{ data: any }>(`/api/v1/billing/${id}/payments`, v);
+  pay(id: string, v: any, idempotencyKey: string) {
+    return this.http.post<{ data: any }>(`/api/v1/billing/${id}/payments`, v, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
   }
   refunds(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/billing/refunds', { params: this.params(q) });

@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../config/prisma.js';
 import { AppError } from '../utils/app-error.js';
+import { invoiceFinancials } from '../utils/invoice-financials.js';
 import { notificationService } from './notification.service.js';
 const db = prisma as any;
 const page = (query: any) => ({
@@ -331,7 +332,7 @@ export const phase23Service = {
               }
             : {}),
         },
-        { patient: true, items: true, payments: true },
+        { patient: true, items: true, payments: { include: { refunds: true } } },
         [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
       );
     },
@@ -420,58 +421,78 @@ export const phase23Service = {
         throw new AppError(409, 'A paid invoice cannot be cancelled.', 'CONFLICT');
       return db.invoice.update({ where: { id }, data: { status: 'Cancelled' } });
     },
-    payment: async (id: string, v: any, actorId: string) => {
-      const payment = await prisma.$transaction(async (tx: any) => {
-        const invoice = await tx.invoice.findUnique({
-          where: { id },
-          include: { items: true, payments: true },
+    payment: async (id: string, v: any, actorId: string, idempotencyKey: string) => {
+      const outcome = await prisma.$transaction(
+        async (tx: any) => {
+          await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+          const previous = await tx.payment.findUnique({ where: { idempotencyKey } });
+          if (previous) {
+            const sameRequest =
+              previous.invoiceId === id &&
+              previous.amount.eq(new Prisma.Decimal(v.amount)) &&
+              previous.method === v.method &&
+              (previous.reference ?? '') === (v.reference ?? '');
+            if (!sameRequest)
+              throw new AppError(
+                409,
+                'The idempotency key was already used for a different payment.',
+                'IDEMPOTENCY_KEY_REUSED',
+              );
+            return { payment: previous, created: false };
+          }
+          const invoice = await tx.invoice.findUnique({
+            where: { id },
+            include: { items: true, payments: { include: { refunds: true } } },
+          });
+          if (!invoice) throw missing('Invoice');
+          if (invoice.status === 'Cancelled')
+            throw new AppError(409, 'A cancelled invoice cannot receive payments.', 'CONFLICT');
+          const financials = invoiceFinancials(invoice);
+          const amount = new Prisma.Decimal(v.amount);
+          if (amount.lte(0) || amount.gt(financials.balance))
+            throw new AppError(422, 'Payment exceeds the outstanding balance.', 'VALIDATION_ERROR');
+          const result = await tx.payment.create({
+            data: {
+              receiptNumber: code('RCT'),
+              invoiceId: id,
+              amount,
+              method: v.method,
+              reference: v.reference,
+              actorId,
+              idempotencyKey,
+            },
+          });
+          await tx.invoice.update({
+            where: { id },
+            data: {
+              status: financials.netPaid.plus(amount).eq(financials.total)
+                ? 'Paid'
+                : 'Partially Paid',
+            },
+          });
+          await tx.auditLog.create({
+            data: {
+              userId: actorId,
+              action: 'PAYMENT',
+              module: 'billing',
+              entityType: 'Payment',
+              entityId: result.id,
+              metadata: { invoiceId: id, amount: amount.toString() },
+            },
+          });
+          return { payment: result, created: true };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+      if (outcome.created)
+        await notificationService.notifyRoles(['HOSPITAL_ADMIN', 'BILLING_STAFF'], {
+          type: 'PAYMENT_RECEIVED',
+          title: 'Payment received',
+          message: `Receipt ${outcome.payment.receiptNumber} was recorded.`,
+          relatedEntityType: 'Invoice',
+          relatedEntityId: id,
         });
-        if (!invoice) throw missing('Invoice');
-        const total = invoice.items.reduce(
-          (s: any, i: any) => s.plus(i.quantity.mul(i.unitPrice)),
-          new Prisma.Decimal(0),
-        );
-        const paid = invoice.payments.reduce(
-          (s: any, p: any) => s.plus(p.amount),
-          new Prisma.Decimal(0),
-        );
-        const amount = new Prisma.Decimal(v.amount);
-        if (amount.lte(0) || paid.plus(amount).gt(total))
-          throw new AppError(422, 'Payment exceeds the outstanding balance.', 'VALIDATION_ERROR');
-        const result = await tx.payment.create({
-          data: {
-            receiptNumber: code('RCT'),
-            invoiceId: id,
-            amount,
-            method: v.method,
-            reference: v.reference,
-            actorId,
-          },
-        });
-        await tx.invoice.update({
-          where: { id },
-          data: { status: paid.plus(amount).eq(total) ? 'Paid' : 'Partially Paid' },
-        });
-        await tx.auditLog.create({
-          data: {
-            userId: actorId,
-            action: 'PAYMENT',
-            module: 'billing',
-            entityType: 'Payment',
-            entityId: result.id,
-            metadata: { invoiceId: id, amount: amount.toString() },
-          },
-        });
-        return result;
-      });
-      await notificationService.notifyRoles(['HOSPITAL_ADMIN', 'BILLING_STAFF'], {
-        type: 'PAYMENT_RECEIVED',
-        title: 'Payment received',
-        message: `Receipt ${payment.receiptNumber} was recorded.`,
-        relatedEntityType: 'Invoice',
-        relatedEntityId: id,
-      });
-      return payment;
+      return outcome.payment;
     },
     refunds: (q: any) => {
       const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
@@ -544,6 +565,17 @@ export const phase23Service = {
           where: { id },
           data: { status, approvedById: actorId },
         });
+        if (status === 'Approved') {
+          const invoice = await tx.invoice.findUnique({
+            where: { id: refund.payment.invoiceId },
+            include: { items: true, payments: { include: { refunds: true } } },
+          });
+          if (!invoice) throw missing('Invoice');
+          await tx.invoice.update({
+            where: { id: invoice.id },
+            data: { status: invoiceFinancials(invoice).status },
+          });
+        }
         await tx.auditLog.create({
           data: {
             userId: actorId,
