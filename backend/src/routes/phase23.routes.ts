@@ -57,7 +57,7 @@ const sortKeysByPath: Record<string, readonly string[]> = {
     'charges',
   ],
   '/billing': ['number', 'patient', 'createdAt', 'status'],
-  '/billing-payments': ['receiptNumber', 'invoice', 'paidAt', 'amount', 'method', 'reference'],
+  '/billing-payments': ['receiptNumber', 'invoice', 'createdAt', 'amount', 'method', 'reference'],
   '/billing/refunds': ['createdAt', 'payment', 'amount', 'reason', 'status'],
   '/insurance/providers': ['name', 'code', 'contact', 'address'],
   '/insurance/policies': [
@@ -371,18 +371,29 @@ phase23Routes.post(
         items: z
           .array(
             z.object({
-              source: z.string(),
-              sourceId: z.string(),
-              description: z.string(),
-              quantity: z.number().positive(),
-              unitPrice: z.number().nonnegative(),
+              source: z.string().trim().min(1).max(80),
+              sourceId: z.string().trim().min(1).max(120),
+              description: z.string().trim().min(2).max(240),
+              quantity: z.number().positive().max(100000).multipleOf(0.01),
+              unitPrice: z.number().nonnegative().max(100000000).multipleOf(0.01),
             }),
           )
           .min(1),
       }),
     ),
   ),
-  send(async (q) => ({ data: await service.billing.create(q.body) }), 201),
+  send(async (q) => {
+    const idempotencyKey = z.uuid().safeParse(q.get('idempotency-key'));
+    if (!idempotencyKey.success)
+      throw new AppError(
+        422,
+        'A valid Idempotency-Key header is required.',
+        'IDEMPOTENCY_KEY_REQUIRED',
+      );
+    return {
+      data: await service.billing.create(q.body, q.auth!.userId, idempotencyKey.data),
+    };
+  }, 201),
 );
 phase23Routes.post(
   '/billing/:id/payments',
@@ -423,24 +434,24 @@ phase23Routes.put(
         items: z
           .array(
             z.object({
-              source: z.string(),
-              sourceId: z.string(),
-              description: z.string(),
-              quantity: z.number().positive(),
-              unitPrice: z.number().nonnegative(),
+              source: z.string().trim().min(1).max(80),
+              sourceId: z.string().trim().min(1).max(120),
+              description: z.string().trim().min(2).max(240),
+              quantity: z.number().positive().max(100000).multipleOf(0.01),
+              unitPrice: z.number().nonnegative().max(100000000).multipleOf(0.01),
             }),
           )
           .min(1),
       }),
     }),
   ),
-  send(async (q) => ({ data: await service.billing.update(q.params.id, q.body) })),
+  send(async (q) => ({ data: await service.billing.update(q.params.id, q.body, q.auth!.userId) })),
 );
 phase23Routes.delete(
   '/billing/:id',
   requirePermissions('billing.create'),
   validate(id),
-  send(async (q) => ({ data: await service.billing.cancel(q.params.id) })),
+  send(async (q) => ({ data: await service.billing.cancel(q.params.id, q.auth!.userId) })),
 );
 phase23Routes.post(
   '/billing/payments/:id/refunds',

@@ -6,6 +6,7 @@ import { PatientStore } from '../../patients/patient.store';
   selector: 'app-bill-form',
   imports: [ReactiveFormsModule],
   templateUrl: './bill-form.html',
+  styleUrl: './bill-form.scss',
 })
 export class BillForm implements OnChanges {
   private fb = inject(FormBuilder);
@@ -13,14 +14,17 @@ export class BillForm implements OnChanges {
   readonly patients = inject(PatientStore);
   entity = input<any | null>(null);
   saved = output<void>();
+  cancelled = output<void>();
   dirtyChanged = output<boolean>();
   submitting = false;
   error = '';
+  private readonly idempotencyKey = crypto.randomUUID();
   form = this.fb.nonNullable.group({
     patientId: ['', Validators.required],
     items: this.fb.array([this.item()]),
   });
   constructor() {
+    this.patients.pageSize.set(100);
     void this.patients.load();
     this.form.valueChanges.subscribe(() => this.dirtyChanged.emit(this.form.dirty));
   }
@@ -29,11 +33,20 @@ export class BillForm implements OnChanges {
   }
   private item(v: any = {}) {
     return this.fb.nonNullable.group({
-      source: [v.source ?? 'Manual', Validators.required],
+      source: [v.source ?? 'Manual', [Validators.required, Validators.maxLength(80)]],
       sourceId: [v.sourceId ?? crypto.randomUUID(), Validators.required],
-      description: [v.description ?? '', Validators.required],
-      quantity: [Number(v.quantity ?? 1), [Validators.required, Validators.min(0.01)]],
-      unitPrice: [Number(v.unitPrice ?? 0), [Validators.required, Validators.min(0)]],
+      description: [
+        v.description ?? '',
+        [Validators.required, Validators.minLength(2), Validators.maxLength(240)],
+      ],
+      quantity: [
+        Number(v.quantity ?? 1),
+        [Validators.required, Validators.min(0.01), Validators.max(100000)],
+      ],
+      unitPrice: [
+        Number(v.unitPrice ?? 0),
+        [Validators.required, Validators.min(0), Validators.max(100000000)],
+      ],
     });
   }
   ngOnChanges() {
@@ -55,13 +68,24 @@ export class BillForm implements OnChanges {
       .getRawValue()
       .reduce((s, x) => s + Number(x.quantity) * Number(x.unitPrice), 0);
   }
+  lineTotal(index: number) {
+    const item = this.items.at(index).getRawValue();
+    return Number(item.quantity) * Number(item.unitPrice);
+  }
+  money(value: number) {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(value);
+  }
   async submit() {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.submitting) return;
     this.submitting = true;
     this.error = '';
     try {
-      await this.store.saveInvoice(this.form.getRawValue(), this.entity()?.id);
+      await this.store.saveInvoice(this.form.getRawValue(), this.idempotencyKey, this.entity()?.id);
       this.form.markAsPristine();
       this.dirtyChanged.emit(false);
       this.saved.emit();

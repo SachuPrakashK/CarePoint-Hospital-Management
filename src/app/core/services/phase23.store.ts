@@ -122,10 +122,13 @@ export class Phase23Store {
     return this.totals(invoiceId).balance;
   }
   outstanding() {
-    return this.invoices().reduce((s, x) => s + this.balance(x.id), 0);
+    return this.invoices().reduce((s, x) => s + Math.max(0, this.balance(x.id)), 0);
   }
   revenue() {
-    return this.payments().reduce((s, x) => s + Number(x.amount), 0);
+    const approvedRefunds = this.refunds()
+      .filter((refund) => refund.status === 'Approved')
+      .reduce((sum, refund) => sum + Number(refund.amount), 0);
+    return this.payments().reduce((s, x) => s + Number(x.amount), 0) - approvedRefunds;
   }
   private async changed(...domains: DashboardDomain[]) {
     await this.loadAll();
@@ -146,7 +149,10 @@ export class Phase23Store {
     await this.changed('billing');
   }
   async approveRefund(id: string, _actor: string) {
-    await firstValueFrom(this.api.resolveRefund(id, 'Approved'));
+    await this.resolveRefund(id, 'Approved');
+  }
+  async resolveRefund(id: string, status: 'Approved' | 'Rejected') {
+    await firstValueFrom(this.api.resolveRefund(id, status));
     await this.changed('billing');
   }
   async bookAmbulance(v: any) {
@@ -211,8 +217,10 @@ export class Phase23Store {
     await firstValueFrom(id ? this.api.updateRadiology(id, v) : this.api.createRadiology(v));
     await this.changed('radiology');
   }
-  async saveInvoice(v: any, id?: string) {
-    await firstValueFrom(id ? this.api.updateInvoice(id, v) : this.api.createInvoice(v));
+  async saveInvoice(v: any, idempotencyKey: string, id?: string) {
+    await firstValueFrom(
+      id ? this.api.updateInvoice(id, v) : this.api.createInvoice(v, idempotencyKey),
+    );
     await this.changed('billing');
   }
   async saveProvider(v: any, id?: string) {

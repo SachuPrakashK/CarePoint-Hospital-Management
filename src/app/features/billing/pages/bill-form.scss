@@ -1,0 +1,137 @@
+.invoice-form-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fbff;
+}
+.invoice-form-section,
+.invoice-summary {
+  border: 1px solid var(--color-border);
+  border-radius: 0.8rem;
+  background: #fff;
+}
+.invoice-form-section {
+  padding: 1.1rem;
+}
+.section-heading,
+.line-item__title,
+.invoice-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.section-heading {
+  margin-bottom: 1rem;
+}
+.section-heading h3 {
+  margin: 0 0 0.2rem;
+  color: #0f4c75;
+  font-size: 1rem;
+}
+.section-heading p,
+.invoice-summary small {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+}
+.line-items {
+  display: grid;
+  gap: 0.8rem;
+}
+.line-item {
+  overflow: hidden;
+  border: 1px solid #dce8f0;
+  border-radius: 0.7rem;
+}
+.line-item__title {
+  padding: 0.7rem 0.9rem;
+  background: #f4f9fd;
+  color: #0f4c75;
+  font-size: 0.82rem;
+}
+.line-item__remove {
+  border: 0;
+  background: transparent;
+  color: var(--color-danger);
+  font: inherit;
+  font-weight: 600;
+}
+.line-item__remove:disabled {
+  opacity: 0.4;
+}
+.line-item__grid {
+  display: grid;
+  grid-template-columns: 1.5fr 0.8fr 0.65fr 0.8fr 0.75fr;
+  gap: 0.9rem;
+  align-items: end;
+  padding: 1rem;
+}
+.line-total {
+  display: grid;
+  gap: 0.4rem;
+  min-height: 4.2rem;
+  align-content: center;
+  padding-left: 0.8rem;
+  border-left: 1px solid var(--color-border);
+}
+.line-total span {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+}
+.line-total strong {
+  color: #0f4c75;
+}
+.invoice-summary {
+  flex-wrap: wrap;
+  padding: 1rem 1.1rem;
+}
+.invoice-summary strong {
+  margin-left: auto;
+  color: #0f4c75;
+  font-size: 1.3rem;
+}
+.invoice-summary small {
+  flex-basis: 100%;
+}
+.form-error {
+  padding: 0.8rem 1rem;
+  border: 1px solid #f2c8c4;
+  border-radius: 0.6rem;
+  background: #fff4f2;
+  color: var(--color-danger);
+}
+.field-hint {
+  color: var(--color-muted);
+}
+@media (max-width: 900px) {
+  .line-item__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .line-item__description,
+  .line-total {
+    grid-column: 1/-1;
+  }
+  .line-total {
+    min-height: auto;
+    padding: 0.8rem 0 0;
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+}
+@media (max-width: 600px) {
+  .invoice-form-body {
+    padding: 1rem;
+  }
+  .section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .line-item__grid {
+    grid-template-columns: 1fr;
+  }
+  .line-item__description,
+  .line-total {
+    grid-column: auto;
+  }
+}

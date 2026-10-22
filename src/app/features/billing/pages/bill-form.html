@@ -1,1 +1,124 @@
-<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()"><div class="crud-modal__body"><label class="field"><span class="form-label">Patient <span class="required-indicator">*</span></span><select formControlName="patientId"><option value="">Select</option>@for(p of patients.patients();track p.id){<option [value]="p.id">{{p.firstName}} {{p.lastName}} · {{p.mrn}}</option>}</select></label><div formArrayName="items">@for(row of items.controls;track $index;let i=$index){<div class="form-grid" [formGroupName]="i"><label class="field"><span class="form-label">Description <span class="required-indicator">*</span></span><input formControlName="description"></label><label class="field"><span class="form-label">Source <span class="required-indicator">*</span></span><input formControlName="source"></label><label class="field"><span class="form-label">Quantity <span class="required-indicator">*</span></span><input type="number" min="0.01" step="0.01" formControlName="quantity"></label><label class="field"><span class="form-label">Unit price <span class="required-indicator">*</span></span><input type="number" min="0" step="0.01" formControlName="unitPrice"></label><button type="button" class="secondary" [disabled]="items.length===1" (click)="remove(i)">Remove item</button></div>}</div><button type="button" class="secondary" (click)="add()">+ Add item</button><p><strong>Backend-validated total: ₹{{total()}}</strong></p>@if(error){<p class="error">{{error}}</p>}</div><div class="crud-modal__footer"><button class="primary" [disabled]="submitting">{{submitting?'Saving...':entity()?'Update':'Create'}}</button></div></form>
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="crud-modal__body invoice-form-body">
+    @if (error) {
+      <div class="form-error" role="alert">{{ error }}</div>
+    }
+    <section class="invoice-form-section">
+      <div class="section-heading">
+        <div>
+          <h3>Patient information</h3>
+          <p>Select the registered patient who will receive this invoice.</p>
+        </div>
+      </div>
+      <label class="field">
+        <span class="form-label">Patient <span class="required-indicator">*</span></span>
+        <select formControlName="patientId">
+          <option value="">Select patient</option>
+          @for (patient of patients.patients(); track patient.id) {
+            <option [value]="patient.id">
+              {{ patient.firstName }} {{ patient.lastName }} · {{ patient.mrn }}
+            </option>
+          }
+        </select>
+        @if (form.controls.patientId.touched && form.controls.patientId.invalid) {
+          <span class="field-error">Select a valid patient.</span>
+        }
+        @if (patients.loading()) {
+          <small class="field-hint">Loading registered patients…</small>
+        }
+        @if (patients.error()) {
+          <span class="field-error">{{ patients.error() }}</span>
+        }
+      </label>
+    </section>
+    <section class="invoice-form-section" formArrayName="items">
+      <div class="section-heading">
+        <div>
+          <h3>Invoice line items</h3>
+          <p>Amounts are validated again by the server before they are persisted.</p>
+        </div>
+        <button type="button" class="secondary" (click)="add()">+ Add line item</button>
+      </div>
+      <div class="line-items">
+        @for (row of items.controls; track $index; let index = $index) {
+          <article class="line-item" [formGroupName]="index">
+            <div class="line-item__title">
+              <strong>Item {{ index + 1 }}</strong
+              ><button
+                type="button"
+                class="line-item__remove"
+                [disabled]="items.length === 1"
+                (click)="remove(index)"
+              >
+                Remove
+              </button>
+            </div>
+            <div class="line-item__grid">
+              <label class="field line-item__description"
+                ><span class="form-label"
+                  >Description <span class="required-indicator">*</span></span
+                ><input
+                  formControlName="description"
+                  maxlength="240"
+                  placeholder="Enter service or charge description"
+                />
+                @if (row.get('description')?.touched && row.get('description')?.invalid) {
+                  <span class="field-error">Enter at least 2 characters.</span>
+                }
+              </label>
+              <label class="field"
+                ><span class="form-label">Source <span class="required-indicator">*</span></span
+                ><input formControlName="source" maxlength="80" placeholder="e.g. Manual" />
+                @if (row.get('source')?.touched && row.get('source')?.invalid) {
+                  <span class="field-error">Enter the charge source.</span>
+                }
+              </label>
+              <label class="field"
+                ><span class="form-label">Quantity <span class="required-indicator">*</span></span
+                ><input
+                  type="number"
+                  min="0.01"
+                  max="100000"
+                  step="0.01"
+                  formControlName="quantity"
+                />
+                @if (row.get('quantity')?.touched && row.get('quantity')?.invalid) {
+                  <span class="field-error">Enter a positive quantity.</span>
+                }
+              </label>
+              <label class="field"
+                ><span class="form-label">Unit price <span class="required-indicator">*</span></span
+                ><input
+                  type="number"
+                  min="0"
+                  max="100000000"
+                  step="0.01"
+                  formControlName="unitPrice"
+                  placeholder="Enter unit price"
+                />
+                @if (row.get('unitPrice')?.touched && row.get('unitPrice')?.invalid) {
+                  <span class="field-error">Enter a valid amount.</span>
+                }
+              </label>
+              <div class="line-total">
+                <span>Line total</span><strong>{{ money(lineTotal(index)) }}</strong>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+    <aside class="invoice-summary" aria-live="polite">
+      <span>Grand total</span><strong>{{ money(total()) }}</strong
+      ><small>Discount and tax are not configured in the current billing model.</small>
+    </aside>
+  </div>
+  <footer class="crud-modal__footer">
+    <button type="button" class="secondary" [disabled]="submitting" (click)="cancelled.emit()">
+      Cancel
+    </button>
+    <button class="primary" type="submit" [disabled]="form.invalid || submitting">
+      {{ submitting ? 'Saving…' : entity() ? 'Update Invoice' : 'Create Invoice' }}
+    </button>
+  </footer>
+</form>

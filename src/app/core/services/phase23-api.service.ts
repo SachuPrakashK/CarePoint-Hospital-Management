@@ -83,8 +83,10 @@ export class Phase23ApiService {
   invoice(id: string) {
     return this.http.get<{ data: any }>(`/api/v1/billing/${id}`);
   }
-  createInvoice(v: any) {
-    return this.http.post<{ data: any }>('/api/v1/billing', v);
+  createInvoice(v: any, idempotencyKey: string) {
+    return this.http.post<{ data: any }>('/api/v1/billing', v, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
   }
   updateInvoice(id: string, v: any) {
     return this.http.put<{ data: any }>(`/api/v1/billing/${id}`, v);
