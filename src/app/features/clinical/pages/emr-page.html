@@ -1,9 +1,21 @@
 @if (id() && summaryLoading()) {
-  <section class="card tab-state loading-state loading-state--page" role="status" aria-live="polite">Loading clinical record…</section>
+  <section
+    class="card tab-state loading-state loading-state--page"
+    role="status"
+    aria-live="polite"
+  >
+    Loading clinical record…
+  </section>
 } @else if (id() && detailsNotFound()) {
-  <app-empty-state title="Clinical record not found" description="The requested patient clinical record does not exist or is no longer available." />
+  <app-empty-state
+    title="Clinical record not found"
+    description="The requested patient clinical record does not exist or is no longer available."
+  />
 } @else if (id() && summaryError()) {
-  <section class="card tab-state error-state" role="alert">{{ summaryError() }} <button type="button" class="secondary" (click)="loadSummary(id())">Retry</button></section>
+  <section class="card tab-state error-state" role="alert">
+    {{ summaryError() }}
+    <button type="button" class="secondary" (click)="loadSummary(id())">Retry</button>
+  </section>
 } @else if (patient(); as p) {
   <div class="page-head">
     <div>
@@ -16,7 +28,7 @@
     </div>
     <a class="secondary button-link" [routerLink]="['/patients', p.id]">Patient profile</a>
   </div>
-  <div class="tabs">
+  <div class="tabs" role="tablist" aria-label="Clinical record sections">
     <button [class.active]="tab() === 'summary'" (click)="tab.set('summary')">Medical record</button
     ><button [class.active]="tab() === 'timeline'" (click)="tab.set('timeline')">Timeline</button
     ><button [class.active]="tab() === 'labs'" (click)="tab.set('labs')">Laboratory</button
@@ -50,9 +62,21 @@
             <p class="muted">No consultation records.</p>
           }
           <h3>Chronic conditions</h3>
-          <p>@for (h of histories('Chronic'); track h.id) { <span>{{ h.condition | displayValue }}</span> } @empty { Not available }</p>
+          <p>
+            @for (h of histories('Chronic'); track h.id) {
+              <span>{{ h.condition | displayValue }}</span>
+            } @empty {
+              Not available
+            }
+          </p>
           <h3>Medical, surgical & family history</h3>
-          @for (h of summary()?.histories ?? []; track h.id) { <p><b>{{ h.type | displayValue }}</b> · {{ h.condition | displayValue }}</p> } @empty { <p class="muted">Not available</p> }
+          @for (h of summary()?.histories ?? []; track h.id) {
+            <p>
+              <b>{{ h.type | displayValue }}</b> · {{ h.condition | displayValue }}
+            </p>
+          } @empty {
+            <p class="muted">Not available</p>
+          }
         </div>
       </section>
       <section class="card">
@@ -69,14 +93,26 @@
           }
           <h3>Medications</h3>
           @if (inpatient.loading()) {
-            <div class="tab-state loading-state loading-state--section" role="status" aria-live="polite">Loading medications…</div>
+            <div
+              class="tab-state loading-state loading-state--section"
+              role="status"
+              aria-live="polite"
+            >
+              Loading medications…
+            </div>
           } @else if (inpatient.error()) {
-            <div class="error-state" role="alert">Medication information could not be loaded. <button type="button" class="secondary" (click)="inpatient.load()">Retry</button></div>
+            <div class="error-state" role="alert">
+              Medication information could not be loaded.
+              <button type="button" class="secondary" (click)="inpatient.load()">Retry</button>
+            </div>
           } @else {
             @for (m of medications(); track m.id) {
               <p>{{ m.medication }} {{ m.dose }} · <app-status-badge [value]="m.status" /></p>
             } @empty {
-              <app-empty-state title="No medications recorded" description="No medication information is available for this patient." />
+              <app-empty-state
+                title="No medications recorded"
+                description="No medication information is available for this patient."
+              />
             }
           }
         </div>
@@ -85,18 +121,50 @@
   } @else if (tab() === 'timeline') {
     <section class="card timeline-tools">
       <div class="section-title timeline-heading">
-        <div><h2>Timeline</h2><p class="muted">Clinical events shown in India Standard Time.</p></div>
+        <div>
+          <h2>Timeline</h2>
+          <p class="muted">Clinical events shown in India Standard Time.</p>
+        </div>
         <div class="toolbar-actions timeline-filters">
-          <app-shared-filter [activeCount]="(filter() ? 1 : 0) + (selectedDate() ? 1 : 0)" [loading]="timelineLoading()" (applied)="applyTimelineFilters()" (cleared)="clearTimelineFilters()">
-                  <label class="field"><span class="form-label">Event type</span><select aria-label="Timeline event type" [value]="filter()" (change)="filter.set($any($event.target).value)"><option value="">All event types</option>@for (t of eventTypes; track t) { <option [value]="t">{{ t }}</option> }</select></label>
-                  <label class="field"><span class="form-label">Clinical date</span><app-calendar [value]="selectedDate()" (valueChange)="selectedDate.set($event)" /></label>
+          <app-shared-filter
+            [disabled]="timelineLoading() || !!timelineError() || timelineItems().length === 0"
+            [activeCount]="(filter() ? 1 : 0) + (selectedDate() ? 1 : 0)"
+            [loading]="timelineLoading()"
+            (applied)="applyTimelineFilters()"
+            (cleared)="clearTimelineFilters()"
+          >
+            <label class="field"
+              ><span class="form-label">Event type</span
+              ><select
+                aria-label="Timeline event type"
+                [value]="filter()"
+                (change)="filter.set($any($event.target).value)"
+              >
+                <option value="">All event types</option>
+                @for (t of eventTypes; track t) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select></label
+            >
+            <label class="field"
+              ><span class="form-label">Clinical date</span
+              ><app-calendar [value]="selectedDate()" (valueChange)="selectedDate.set($event)"
+            /></label>
           </app-shared-filter>
         </div>
       </div>
       @if (timelineLoading()) {
-        <div class="tab-state loading-state loading-state--section" role="status" aria-live="polite">Loading clinical timeline…</div>
+        <div
+          class="tab-state loading-state loading-state--section"
+          role="status"
+          aria-live="polite"
+        >
+          Loading clinical timeline…
+        </div>
       } @else if (timelineError()) {
-        <div class="tab-state error-state" role="alert">{{ timelineError() }} <button class="secondary" (click)="loadTimeline()">Retry</button></div>
+        <div class="tab-state error-state" role="alert">
+          {{ timelineError() }} <button class="secondary" (click)="loadTimeline()">Retry</button>
+        </div>
       } @else if (timelineItems().length) {
         <div class="timeline">
           @for (e of timelineItems(); track e.id + e.type) {
@@ -114,7 +182,11 @@
       } @else {
         <app-empty-state
           title="No clinical records found"
-          [description]="filter() || selectedDate() ? 'Try changing or clearing the selected filters.' : 'Clinical events will appear here when they are recorded.'"
+          [description]="
+            filter() || selectedDate()
+              ? 'Try changing or clearing the selected filters.'
+              : 'Clinical events will appear here when they are recorded.'
+          "
           [actionLabel]="filter() || selectedDate() ? 'Clear Filters' : ''"
           (action)="clearTimelineFilters()"
         />

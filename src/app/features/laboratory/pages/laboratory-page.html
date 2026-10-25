@@ -39,12 +39,14 @@
     />
     <div class="toolbar-actions">
       <app-column-config
+        [disabled]="loading() || !!error() || total() === 0"
         [columns]="columns"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
         (reset)="resetColumns()"
       />
       <app-shared-filter
+        [disabled]="loading() || !!error() || total() === 0"
         [activeCount]="activeFilterCount()"
         [loading]="loading()"
         (applied)="filter()"
@@ -122,7 +124,7 @@
         /></label>
       </app-shared-filter>
       <app-shared-export
-        [disabled]="!total()"
+        [disabled]="loading() || !!error() || total() === 0"
         [exporting]="exporting()"
         (exportRequested)="exportOrders()"
       />

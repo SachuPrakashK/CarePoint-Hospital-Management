@@ -31,3 +31,30 @@
     overflow-x: clip;
   }
 }
+
+// Invoice and report routes must print without the application navigation chrome.
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  .app-shell > aside,
+  .workspace > header,
+  app-breadcrumbs,
+  .sidebar-tooltip,
+  .backdrop {
+    display: none !important;
+  }
+
+  .app-shell,
+  .app-shell .workspace,
+  .app-shell.collapsed .workspace,
+  .workspace > main {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+}

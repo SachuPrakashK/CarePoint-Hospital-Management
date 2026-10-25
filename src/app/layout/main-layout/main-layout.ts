@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  HostListener,
+  inject,
+  signal,
+} from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthStore } from '../../core/auth/auth.store';
 import { AppIcon } from '../../shared/components/icon/app-icon';
 import { Breadcrumbs } from '../../shared/components/breadcrumbs/breadcrumbs';
@@ -7,13 +15,12 @@ import { AppNotification, NotificationStore } from '../../core/notifications/not
 import { AppDateTimeService } from '../../core/services/app-date-time.service';
 import { LanguageService } from '../../core/i18n/language.service';
 import { TranslatePipe } from '../../core/i18n/translate.pipe';
-interface NavItem {
-  label: string;
-  key: string;
-  icon: string;
-  path: string;
-  permission: string;
-}
+import {
+  NavigationGroup,
+  resolveNavigation,
+  SIDEBAR_BOTTOM_ITEMS,
+  SIDEBAR_NAVIGATION_GROUPS,
+} from '../../core/navigation/navigation.config';
 @Component({
   imports: [RouterLink, RouterLinkActive, RouterOutlet, AppIcon, Breadcrumbs, TranslatePipe],
   templateUrl: './main-layout.html',
@@ -32,56 +39,18 @@ export class MainLayout {
   readonly notificationMenu = signal(false);
   readonly languageMenu = signal(false);
   readonly sidebarTooltip = signal<{ label: string; top: number } | null>(null);
-  readonly nav: NavItem[] = [
-    { label: 'Dashboard', key:'nav.dashboard', icon: 'dashboard', path: '/dashboard', permission: 'dashboard.view' },
-    { label: 'Patients', key:'nav.patients', icon: 'patients', path: '/patients', permission: 'patients.view' },
-    {
-      label: 'Appointments',
-      key:'nav.appointments',
-      icon: 'calendar',
-      path: '/appointments',
-      permission: 'appointments.view',
-    },
-    { label: 'OPD & Queue', key:'nav.opd', icon: 'queue', path: '/opd', permission: 'queue.view' },
-    { label: 'Clinical EMR', key:'nav.clinical', icon: 'clinical', path: '/clinical', permission: 'emr.view' },
-    { label: 'Laboratory', key:'nav.laboratory', icon: 'lab', path: '/laboratory', permission: 'laboratory.view' },
-    { label: 'Radiology', key:'nav.radiology', icon: 'radiology', path: '/radiology', permission: 'radiology.view' },
-    { label: 'Admissions & Beds', key:'nav.admissions', icon: 'bed', path: '/inpatient', permission: 'admissions.view' },
-    { label: 'Nursing', key:'nav.nursing', icon: 'nursing', path: '/nursing', permission: 'nursing.view' },
-    {
-      label: 'Procedures & OT',
-      key:'nav.procedures',
-      icon: 'procedure',
-      path: '/procedures',
-      permission: 'procedures.view',
-    },
-    { label: 'Pharmacy', key:'nav.pharmacy', icon: 'pharmacy', path: '/pharmacy', permission: 'pharmacy.view' },
-    { label: 'Billing', key:'nav.billing', icon: 'billing', path: '/billing', permission: 'billing.view' },
-    { label: 'Insurance', key:'nav.insurance', icon: 'insurance', path: '/insurance', permission: 'insurance.view' },
-    {
-      label: 'Inventory & Ops',
-      key:'nav.inventory',
-      icon: 'inventory',
-      path: '/operations',
-      permission: 'inventory.view',
-    },
-    { label: 'Reports', key:'nav.reports', icon: 'reports', path: '/reports', permission: 'reports.view' },
-    { label: 'Audit logs', key:'nav.audit', icon: 'audit', path: '/audit-logs', permission: 'audit.view' },
-    { label: 'Documents', key:'nav.documents', icon: 'documents', path: '/documents', permission: 'documents.view' },
-    { label: 'Doctors', key:'nav.doctors', icon: 'doctor', path: '/doctors', permission: 'doctors.view' },
-    { label: 'Employees', key:'nav.employees', icon: 'users', path: '/employees', permission: 'employees.view' },
-    {
-      label: 'Departments',
-      key:'nav.departments',
-      icon: 'department',
-      path: '/departments',
-      permission: 'departments.view',
-    },
-    { label: 'Users', key:'nav.users', icon: 'users', path: '/users', permission: 'users.view' },
-    { label: 'Roles', key:'nav.roles', icon: 'shield', path: '/roles', permission: 'roles.view' },
-  ];
+  readonly navigationGroups = SIDEBAR_NAVIGATION_GROUPS;
+  readonly bottomNavigation = SIDEBAR_BOTTOM_ITEMS;
+  readonly currentUrl = signal(this.router.url);
+  readonly activeNavigation = computed(() => resolveNavigation(this.currentUrl()));
   constructor() {
     void this.notifications.load();
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event) => this.currentUrl.set(event.urlAfterRedirects));
+  }
+  groupVisible(group: NavigationGroup) {
+    return group.items.some((item) => this.auth.has(item.permission as never));
   }
   toggleSidebar() {
     if (window.innerWidth <= 850) {
@@ -115,7 +84,9 @@ export class MainLayout {
   timeAgo(value: string) {
     return this.dates.relativeTime(value);
   }
-  t(key:string){return this.language.translate(key);}
+  t(key: string) {
+    return this.language.translate(key);
+  }
   showSidebarTooltip(event: Event, label: string) {
     if (!this.collapsed() || window.innerWidth <= 850) return;
     const bounds = (event.currentTarget as HTMLElement).getBoundingClientRect();

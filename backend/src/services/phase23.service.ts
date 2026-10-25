@@ -32,7 +32,8 @@ const paged = async (
   };
 };
 const missing = (name: string) => new AppError(404, `${name} was not found.`, 'NOT_FOUND');
-const sensitiveAuditKey = /password|token|secret|authorization|cookie|session/i;
+const sensitiveAuditKey =
+  /password|token|secret|authorization|cookie|session|credential|api.?key|private.?key|access.?key/i;
 export const sanitizeAuditMetadata = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(sanitizeAuditMetadata);
   if (value && typeof value === 'object')
@@ -564,7 +565,7 @@ export const phase23Service = {
     payment: async (id: string, v: any, actorId: string, idempotencyKey: string) => {
       const outcome = await prisma.$transaction(
         async (tx: any) => {
-          await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
           const previous = await tx.payment.findUnique({ where: { idempotencyKey } });
           if (previous) {
             const sameRequest =
@@ -709,9 +710,23 @@ export const phase23Service = {
         })),
       };
     },
-    requestRefund: (paymentId: string, v: any, actorId: string) =>
+    requestRefund: (paymentId: string, v: any, actorId: string, idempotencyKey: string) =>
       prisma.$transaction(async (tx: any) => {
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${paymentId}))`;
+        const previous = await tx.refund.findUnique({ where: { idempotencyKey } });
+        if (previous) {
+          const sameRequest =
+            previous.paymentId === paymentId &&
+            previous.amount.eq(new Prisma.Decimal(v.amount)) &&
+            previous.reason === v.reason;
+          if (!sameRequest)
+            throw new AppError(
+              409,
+              'The idempotency key was already used for a different refund.',
+              'IDEMPOTENCY_KEY_REUSED',
+            );
+          return previous;
+        }
         const payment = await tx.payment.findUnique({
           where: { id: paymentId },
           include: { refunds: true },
@@ -734,6 +749,7 @@ export const phase23Service = {
             reason: v.reason,
             status: 'Requested',
             requestedById: actorId,
+            idempotencyKey,
           },
         });
         await tx.auditLog.create({
@@ -750,7 +766,7 @@ export const phase23Service = {
       }),
     approveRefund: (id: string, status: 'Approved' | 'Rejected', actorId: string) =>
       prisma.$transaction(async (tx: any) => {
-        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
         const refund = await tx.refund.findUnique({ where: { id }, include: { payment: true } });
         if (!refund) throw missing('Refund');
         if (refund.status !== 'Requested')
@@ -783,6 +799,41 @@ export const phase23Service = {
       }),
   },
   insurance: {
+    summary: async () => {
+      const [claims, activePolicies, activeProviders] = await Promise.all([
+        db.insuranceClaim.groupBy({
+          by: ['status'],
+          _count: { _all: true },
+          _sum: { claimedAmount: true, approvedAmount: true },
+        }),
+        db.patientInsurance.count({ where: { isActive: true } }),
+        db.insuranceProvider.count({ where: { isActive: true } }),
+      ]);
+      const count = (status: string) =>
+        claims.find((item: any) => item.status === status)?._count._all ?? 0;
+      return {
+        data: {
+          totalClaims: claims.reduce((sum: number, item: any) => sum + item._count._all, 0),
+          pendingClaims: claims
+            .filter((item: any) => ['Draft', 'Submitted', 'Under Review'].includes(item.status))
+            .reduce((sum: number, item: any) => sum + item._count._all, 0),
+          approvedClaims: count('Approved') + count('Settled'),
+          rejectedClaims: count('Rejected'),
+          totalClaimAmount: claims.reduce(
+            (sum: Prisma.Decimal, item: any) => sum.plus(item._sum.claimedAmount ?? 0),
+            new Prisma.Decimal(0),
+          ),
+          approvedAmount: claims
+            .filter((item: any) => ['Approved', 'Settled'].includes(item.status))
+            .reduce(
+              (sum: Prisma.Decimal, item: any) => sum.plus(item._sum.approvedAmount ?? 0),
+              new Prisma.Decimal(0),
+            ),
+          activePolicies,
+          activeProviders,
+        },
+      };
+    },
     providers: (q: any) => {
       const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
       const sorts: Record<string, any> = {
@@ -795,7 +846,11 @@ export const phase23Service = {
         db.insuranceProvider,
         q,
         {
-          isActive: true,
+          ...(q.status === 'inactive'
+            ? { isActive: false }
+            : q.status === 'all'
+              ? {}
+              : { isActive: true }),
           ...(q.search ? { name: { contains: q.search, mode: 'insensitive' } } : {}),
         },
         undefined,
@@ -806,6 +861,14 @@ export const phase23Service = {
     updateProvider: (id: string, v: any) => db.insuranceProvider.update({ where: { id }, data: v }),
     removeProvider: (id: string) =>
       db.insuranceProvider.update({ where: { id }, data: { isActive: false } }),
+    getProvider: async (id: string) => {
+      const item = await db.insuranceProvider.findUnique({
+        where: { id },
+        include: { policies: { include: { patient: true, claims: true } } },
+      });
+      if (!item) throw missing('Insurance provider');
+      return item;
+    },
     policies: (q: any) => {
       const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
       const sorts: Record<string, any> = {
@@ -822,6 +885,20 @@ export const phase23Service = {
         q,
         {
           ...(q.patient_id ? { patientId: q.patient_id } : {}),
+          ...(q.provider_id ? { providerId: q.provider_id } : {}),
+          ...(q.status === 'active'
+            ? { isActive: true }
+            : q.status === 'inactive'
+              ? { isActive: false }
+              : {}),
+          ...(q.expiry_from || q.expiry_to
+            ? {
+                endsAt: {
+                  ...(q.expiry_from ? { gte: new Date(`${q.expiry_from}T00:00:00.000Z`) } : {}),
+                  ...(q.expiry_to ? { lte: new Date(`${q.expiry_to}T23:59:59.999Z`) } : {}),
+                },
+              }
+            : {}),
           ...(q.search
             ? {
                 OR: [
@@ -887,6 +964,18 @@ export const phase23Service = {
     },
     deactivatePolicy: (id: string) =>
       db.patientInsurance.update({ where: { id }, data: { isActive: false } }),
+    getPolicy: async (id: string) => {
+      const item = await db.patientInsurance.findUnique({
+        where: { id },
+        include: {
+          patient: true,
+          provider: true,
+          claims: { include: { invoice: true } },
+        },
+      });
+      if (!item) throw missing('Insurance policy');
+      return item;
+    },
     claims: (q: any) => {
       const direction = q.sort_order === 'desc' ? 'desc' : 'asc';
       const sorts: Record<string, any> = {
@@ -903,6 +992,16 @@ export const phase23Service = {
         q,
         {
           ...(q.patient_id ? { patientId: q.patient_id } : {}),
+          ...(q.provider_id ? { insurance: { providerId: q.provider_id } } : {}),
+          ...(q.status ? { status: q.status } : {}),
+          ...(q.date_from || q.date_to
+            ? {
+                createdAt: {
+                  ...(q.date_from ? { gte: new Date(`${q.date_from}T00:00:00.000Z`) } : {}),
+                  ...(q.date_to ? { lte: new Date(`${q.date_to}T23:59:59.999Z`) } : {}),
+                },
+              }
+            : {}),
           ...(q.search
             ? {
                 OR: [
@@ -926,6 +1025,14 @@ export const phase23Service = {
         { patient: true, insurance: { include: { provider: true } }, invoice: true },
         [sorts[q.sort_by] ?? { createdAt: 'desc' }, { id: 'asc' }],
       );
+    },
+    getClaim: async (id: string) => {
+      const item = await db.insuranceClaim.findUnique({
+        where: { id },
+        include: { patient: true, insurance: { include: { provider: true } }, invoice: true },
+      });
+      if (!item) throw missing('Insurance claim');
+      return item;
     },
     createClaim: (v: any, actorId: string) =>
       prisma.$transaction(async (tx: any) => {
@@ -975,45 +1082,48 @@ export const phase23Service = {
         return result;
       }),
     updateClaim: async (id: string, v: any, actorId: string) => {
-      const claim = await db.insuranceClaim.findUnique({ where: { id } });
-      if (!claim) throw missing('Insurance claim');
-      const allowed: Record<string, string[]> = {
-        Draft: ['Submitted', 'Cancelled'],
-        Submitted: ['Under Review', 'Cancelled'],
-        'Under Review': ['Approved', 'Rejected'],
-        Approved: ['Settled'],
-        Rejected: [],
-        Settled: [],
-        Cancelled: [],
-      };
-      if (v.status && !(allowed[claim.status] ?? []).includes(v.status))
-        throw new AppError(409, 'Invalid insurance claim status transition.', 'CONFLICT');
-      const approvedAmount =
-        v.approvedAmount == null ? undefined : new Prisma.Decimal(v.approvedAmount);
-      if (approvedAmount?.gt(claim.claimedAmount))
-        throw new AppError(
-          422,
-          'Approved amount cannot exceed the claimed amount.',
-          'VALIDATION_ERROR',
-        );
-      const result = await db.insuranceClaim.update({
-        where: { id },
-        data: {
-          ...v,
-          approvedAmount,
-          ...(v.status === 'Submitted' ? { submittedAt: new Date() } : {}),
-          ...(v.status === 'Settled' ? { settledAt: new Date() } : {}),
-        },
-      });
-      await db.auditLog.create({
-        data: {
-          userId: actorId,
-          action: 'STATUS_CHANGE',
-          module: 'insurance',
-          entityType: 'InsuranceClaim',
-          entityId: id,
-          metadata: { status: v.status ?? claim.status },
-        },
+      const result = await prisma.$transaction(async (tx: any) => {
+        const claim = await tx.insuranceClaim.findUnique({ where: { id } });
+        if (!claim) throw missing('Insurance claim');
+        const allowed: Record<string, string[]> = {
+          Draft: ['Submitted', 'Cancelled'],
+          Submitted: ['Under Review', 'Approved', 'Rejected', 'Cancelled'],
+          'Under Review': ['Approved', 'Rejected'],
+          Approved: ['Settled'],
+          Rejected: [],
+          Settled: [],
+          Cancelled: [],
+        };
+        if (v.status && !(allowed[claim.status] ?? []).includes(v.status))
+          throw new AppError(409, 'Invalid insurance claim status transition.', 'CONFLICT');
+        const approvedAmount =
+          v.approvedAmount == null ? undefined : new Prisma.Decimal(v.approvedAmount);
+        if (approvedAmount?.isNegative() || approvedAmount?.gt(claim.claimedAmount))
+          throw new AppError(
+            422,
+            'Approved amount must be between zero and the claimed amount.',
+            'VALIDATION_ERROR',
+          );
+        const updated = await tx.insuranceClaim.update({
+          where: { id },
+          data: {
+            ...v,
+            approvedAmount,
+            ...(v.status === 'Submitted' ? { submittedAt: new Date() } : {}),
+            ...(v.status === 'Settled' ? { settledAt: new Date() } : {}),
+          },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            action: 'STATUS_CHANGE',
+            module: 'insurance',
+            entityType: 'InsuranceClaim',
+            entityId: id,
+            metadata: { status: v.status ?? claim.status },
+          },
+        });
+        return updated;
       });
       if (v.status)
         await notificationService.notifyRoles(['HOSPITAL_ADMIN', 'BILLING_STAFF'], {
@@ -1900,8 +2010,10 @@ export const phase23Service = {
         ...(q.created_from || q.created_to
           ? {
               createdAt: {
-                ...(q.created_from ? { gte: new Date(`${q.created_from}T00:00:00.000Z`) } : {}),
-                ...(q.created_to ? { lte: new Date(`${q.created_to}T23:59:59.999Z`) } : {}),
+                ...(q.created_from
+                  ? { gte: new Date(`${q.created_from}T00:00:00.000+05:30`) }
+                  : {}),
+                ...(q.created_to ? { lte: new Date(`${q.created_to}T23:59:59.999+05:30`) } : {}),
               },
             }
           : {}),
@@ -1912,6 +2024,7 @@ export const phase23Service = {
                 { module: { contains: q.search, mode: 'insensitive' } },
                 { entityType: { contains: q.search, mode: 'insensitive' } },
                 { entityId: { contains: q.search, mode: 'insensitive' } },
+                { userId: { contains: q.search, mode: 'insensitive' } },
                 {
                   user: {
                     is: {
@@ -1978,7 +2091,7 @@ export const phase23Service = {
         id: item.userId,
         name: item.user
           ? `${item.user.firstName} ${item.user.lastName}`.trim()
-          : 'Unavailable user',
+          : `Unavailable user (${item.userId})`,
         email: item.user?.email ?? null,
       })),
     };

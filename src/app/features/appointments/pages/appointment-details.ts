@@ -24,8 +24,14 @@ export class AppointmentDetails {
       return;
     }
     this.api.get(id).subscribe({
-      next: ({ data }) => { this.appointment.set(data); this.loading.set(false); },
-      error: () => { this.error.set('Unable to load appointment.'); this.loading.set(false); },
+      next: ({ data }) => {
+        this.appointment.set(data);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set('Unable to load appointment.');
+        this.loading.set(false);
+      },
     });
   }
 }

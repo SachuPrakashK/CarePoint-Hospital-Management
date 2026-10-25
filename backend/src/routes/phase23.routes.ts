@@ -463,12 +463,23 @@ phase23Routes.post(
       body: z.object({ amount: z.number().positive(), reason: z.string().trim().min(3).max(500) }),
     }),
   ),
-  send(
-    async (q) => ({
-      data: await service.billing.requestRefund(q.params.id, q.body, q.auth!.userId),
-    }),
-    201,
-  ),
+  send(async (q) => {
+    const idempotencyKey = z.uuid().safeParse(q.get('idempotency-key'));
+    if (!idempotencyKey.success)
+      throw new AppError(
+        422,
+        'A valid Idempotency-Key header is required.',
+        'IDEMPOTENCY_KEY_REQUIRED',
+      );
+    return {
+      data: await service.billing.requestRefund(
+        q.params.id,
+        q.body,
+        q.auth!.userId,
+        idempotencyKey.data,
+      ),
+    };
+  }, 201),
 );
 phase23Routes.patch(
   '/billing/refunds/:id',
@@ -485,9 +496,20 @@ phase23Routes.patch(
   })),
 );
 phase23Routes.get(
+  '/insurance/summary',
+  requirePermissions('insurance.view'),
+  send(async () => service.insurance.summary()),
+);
+phase23Routes.get(
   '/insurance/providers',
   requirePermissions('insurance.view'),
   send(async (q) => service.insurance.providers(q.query)),
+);
+phase23Routes.get(
+  '/insurance/providers/:id',
+  requirePermissions('insurance.view'),
+  validate(id),
+  send(async (q) => ({ data: await service.insurance.getProvider(q.params.id) })),
 );
 phase23Routes.post(
   '/insurance/providers',
@@ -499,6 +521,7 @@ phase23Routes.post(
         code: z.string().min(2),
         contact: z.string().optional(),
         address: z.string().optional(),
+        isActive: z.boolean().optional(),
       }),
     ),
   ),
@@ -533,6 +556,12 @@ phase23Routes.get(
   requirePermissions('insurance.view'),
   send(async (q) => service.insurance.policies(q.query)),
 );
+phase23Routes.get(
+  '/insurance/policies/:id',
+  requirePermissions('insurance.view'),
+  validate(id),
+  send(async (q) => ({ data: await service.insurance.getPolicy(q.params.id) })),
+);
 phase23Routes.post(
   '/insurance/policies',
   requirePermissions('insurance.create'),
@@ -548,6 +577,7 @@ phase23Routes.post(
         coverageLimit: z.number().nonnegative(),
         relationship: z.string(),
         priority: z.enum(['Primary', 'Secondary']),
+        isActive: z.boolean().optional(),
       }),
     ),
   ),
@@ -570,6 +600,7 @@ phase23Routes.put(
         coverageLimit: z.number().nonnegative().optional(),
         relationship: z.string().optional(),
         priority: z.enum(['Primary', 'Secondary']).optional(),
+        isActive: z.boolean().optional(),
       }),
     }),
   ),
@@ -585,6 +616,12 @@ phase23Routes.get(
   '/insurance/claims',
   requirePermissions('insurance.view'),
   send(async (q) => service.insurance.claims(q.query)),
+);
+phase23Routes.get(
+  '/insurance/claims/:id',
+  requirePermissions('insurance.view'),
+  validate(id),
+  send(async (q) => ({ data: await service.insurance.getClaim(q.params.id) })),
 );
 phase23Routes.post(
   '/insurance/claims',

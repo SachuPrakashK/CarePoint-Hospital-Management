@@ -144,8 +144,8 @@ export class Phase23Store {
     await firstValueFrom(this.api.pay(invoiceId, { amount, method, reference }, idempotencyKey));
     await this.changed('billing');
   }
-  async requestRefund(paymentId: string, amount: number, reason: string) {
-    await firstValueFrom(this.api.requestRefund(paymentId, { amount, reason }));
+  async requestRefund(paymentId: string, amount: number, reason: string, idempotencyKey: string) {
+    await firstValueFrom(this.api.requestRefund(paymentId, { amount, reason }, idempotencyKey));
     await this.changed('billing');
   }
   async approveRefund(id: string, _actor: string) {
@@ -233,6 +233,10 @@ export class Phase23Store {
   }
   async savePolicy(v: any, id?: string) {
     await firstValueFrom(id ? this.api.updatePolicy(id, v) : this.api.createPolicy(v));
+    await this.changed('insurance');
+  }
+  async removePolicy(id: string) {
+    await firstValueFrom(this.api.deactivatePolicy(id));
     await this.changed('insurance');
   }
 }

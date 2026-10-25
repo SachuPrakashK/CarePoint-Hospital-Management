@@ -66,7 +66,11 @@ export class InpatientStore {
     void this.load();
   }
   async load() {
-    await Promise.all([this.loadAdmissions({ page: 1, pageSize: 10 }), this.loadSupportingData(), this.loadNursing()]);
+    await Promise.all([
+      this.loadAdmissions({ page: 1, pageSize: 10 }),
+      this.loadSupportingData(),
+      this.loadNursing(),
+    ]);
   }
   private async loadSupportingData() {
     const [beds, lookups, wards, procedures] = await Promise.allSettled([
@@ -78,30 +82,46 @@ export class InpatientStore {
     if (beds.status === 'fulfilled') this.bedsState.set(beds.value.data.map(this.mapBed));
     if (lookups.status === 'fulfilled') this.lookups.set(lookups.value.data);
     if (wards.status === 'fulfilled') this.wardsState.set(wards.value.data);
-    if (procedures.status === 'fulfilled') this.proceduresState.set(procedures.value.data.map((item: any) => ({ ...item, patientName: `${item.patient?.firstName ?? ''} ${item.patient?.lastName ?? ''}`.trim(), doctor: `${item.doctor?.firstName ?? ''} ${item.doctor?.lastName ?? ''}`.trim(), location: item.theatre?.name ?? '', theatre: item.theatre?.name })));
+    if (procedures.status === 'fulfilled')
+      this.proceduresState.set(
+        procedures.value.data.map((item: any) => ({
+          ...item,
+          patientName: `${item.patient?.firstName ?? ''} ${item.patient?.lastName ?? ''}`.trim(),
+          doctor: `${item.doctor?.firstName ?? ''} ${item.doctor?.lastName ?? ''}`.trim(),
+          location: item.theatre?.name ?? '',
+          theatre: item.theatre?.name,
+        })),
+      );
   }
   async loadNursing(admissionId?: string) {
     if (!admissionId && this.nursingAllLoaded) return;
     if (!admissionId && this.nursingFlight) return this.nursingFlight;
     const load = async () => {
-    this.nursingLoading.set(true);
-    this.nursingError.set('');
-    const [assignments, notes, medications, handovers, staff] = await Promise.allSettled([
-      firstValueFrom(this.api.assignedPatients()),
-      firstValueFrom(this.api.notes(admissionId)),
-      firstValueFrom(this.api.medications(admissionId)),
-      firstValueFrom(this.api.handovers(admissionId)),
-      firstValueFrom(this.api.nursingStaff()),
-    ]);
-    if (assignments.status === 'fulfilled') this.assignedPatientsState.set(assignments.value.data.map(this.mapAssignment));
-    if (notes.status === 'fulfilled') this.notesState.set(notes.value.data.map(this.mapNursingNote));
-    if (medications.status === 'fulfilled') this.medicationsState.set(medications.value.data.map(this.mapMedication));
-    if (handovers.status === 'fulfilled') this.handoversState.set(handovers.value.data);
-    if (staff.status === 'fulfilled') this.nursingStaffState.set(staff.value.data);
-    if ([assignments, notes, medications, handovers, staff].some((result) => result.status === 'rejected'))
-      this.nursingError.set('Some nursing information could not be loaded.');
-    if (!admissionId) this.nursingAllLoaded = true;
-    this.nursingLoading.set(false);
+      this.nursingLoading.set(true);
+      this.nursingError.set('');
+      const [assignments, notes, medications, handovers, staff] = await Promise.allSettled([
+        firstValueFrom(this.api.assignedPatients()),
+        firstValueFrom(this.api.notes(admissionId)),
+        firstValueFrom(this.api.medications(admissionId)),
+        firstValueFrom(this.api.handovers(admissionId)),
+        firstValueFrom(this.api.nursingStaff()),
+      ]);
+      if (assignments.status === 'fulfilled')
+        this.assignedPatientsState.set(assignments.value.data.map(this.mapAssignment));
+      if (notes.status === 'fulfilled')
+        this.notesState.set(notes.value.data.map(this.mapNursingNote));
+      if (medications.status === 'fulfilled')
+        this.medicationsState.set(medications.value.data.map(this.mapMedication));
+      if (handovers.status === 'fulfilled') this.handoversState.set(handovers.value.data);
+      if (staff.status === 'fulfilled') this.nursingStaffState.set(staff.value.data);
+      if (
+        [assignments, notes, medications, handovers, staff].some(
+          (result) => result.status === 'rejected',
+        )
+      )
+        this.nursingError.set('Some nursing information could not be loaded.');
+      if (!admissionId) this.nursingAllLoaded = true;
+      this.nursingLoading.set(false);
     };
     if (admissionId) return load();
     this.nursingFlight = load().finally(() => (this.nursingFlight = undefined));
@@ -126,7 +146,8 @@ export class InpatientStore {
     ...item,
     patientId: item.admission?.patientId,
     administeredBy:
-      `${item.administeredBy?.firstName ?? ''} ${item.administeredBy?.lastName ?? ''}`.trim() || undefined,
+      `${item.administeredBy?.firstName ?? ''} ${item.administeredBy?.lastName ?? ''}`.trim() ||
+      undefined,
     frequency: item.prescriptionItem?.frequency,
     orderedBy: item.prescriptionItem?.prescription?.doctor
       ? `${item.prescriptionItem.prescription.doctor.firstName} ${item.prescriptionItem.prescription.doctor.lastName}`
@@ -143,7 +164,11 @@ export class InpatientStore {
       const pagination = response.pagination;
       this.admissionsTotal.set(pagination?.total ?? response.data.length);
       this.admissionsTotalPages.set(pagination?.total_pages ?? (response.data.length ? 1 : 0));
-      this.dischargesState.set(response.data.filter((item: any) => item.discharge).map((item: any) => ({ ...item.discharge, patientId: item.patientId })));
+      this.dischargesState.set(
+        response.data
+          .filter((item: any) => item.discharge)
+          .map((item: any) => ({ ...item.discharge, patientId: item.patientId })),
+      );
     } catch {
       if (request === this.admissionRequest) this.error.set('Admissions could not be loaded.');
     } finally {

@@ -4,6 +4,5 @@ import { AuthStore } from '../auth/auth.store';
 import { Permission } from '../models/auth.models';
 
 export const permissionGuard: CanActivateFn = (route) =>
-
   inject(AuthStore).has(route.data['permission'] as Permission) ||
   inject(Router).createUrlTree(['/forbidden']);

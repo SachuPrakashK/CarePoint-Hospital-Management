@@ -89,4 +89,30 @@ describe('AuditStore', () => {
       expect.objectContaining({ id: 'event/id', actor: 'System' }),
     );
   });
+
+  it('preserves the actor identifier when the related user is unavailable', async () => {
+    const pending = store.get('event-2');
+    const request = http.expectOne('/api/v1/audit/event-2');
+    request.flush({
+      data: {
+        id: 'event-2',
+        createdAt: '2026-10-18T10:00:00.000Z',
+        userId: 'deleted-user-1',
+        action: 'DELETE',
+        module: 'patients',
+        entityType: 'Patient',
+        entityId: 'patient-1',
+        metadata: null,
+        ipAddress: null,
+        user: null,
+      },
+    });
+
+    await expect(pending).resolves.toEqual(
+      expect.objectContaining({
+        actor: 'Unavailable user (deleted-user-1)',
+        userId: 'deleted-user-1',
+      }),
+    );
+  });
 });

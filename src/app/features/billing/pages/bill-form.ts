@@ -1,10 +1,11 @@
-import { Component, inject, input, OnChanges, output } from '@angular/core';
+import { Component, computed, inject, input, OnChanges, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Phase23Store } from '../../../core/services/phase23.store';
 import { PatientStore } from '../../patients/patient.store';
+import { AppIcon } from '../../../shared/components/icon/app-icon';
 @Component({
   selector: 'app-bill-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, AppIcon],
   templateUrl: './bill-form.html',
   styleUrl: './bill-form.scss',
 })
@@ -19,9 +20,21 @@ export class BillForm implements OnChanges {
   submitting = false;
   error = '';
   private readonly idempotencyKey = crypto.randomUUID();
+  readonly patientQuery = signal('');
+  readonly filteredPatients = computed(() => {
+    const query = this.patientQuery().trim().toLocaleLowerCase();
+    if (!query) return this.patients.patients();
+    return this.patients
+      .patients()
+      .filter((patient) =>
+        `${patient.firstName} ${patient.lastName} ${patient.mrn}`
+          .toLocaleLowerCase()
+          .includes(query),
+      );
+  });
   form = this.fb.nonNullable.group({
     patientId: ['', Validators.required],
-    items: this.fb.array([this.item()]),
+    items: this.fb.array([this.item()], Validators.minLength(1)),
   });
   constructor() {
     this.patients.pageSize.set(100);
@@ -60,8 +73,11 @@ export class BillForm implements OnChanges {
   add() {
     this.items.push(this.item());
   }
+  filterPatients(event: Event) {
+    this.patientQuery.set((event.target as HTMLInputElement).value);
+  }
   remove(i: number) {
-    if (this.items.length > 1) this.items.removeAt(i);
+    this.items.removeAt(i);
   }
   total() {
     return this.items

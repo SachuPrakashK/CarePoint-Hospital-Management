@@ -18,51 +18,66 @@
   <div class="toolbar">
     <app-search-field [placeholder]="'Search ' + kind" (valueChange)="query($event)" />
     <div class="toolbar-actions">
-      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <app-shared-filter [activeCount]="(department() ? 1 : 0) + (specialization() ? 1 : 0) + (status() ? 1 : 0)" [loading]="loading()" (applied)="apply()" (cleared)="clear()">
-              <label class="field"
-                ><span>Department</span
-                ><select
-                  [value]="department()"
-                  (change)="departmentChanged($any($event.target).value)"
-                >
-                  <option value="">All departments</option>
-                  @for (item of options().departments; track item.id) {
-                    <option [value]="item.id">{{ item.name }}</option>
-                  }
-                </select></label
-              >
-              @if (kind === 'doctors') {
-                <label class="field"
-                  ><span>Specialization</span
-                  ><select
-                    [value]="specialization()"
-                    (change)="specialization.set($any($event.target).value)"
-                  >
-                    <option value="">All specializations</option>
-                    @for (item of filteredSpecializations(); track item.id) {
-                      <option [value]="item.id">{{ item.name }}</option>
-                    }
-                  </select></label
-                >
+      <app-column-config
+        [disabled]="loading() || !!error() || total() === 0"
+        [columns]="columns"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+      <app-shared-filter
+        [disabled]="loading() || !!error() || total() === 0"
+        [activeCount]="(department() ? 1 : 0) + (specialization() ? 1 : 0) + (status() ? 1 : 0)"
+        [loading]="loading()"
+        (applied)="apply()"
+        (cleared)="clear()"
+      >
+        <label class="field"
+          ><span>Department</span
+          ><select [value]="department()" (change)="departmentChanged($any($event.target).value)">
+            <option value="">All departments</option>
+            @for (item of options().departments; track item.id) {
+              <option [value]="item.id">{{ item.name }}</option>
+            }
+          </select></label
+        >
+        @if (kind === 'doctors') {
+          <label class="field"
+            ><span>Specialization</span
+            ><select
+              [value]="specialization()"
+              (change)="specialization.set($any($event.target).value)"
+            >
+              <option value="">All specializations</option>
+              @for (item of filteredSpecializations(); track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
               }
-              <label class="field"
-                ><span>Status</span
-                ><select [value]="status()" (change)="status.set($any($event.target).value)">
-                  <option value="">All statuses</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="INACTIVE">Inactive</option>
-                  <option value="LOCKED">Locked</option>
-                </select></label
-              >
+            </select></label
+          >
+        }
+        <label class="field"
+          ><span>Status</span
+          ><select [value]="status()" (change)="status.set($any($event.target).value)">
+            <option value="">All statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="LOCKED">Locked</option>
+          </select></label
+        >
       </app-shared-filter>
       @if (can('export')) {
-        <app-shared-export [disabled]="!total()" [exporting]="exporting()" (exportRequested)="export()" />
+        <app-shared-export
+          [disabled]="loading() || !!error() || total() === 0"
+          [exporting]="exporting()"
+          (exportRequested)="export()"
+        />
       }
     </div>
   </div>
   @if (loading()) {
-    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading {{ kind }}...</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">
+      Loading {{ kind }}...
+    </div>
   } @else if (error()) {
     <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
   } @else if (!items().length) {
@@ -75,18 +90,104 @@
       <table>
         <thead>
           <tr>
-            @if(columnVisible('code')){<th [attr.aria-sort]="ariaSort('employeeCode')"><app-table-sort-header [label]="singular + ' ID'" field="employeeCode" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('name')){<th [attr.aria-sort]="ariaSort('firstName')"><app-table-sort-header [label]="singular" field="firstName" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('department')){<th [attr.aria-sort]="ariaSort('department')"><app-table-sort-header label="Department" field="department" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('position')){<th [attr.aria-sort]="ariaSort(kind === 'doctors' ? 'specialization' : 'designation')"><app-table-sort-header [label]="kind === 'doctors' ? 'Specialization' : 'Designation'" [field]="kind === 'doctors' ? 'specialization' : 'designation'" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('phone')){<th [attr.aria-sort]="ariaSort('phone')"><app-table-sort-header label="Phone" field="phone" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('email')){<th [attr.aria-sort]="ariaSort('email')"><app-table-sort-header label="Email" field="email" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if (kind === 'doctors') {
-              @if(columnVisible('experience')){<th [attr.aria-sort]="ariaSort('yearsOfExperience')"><app-table-sort-header label="Experience" field="yearsOfExperience" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            } @else {
-              @if(columnVisible('experience')){<th [attr.aria-sort]="ariaSort('joiningDate')"><app-table-sort-header label="Joining date" field="joiningDate" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
+            @if (columnVisible('code')) {
+              <th [attr.aria-sort]="ariaSort('employeeCode')">
+                <app-table-sort-header
+                  [label]="singular + ' ID'"
+                  field="employeeCode"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
             }
-            @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>} @if(columnVisible('actions')){<th>Actions</th>}
+            @if (columnVisible('name')) {
+              <th [attr.aria-sort]="ariaSort('firstName')">
+                <app-table-sort-header
+                  [label]="singular"
+                  field="firstName"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('department')) {
+              <th [attr.aria-sort]="ariaSort('department')">
+                <app-table-sort-header
+                  label="Department"
+                  field="department"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('position')) {
+              <th
+                [attr.aria-sort]="ariaSort(kind === 'doctors' ? 'specialization' : 'designation')"
+              >
+                <app-table-sort-header
+                  [label]="kind === 'doctors' ? 'Specialization' : 'Designation'"
+                  [field]="kind === 'doctors' ? 'specialization' : 'designation'"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('phone')) {
+              <th [attr.aria-sort]="ariaSort('phone')">
+                <app-table-sort-header
+                  label="Phone"
+                  field="phone"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('email')) {
+              <th [attr.aria-sort]="ariaSort('email')">
+                <app-table-sort-header
+                  label="Email"
+                  field="email"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (kind === 'doctors') {
+              @if (columnVisible('experience')) {
+                <th [attr.aria-sort]="ariaSort('yearsOfExperience')">
+                  <app-table-sort-header
+                    label="Experience"
+                    field="yearsOfExperience"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+            } @else {
+              @if (columnVisible('experience')) {
+                <th [attr.aria-sort]="ariaSort('joiningDate')">
+                  <app-table-sort-header
+                    label="Joining date"
+                    field="joiningDate"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+            }
+            @if (columnVisible('status')) {
+              <th [attr.aria-sort]="ariaSort('status')">
+                <app-table-sort-header
+                  label="Status"
+                  field="status"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('actions')) {
+              <th>Actions</th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -97,24 +198,50 @@
               (click)="view(item)"
               (keydown.enter)="view(item)"
             >
-              @if(columnVisible('code')){<td>{{ item.employeeCode }}</td>} @if(columnVisible('name')){<td>
-                <b>{{ item.firstName }} {{ item.lastName }}</b>
-              </td>} @if(columnVisible('department')){<td>{{ item.department?.name || 'Not available' }}</td>} @if(columnVisible('position')){<td>{{ item.specialization?.name || item.designation || 'Not available' }}</td>} @if(columnVisible('phone')){<td>{{ item.phone || '—' }}</td>} @if(columnVisible('email')){<td>{{ item.email }}</td>} @if(columnVisible('experience')){<td>
-                {{
-                  kind === 'doctors'
-                    ? (item.yearsOfExperience ?? 0) + ' years'
-                    : item.joiningDate?.slice(0, 10) || 'Not available'
-                }}
-              </td>} @if(columnVisible('status')){<td><app-status-badge [value]="item.status" /></td>} @if(columnVisible('actions')){<td class="actions" (click)="$event.stopPropagation()">
-                <app-actions-menu
-                  [id]="item.id"
-                  [canEdit]="can('update')"
-                  [canDelete]="can('delete')"
-                  (view)="view(item)"
-                  (edit)="open(item)"
-                  (delete)="remove(item)"
-                />
-              </td>}
+              @if (columnVisible('code')) {
+                <td>{{ item.employeeCode }}</td>
+              }
+              @if (columnVisible('name')) {
+                <td>
+                  <b>{{ item.firstName }} {{ item.lastName }}</b>
+                </td>
+              }
+              @if (columnVisible('department')) {
+                <td>{{ item.department?.name || 'Not available' }}</td>
+              }
+              @if (columnVisible('position')) {
+                <td>{{ item.specialization?.name || item.designation || 'Not available' }}</td>
+              }
+              @if (columnVisible('phone')) {
+                <td>{{ item.phone || '—' }}</td>
+              }
+              @if (columnVisible('email')) {
+                <td>{{ item.email }}</td>
+              }
+              @if (columnVisible('experience')) {
+                <td>
+                  {{
+                    kind === 'doctors'
+                      ? (item.yearsOfExperience ?? 0) + ' years'
+                      : item.joiningDate?.slice(0, 10) || 'Not available'
+                  }}
+                </td>
+              }
+              @if (columnVisible('status')) {
+                <td><app-status-badge [value]="item.status" /></td>
+              }
+              @if (columnVisible('actions')) {
+                <td class="actions" (click)="$event.stopPropagation()">
+                  <app-actions-menu
+                    [id]="item.id"
+                    [canEdit]="can('update')"
+                    [canDelete]="can('delete')"
+                    (view)="view(item)"
+                    (edit)="open(item)"
+                    (delete)="remove(item)"
+                  />
+                </td>
+              }
             </tr>
           }
         </tbody>
@@ -134,7 +261,9 @@
 </section>
 @if (modal()) {
   <app-modal
-    [title]="editing() ? 'Edit ' + singular : kind === 'employees' ? 'Add Employment' : 'Add Doctor'"
+    [title]="
+      editing() ? 'Edit ' + singular : kind === 'employees' ? 'Add Employment' : 'Add Doctor'
+    "
     size="xl"
     [dirty]="dirty()"
     (closed)="modal.set(false)"

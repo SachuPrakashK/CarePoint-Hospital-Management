@@ -53,6 +53,17 @@ describe('security and validation', () => {
     ).toBe(false);
   });
 
+  it('excludes retired language codes from the managed language catalog', async () => {
+    const { findCatalogLanguage, LANGUAGE_CATALOG } = await import(
+      '../src/data/language-catalog.js'
+    );
+    expect(LANGUAGE_CATALOG.some((item) => ['hi', 'ml', 'ta'].includes(item.code))).toBe(false);
+    expect(findCatalogLanguage('hi')).toBeUndefined();
+    expect(findCatalogLanguage('ml')).toBeUndefined();
+    expect(findCatalogLanguage('ta')).toBeUndefined();
+    expect(findCatalogLanguage('en')?.code).toBe('en');
+  });
+
   it('redacts sensitive values in nested audit metadata without changing safe fields', async () => {
     const { sanitizeAuditMetadata } = await import('../src/services/phase23.service.js');
     expect(
@@ -60,12 +71,16 @@ describe('security and validation', () => {
         patientId: 'patient-1',
         password: 'unsafe',
         request: { authorization: 'Bearer secret', reason: 'updated' },
+        apiKey: 'unsafe-api-key',
+        databaseCredential: 'unsafe-credential',
         changes: [{ refreshToken: 'token', field: 'email' }],
       }),
     ).toEqual({
       patientId: 'patient-1',
       password: '[REDACTED]',
       request: { authorization: '[REDACTED]', reason: 'updated' },
+      apiKey: '[REDACTED]',
+      databaseCredential: '[REDACTED]',
       changes: [{ refreshToken: '[REDACTED]', field: 'email' }],
     });
   });

@@ -46,7 +46,11 @@ const mapAudit = (record: AuditApiRecord): AuditEvent => ({
   id: record.id,
   createdAt: record.createdAt,
   userId: record.userId,
-  actor: record.user ? `${record.user.firstName} ${record.user.lastName}`.trim() : 'System',
+  actor: record.user
+    ? `${record.user.firstName} ${record.user.lastName}`.trim()
+    : record.userId
+      ? `Unavailable user (${record.userId})`
+      : 'System',
   actorEmail: record.user?.email ?? null,
   module: record.module,
   action: record.action,

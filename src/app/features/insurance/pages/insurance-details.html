@@ -1,0 +1,135 @@
+<div class="details-head">
+  <div>
+    <h1>
+      {{
+        kind() === 'claims'
+          ? 'Claim Details'
+          : kind() === 'policies'
+            ? 'Policy Details'
+            : 'Provider Details'
+      }}
+    </h1>
+  </div>
+</div>
+@if (loading()) {
+  <div class="details-state">Loading insurance details…</div>
+} @else if (error()) {
+  <div class="details-state error-state">
+    {{ error() }} <button class="secondary" (click)="load()">Retry</button>
+  </div>
+} @else if (item(); as record) {
+  <article class="details-card">
+    <header>
+      <span><app-icon [name]="kind() === 'providers' ? 'shield' : 'insurance'" [size]="22" /></span>
+      <div>
+        <h2>
+          {{
+            kind() === 'claims'
+              ? record.number
+              : kind() === 'policies'
+                ? record.policyNumber
+                : record.name
+          }}
+        </h2>
+        <p>{{ kind() === 'providers' ? record.code : 'Verified insurance record' }}</p>
+      </div>
+      <app-status-badge
+        [value]="kind() === 'claims' ? record.status : record.isActive ? 'Active' : 'Inactive'"
+      />
+    </header>
+    <dl>
+      @if (kind() === 'claims') {
+        <div>
+          <dt>Patient</dt>
+          <dd>{{ patientName(record.patient) }}</dd>
+        </div>
+        <div>
+          <dt>Provider</dt>
+          <dd>{{ record.insurance?.provider?.name || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Policy</dt>
+          <dd>{{ record.insurance?.policyNumber || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Invoice</dt>
+          <dd>{{ record.invoice?.number || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Claimed</dt>
+          <dd>{{ money(record.claimedAmount) }}</dd>
+        </div>
+        <div>
+          <dt>Approved</dt>
+          <dd>{{ money(record.approvedAmount) }}</dd>
+        </div>
+        <div>
+          <dt>Patient responsibility</dt>
+          <dd>{{ money(record.patientResponsibility) }}</dd>
+        </div>
+        <div>
+          <dt>Submitted</dt>
+          <dd>{{ record.submittedAt ? (record.submittedAt | date: 'medium') : '—' }}</dd>
+        </div>
+      } @else if (kind() === 'policies') {
+        <div>
+          <dt>Patient</dt>
+          <dd>{{ patientName(record.patient) }}</dd>
+        </div>
+        <div>
+          <dt>Provider</dt>
+          <dd>{{ record.provider?.name || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Member number</dt>
+          <dd>{{ record.memberNumber || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Coverage</dt>
+          <dd>{{ money(record.coverageLimit) }}</dd>
+        </div>
+        <div>
+          <dt>Effective date</dt>
+          <dd>{{ record.startsAt | date: 'mediumDate' }}</dd>
+        </div>
+        <div>
+          <dt>Expiry date</dt>
+          <dd>{{ record.endsAt | date: 'mediumDate' }}</dd>
+        </div>
+        <div>
+          <dt>Relationship</dt>
+          <dd>{{ record.relationship }}</dd>
+        </div>
+        <div>
+          <dt>Priority</dt>
+          <dd>{{ record.priority }}</dd>
+        </div>
+      } @else {
+        <div>
+          <dt>Provider code</dt>
+          <dd>{{ record.code }}</dd>
+        </div>
+        <div>
+          <dt>Contact</dt>
+          <dd>{{ record.contact || '—' }}</dd>
+        </div>
+        <div class="wide">
+          <dt>Address</dt>
+          <dd>{{ record.address || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Policies</dt>
+          <dd>{{ record.policies?.length || 0 }}</dd>
+        </div>
+        <div>
+          <dt>Related claims</dt>
+          <dd>
+            {{ relatedClaimCount(record) }}
+          </dd>
+        </div>
+      }
+    </dl>
+  </article>
+} @else {
+  <div class="details-state">Record not found.</div>
+}

@@ -23,7 +23,9 @@ export class AppointmentStatusChart extends ChartBase {
     series.get('colors')?.set(
       'colors',
       this.data().map((item, index) =>
-        am5.color(APPOINTMENT_STATUS_COLORS[item.status] ?? CHART_COLORS[index % CHART_COLORS.length]),
+        am5.color(
+          APPOINTMENT_STATUS_COLORS[item.status] ?? CHART_COLORS[index % CHART_COLORS.length],
+        ),
       ),
     );
     series.labels.template.set('forceHidden', true);

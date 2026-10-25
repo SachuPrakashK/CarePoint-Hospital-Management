@@ -22,7 +22,7 @@ section {
   border: 0;
   background: transparent;
 }
-.danger-icon {
+.confirmation-icon {
   display: grid;
   place-items: center;
   width: 46px;
@@ -31,6 +31,10 @@ section {
   background: #fff0ef;
   color: var(--color-danger);
   margin-bottom: 16px;
+}
+.confirmation-icon.approval-icon {
+  background: #ecfdf5;
+  color: #0f766e;
 }
 h2 {
   font-size: 20px;

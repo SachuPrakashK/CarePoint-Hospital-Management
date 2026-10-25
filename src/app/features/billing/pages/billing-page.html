@@ -65,7 +65,15 @@
       (valueChange)="query($event)"
     />
     <div class="toolbar-actions">
+      <app-column-config
+        [disabled]="loading() || !!error() || total() === 0"
+        [columns]="columns()"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
       <app-shared-filter
+        [disabled]="loading() || !!error() || total() === 0"
         [activeCount]="activeFilterCount()"
         [loading]="loading()"
         (applied)="applyFilters()"
@@ -102,15 +110,9 @@
           </label>
         }
       </app-shared-filter>
-      <app-column-config
-        [columns]="columns()"
-        [visible]="visibleColumns()"
-        (apply)="applyColumns($event)"
-        (reset)="resetColumns()"
-      />
       <app-shared-export
-        label="Export page"
-        [disabled]="loading() || !rows().length"
+        label="Export"
+        [disabled]="loading() || !!error() || total() === 0"
         (exportRequested)="exportCurrentPage()"
       />
     </div>
@@ -185,7 +187,7 @@
                 <th>Created by</th>
               }
               @if (columnVisible('actions')) {
-                <th>Actions</th>
+                <th class="actions-column">Actions</th>
               }
             } @else if (tab() === 'payments') {
               @if (columnVisible('receipt')) {
@@ -258,7 +260,7 @@
                 <th>Recorded by</th>
               }
               @if (columnVisible('actions')) {
-                <th>Actions</th>
+                <th class="actions-column">Actions</th>
               }
             } @else {
               @if (columnVisible('date')) {
@@ -320,8 +322,8 @@
               @if (columnVisible('processedBy')) {
                 <th>Processed by</th>
               }
-              @if (columnVisible('approval')) {
-                <th>Approval</th>
+              @if (columnVisible('actions')) {
+                <th class="actions-column">Actions</th>
               }
             }
           </tr>
@@ -367,26 +369,28 @@
                   <td>{{ item.createdBy || 'Legacy record' }}</td>
                 }
                 @if (columnVisible('actions')) {
-                  <td (click)="$event.stopPropagation()">
-                    <a class="secondary button-link" [routerLink]="['invoice', item.id]">Open</a>
-                    @if (
-                      auth.has('billing.create') &&
-                      !item.payments?.length &&
-                      item.status !== 'Cancelled'
-                    ) {
-                      <button class="secondary" (click)="openInvoice(item)">Edit</button>
-                    }
-                    @if (auth.has('billing.payment') && totals(item).balance > 0) {
-                      <button
-                        class="primary"
-                        (click)="
-                          paymentInvoice.set({ id: item.id, amount: totals(item).balance });
-                          dirty.set(false)
-                        "
-                      >
-                        Pay
-                      </button>
-                    }
+                  <td class="actions actions-column" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [id]="item.id"
+                      [label]="'Actions for invoice ' + item.number"
+                      [canView]="true"
+                      [canEdit]="auth.has('billing.create')"
+                      [editDisabled]="item.payments?.length || item.status === 'Cancelled'"
+                      editDisabledReason="Paid or cancelled invoices cannot be edited."
+                      [canPrint]="true"
+                      [canPayment]="auth.has('billing.payment') && totals(item).balance > 0"
+                      [canDelete]="
+                        auth.has('billing.create') &&
+                        !item.payments?.length &&
+                        item.status !== 'Cancelled'
+                      "
+                      deleteLabel="Cancel / Void"
+                      (view)="openDetails(item)"
+                      (edit)="openInvoice(item)"
+                      (print)="printInvoice(item)"
+                      (payment)="paymentInvoice.set(item); dirty.set(false)"
+                      (delete)="cancelInvoice(item)"
+                    />
                   </td>
                 }
               } @else if (tab() === 'payments') {
@@ -418,16 +422,13 @@
                   <td>{{ item.recordedBy || 'Unknown user' }}</td>
                 }
                 @if (columnVisible('actions')) {
-                  <td (click)="$event.stopPropagation()">
+                  <td class="payment-actions actions-column" (click)="$event.stopPropagation()">
                     @if (auth.has('billing.refund') && refundable(item) > 0) {
                       <button
-                        class="secondary"
-                        (click)="
-                          refundPayment.set({ id: item.id, amount: refundable(item) });
-                          dirty.set(false)
-                        "
+                        class="refund-button"
+                        (click)="refundPayment.set(item); dirty.set(false)"
                       >
-                        Refund
+                        <app-icon name="rotate-ccw" [size]="15" /> Refund
                       </button>
                     }
                   </td>
@@ -457,17 +458,33 @@
                 @if (columnVisible('processedBy')) {
                   <td>{{ item.approvedBy || item.requestedBy || 'Unknown user' }}</td>
                 }
-                @if (columnVisible('approval')) {
-                  <td (click)="$event.stopPropagation()">
+                @if (columnVisible('actions')) {
+                  <td class="refund-actions actions-column" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [id]="item.id"
+                      [label]="'Actions for refund ' + item.id"
+                      [canView]="true"
+                      [canEdit]="false"
+                      [canDelete]="false"
+                      (view)="openDetails(item)"
+                    />
                     @if (item.status === 'Requested' && auth.has('billing.refund')) {
-                      <button class="primary" (click)="resolveRefund(item.id, 'Approved')">
-                        Approve & process
-                      </button>
-                      <button class="danger" (click)="resolveRefund(item.id, 'Rejected')">
-                        Reject
-                      </button>
-                    } @else {
-                      {{ item.approvedBy || 'Processed' }}
+                      <div class="refund-approval-actions">
+                        <button
+                          class="primary"
+                          [disabled]="!!resolvingRefundId()"
+                          (click)="resolveRefund(item.id, 'Approved')"
+                        >
+                          Approve & process
+                        </button>
+                        <button
+                          class="danger"
+                          [disabled]="!!resolvingRefundId()"
+                          (click)="resolveRefund(item.id, 'Rejected')"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     }
                   </td>
                 }
@@ -498,7 +515,7 @@
     [description]="
       editing()
         ? 'Update eligible invoice line items.'
-        : 'Create an itemized invoice for a registered patient.'
+        : 'Create an itemized patient billing invoice.'
     "
     icon="billing"
     size="xl"
@@ -512,20 +529,32 @@
   /></app-modal>
 }
 @if (paymentInvoice(); as payment) {
-  <app-modal title="Record payment" [dirty]="dirty()" (closed)="paymentInvoice.set(null)"
+  <app-modal
+    title="Record Payment"
+    description="Record a verified payment against this invoice."
+    icon="billing"
+    size="lg"
+    [dirty]="dirty()"
+    (closed)="paymentInvoice.set(null)"
     ><app-payment-form
-      [invoiceId]="payment.id"
-      [initialAmount]="payment.amount"
+      [invoice]="payment"
       (dirtyChanged)="dirty.set($event)"
+      (cancelled)="paymentInvoice.set(null)"
       (saved)="paymentSaved()"
   /></app-modal>
 }
 @if (refundPayment(); as payment) {
-  <app-modal title="Request refund" [dirty]="dirty()" (closed)="refundPayment.set(null)"
+  <app-modal
+    title="Refund Payment"
+    description="Submit a controlled refund request for approval."
+    icon="rotate-ccw"
+    size="lg"
+    [dirty]="dirty()"
+    (closed)="refundPayment.set(null)"
     ><app-refund-form
-      [paymentId]="payment.id"
-      [initialAmount]="payment.amount"
+      [payment]="payment"
       (dirtyChanged)="dirty.set($event)"
+      (cancelled)="refundPayment.set(null)"
       (saved)="refundSaved()"
   /></app-modal>
 }

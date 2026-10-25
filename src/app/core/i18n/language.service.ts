@@ -11,6 +11,9 @@ export interface AppLanguage {
   enabled: boolean;
   translationCoverage: number;
   isDefault: boolean;
+  translationAvailable?: boolean;
+  translationStatus?: 'AVAILABLE' | 'REQUIRED';
+  translations?: { key: string; value: string }[];
 }
 @Injectable({ providedIn: 'root' })
 export class LanguageService {
@@ -28,6 +31,7 @@ export class LanguageService {
       isDefault: true,
     },
   ]);
+  readonly runtimeTranslations = signal<Record<string, Record<string, string>>>({});
   async load() {
     try {
       const [languages, preference] = await Promise.all([
@@ -35,6 +39,14 @@ export class LanguageService {
         firstValueFrom(this.http.get<{ data: AppLanguage | null }>('/api/v1/languages/preference')),
       ]);
       this.enabled.set(languages.data);
+      this.runtimeTranslations.set(
+        Object.fromEntries(
+          languages.data.map((language) => [
+            language.code,
+            Object.fromEntries((language.translations ?? []).map((item) => [item.key, item.value])),
+          ]),
+        ),
+      );
       const code = preference.data?.code ?? 'en';
       this.current.set(languages.data.some((x) => x.code === code) ? code : 'en');
       document.documentElement.lang = this.current();
@@ -56,6 +68,11 @@ export class LanguageService {
     }
   }
   translate(key: string) {
-    return TRANSLATIONS[this.current()]?.[key] ?? TRANSLATIONS['en']?.[key] ?? key;
+    return (
+      this.runtimeTranslations()[this.current()]?.[key] ??
+      TRANSLATIONS[this.current()]?.[key] ??
+      TRANSLATIONS['en']?.[key] ??
+      key
+    );
   }
 }

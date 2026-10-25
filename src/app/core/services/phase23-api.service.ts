@@ -105,14 +105,22 @@ export class Phase23ApiService {
   payments(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/billing-payments', { params: this.params(q) });
   }
-  requestRefund(paymentId: string, v: any) {
-    return this.http.post<{ data: any }>(`/api/v1/billing/payments/${paymentId}/refunds`, v);
+  requestRefund(paymentId: string, v: any, idempotencyKey: string) {
+    return this.http.post<{ data: any }>(`/api/v1/billing/payments/${paymentId}/refunds`, v, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
   }
   resolveRefund(id: string, status: 'Approved' | 'Rejected') {
     return this.http.patch<{ data: any }>(`/api/v1/billing/refunds/${id}`, { status });
   }
   providers(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/insurance/providers', { params: this.params(q) });
+  }
+  insuranceSummary() {
+    return this.http.get<{ data: any }>('/api/v1/insurance/summary');
+  }
+  insuranceProvider(id: string) {
+    return this.http.get<{ data: any }>(`/api/v1/insurance/providers/${id}`);
   }
   createProvider(v: any) {
     return this.http.post<{ data: any }>('/api/v1/insurance/providers', v);
@@ -129,6 +137,9 @@ export class Phase23ApiService {
   policies(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/insurance/policies', { params: this.params(q) });
   }
+  insurancePolicy(id: string) {
+    return this.http.get<{ data: any }>(`/api/v1/insurance/policies/${id}`);
+  }
   createPolicy(v: any) {
     return this.http.post<{ data: any }>('/api/v1/insurance/policies', v);
   }
@@ -140,6 +151,9 @@ export class Phase23ApiService {
   }
   claims(q: Record<string, unknown> = {}) {
     return this.http.get<Page<any>>('/api/v1/insurance/claims', { params: this.params(q) });
+  }
+  insuranceClaim(id: string) {
+    return this.http.get<{ data: any }>(`/api/v1/insurance/claims/${id}`);
   }
   createClaim(v: any) {
     return this.http.post<{ data: any }>('/api/v1/insurance/claims', v);

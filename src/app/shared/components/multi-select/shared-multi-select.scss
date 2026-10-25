@@ -1,0 +1,114 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+.multi-select {
+  position: relative;
+}
+.multi-select__trigger {
+  width: 100%;
+  min-height: var(--input-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+}
+.multi-select__trigger:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.multi-select__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+.multi-select__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e7f8f4;
+  color: #08766c;
+  font-size: 12px;
+  font-weight: 600;
+}
+.multi-select__chip button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.multi-select__panel {
+  position: absolute;
+  z-index: calc(var(--z-dropdown) + 2);
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  min-width: 320px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-dialog);
+}
+.multi-select__options {
+  max-height: min(42vh, 320px);
+  margin-top: 8px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.multi-select__options label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.multi-select__options label:hover:not(.disabled) {
+  background: var(--color-light-blue);
+}
+.multi-select__options label.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.multi-select__options span,
+.multi-select__options small {
+  display: block;
+}
+.multi-select__options small,
+.multi-select__options code {
+  color: var(--color-muted);
+}
+.multi-select__options p {
+  padding: 16px;
+  color: var(--color-muted);
+  text-align: center;
+}
+.multi-select__panel footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 12px;
+}
+@media (max-width: 520px) {
+  .multi-select__panel {
+    min-width: 0;
+  }
+}

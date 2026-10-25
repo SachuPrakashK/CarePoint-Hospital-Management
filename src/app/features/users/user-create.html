@@ -1,17 +1,101 @@
-    <form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()">
-      <div class="crud-modal__body">
-        <div class="form-grid">
-          <label class="field"><span class="form-label">First Name <span class="required-indicator">*</span></span><input formControlName="firstName" placeholder="Enter first name" /></label>
-          <label class="field"><span class="form-label">Last Name <span class="required-indicator">*</span></span><input formControlName="lastName" placeholder="Enter last name" /></label>
-          <label class="field"><span class="form-label">Email <span class="required-indicator">*</span></span><input type="email" formControlName="email" placeholder="Enter email address" /></label>
-          <label class="field"><span class="form-label">Phone</span><input formControlName="phone" placeholder="Enter phone number" /></label>
-          <label class="field"><span class="form-label">Username</span><input formControlName="username" placeholder="Enter username" /></label>
-          <label class="field"><span class="form-label">Role <span class="required-indicator">*</span></span><select formControlName="roleCode"><option value="">Select role</option>@for (role of roles(); track role.id) { <option [value]="role.code">{{ role.name }}</option> }</select></label>
-          <label class="field"><span class="form-label">Status <span class="required-indicator">*</span></span><select formControlName="status"><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option></select></label>
-          <label class="field"><span class="form-label">{{ mode() === 'edit' ? 'New password' : 'Temporary password' }} @if (mode() === 'create') { <span class="required-indicator">*</span> }</span><input type="password" formControlName="password" autocomplete="new-password" [placeholder]="mode() === 'edit' ? 'Leave blank to keep current password' : 'Enter secure temporary password'" />@if (form.controls.password.touched && form.controls.password.invalid) { <span class="error">Use at least {{ passwordMinimumLength() }} characters and meet the security policy.</span> }</label>
-          <label class="field"><span class="form-label">Confirm password @if (mode() === 'create') { <span class="required-indicator">*</span> }</span><input type="password" formControlName="confirmPassword" autocomplete="new-password" placeholder="Confirm password" />@if(form.controls.confirmPassword.touched && form.controls.confirmPassword.hasError('mismatch')){<span class="error">Passwords must match.</span>}</label>
-        </div>
-        @if (error()) { <div class="form-api-error" role="alert">{{ error() }}</div> }
-      </div>
-      <div class="crud-modal__footer"><button class="primary" [disabled]="form.invalid || submitting()">{{ submitting() ? (mode() === 'edit' ? 'Updating...' : 'Creating...') : (mode() === 'edit' ? 'Update' : 'Create') }}</button></div>
-    </form>
+﻿<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()">
+  <div class="crud-modal__body">
+    <div class="form-grid">
+      <label class="field"
+        ><span class="form-label">First Name <span class="required-indicator">*</span></span
+        ><input formControlName="firstName" placeholder="Enter first name"
+      /></label>
+      <label class="field"
+        ><span class="form-label">Last Name <span class="required-indicator">*</span></span
+        ><input formControlName="lastName" placeholder="Enter last name"
+      /></label>
+      <label class="field"
+        ><span class="form-label">Email <span class="required-indicator">*</span></span
+        ><input type="email" formControlName="email" placeholder="Enter email address"
+      /></label>
+      <label class="field"
+        ><span class="form-label">Phone</span
+        ><input formControlName="phone" placeholder="Enter phone number"
+      /></label>
+      <label class="field"
+        ><span class="form-label">Username</span
+        ><input formControlName="username" placeholder="Enter username"
+      /></label>
+      <label class="field"
+        ><span class="form-label">Role <span class="required-indicator">*</span></span
+        ><select formControlName="roleCode">
+          <option value="" disabled>Select role</option>
+          @for (role of roles(); track role.id) {
+            <option [value]="role.code">{{ role.name }}</option>
+          }
+        </select></label
+      >
+      <label class="field"
+        ><span class="form-label">Status <span class="required-indicator">*</span></span
+        ><select formControlName="status">
+          <option value="" disabled>Select status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select></label
+      >
+      <label class="field"
+        ><span class="form-label"
+          >{{ mode() === 'edit' ? 'New password' : 'Temporary password' }}
+          @if (mode() === 'create') {
+            <span class="required-indicator">*</span>
+          }</span
+        ><input
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+          [placeholder]="
+            mode() === 'edit'
+              ? 'Leave blank to keep current password'
+              : 'Enter secure temporary password'
+          "
+        />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <span class="error"
+            >Use at least {{ passwordMinimumLength() }} characters and meet the security
+            policy.</span
+          >
+        }
+      </label>
+      <label class="field"
+        ><span class="form-label"
+          >Confirm password
+          @if (mode() === 'create') {
+            <span class="required-indicator">*</span>
+          }</span
+        ><input
+          type="password"
+          formControlName="confirmPassword"
+          autocomplete="new-password"
+          placeholder="Confirm password"
+        />
+        @if (
+          form.controls.confirmPassword.touched &&
+          form.controls.confirmPassword.hasError('mismatch')
+        ) {
+          <span class="error">Passwords must match.</span>
+        }
+      </label>
+    </div>
+    @if (error()) {
+      <div class="form-api-error" role="alert">{{ error() }}</div>
+    }
+  </div>
+  <div class="crud-modal__footer">
+    <button class="primary" [disabled]="form.invalid || submitting()">
+      {{
+        submitting()
+          ? mode() === 'edit'
+            ? 'Updating...'
+            : 'Creating...'
+          : mode() === 'edit'
+            ? 'Update'
+            : 'Create'
+      }}
+    </button>
+  </div>
+</form>

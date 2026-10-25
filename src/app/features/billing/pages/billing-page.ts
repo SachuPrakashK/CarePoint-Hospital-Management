@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { Phase23Store } from '../../../core/services/phase23.store';
 import { AppDateTimeService } from '../../../core/services/app-date-time.service';
 import { AppModal } from '../../../shared/components/modal/app-modal';
@@ -20,9 +20,11 @@ import { AppIcon } from '../../../shared/components/icon/app-icon';
 import { SharedFilter } from '../../../shared/components/filters/shared-filter';
 import { SharedExport } from '../../../shared/components/export/shared-export';
 import { AuthStore } from '../../../core/auth/auth.store';
+import { AppActionsMenu } from '../../../shared/components/actions-menu/app-actions-menu';
+import { ConfirmationService } from '../../../core/services/confirmation.service';
+import { ToastService } from '../../../core/services/toast.service';
 @Component({
   imports: [
-    RouterLink,
     AppModal,
     BillForm,
     PaymentForm,
@@ -36,6 +38,7 @@ import { AuthStore } from '../../../core/auth/auth.store';
     AppIcon,
     SharedFilter,
     SharedExport,
+    AppActionsMenu,
   ],
   templateUrl: './billing-page.html',
   styleUrl: './billing-page.scss',
@@ -47,9 +50,11 @@ export class BillingPage {
   private api = inject(Phase23ApiService);
   private preferences = inject(TablePreferencesService);
   private router = inject(Router);
+  private confirmation = inject(ConfirmationService);
+  private toast = inject(ToastService);
   readonly tab = signal<'invoices' | 'payments' | 'refunds'>('invoices');
-  readonly paymentInvoice = signal<{ id: string; amount: number } | null>(null);
-  readonly refundPayment = signal<{ id: string; amount: number } | null>(null);
+  readonly paymentInvoice = signal<any | null>(null);
+  readonly refundPayment = signal<any | null>(null);
   readonly invoiceModal = signal(false);
   readonly editing = signal<any | null>(null);
   readonly dirty = signal(false);
@@ -57,6 +62,7 @@ export class BillingPage {
   readonly rows = signal<any[]>([]);
   readonly loading = signal(false);
   readonly error = signal('');
+  readonly resolvingRefundId = signal<string | null>(null);
   readonly search = signal('');
   readonly statusFilter = signal('');
   readonly methodFilter = signal('');
@@ -145,7 +151,7 @@ export class BillingPage {
       { id: 'reason', header: 'Reason', visibleByDefault: true, sortable: true, sortKey: 'reason' },
       { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
       { id: 'processedBy', header: 'Processed by', visibleByDefault: true },
-      { id: 'approval', header: 'Approval', visibleByDefault: true, required: true },
+      { id: 'actions', header: 'Actions', visibleByDefault: true, required: true },
     ],
   };
   readonly visibleColumns = signal<string[]>(
@@ -307,10 +313,25 @@ export class BillingPage {
           : item.payment?.invoiceId;
     if (invoiceId) void this.router.navigate(['/billing/invoice', invoiceId]);
   }
+  printInvoice(invoice: any) {
+    window.open(`/billing/invoice/${invoice.id}?print=1`, '_blank', 'noopener');
+  }
+  async cancelInvoice(invoice: any) {
+    const confirmed = await this.confirmation.confirm({
+      title: 'Cancel invoice?',
+      message: `Invoice ${invoice.number} will be voided and retained in financial history.`,
+      confirmLabel: 'Cancel invoice',
+      cancelLabel: 'Keep invoice',
+      danger: true,
+    });
+    if (!confirmed) return;
+    await firstValueFrom(this.api.cancelInvoice(invoice.id));
+    this.message.set('Invoice cancelled.');
+    await Promise.all([this.loadTable(), this.store.loadAll()]);
+  }
   exportCurrentPage() {
     const columns = this.columns().filter(
-      (column) =>
-        this.columnVisible(column.id) && column.id !== 'actions' && column.id !== 'approval',
+      (column) => this.columnVisible(column.id) && column.id !== 'actions',
     );
     const value = (item: any, id: string) => {
       const invoice = this.tab() === 'refunds' ? item.payment?.invoice : item.invoice;
@@ -396,8 +417,20 @@ export class BillingPage {
     void this.selectTab('refunds');
   }
   async resolveRefund(id: string, status: 'Approved' | 'Rejected') {
-    await this.store.resolveRefund(id, status);
-    this.message.set(status === 'Approved' ? 'Refund approved.' : 'Refund rejected.');
-    await this.loadTable();
+    if (this.resolvingRefundId()) return;
+    this.resolvingRefundId.set(id);
+    try {
+      await this.store.resolveRefund(id, status);
+      const success = status === 'Approved' ? 'Refund approved.' : 'Refund rejected.';
+      this.message.set(success);
+      this.toast.success(success);
+      await this.loadTable();
+    } catch (error: any) {
+      this.toast.error(
+        error?.error?.message ?? error?.message ?? 'The refund could not be updated.',
+      );
+    } finally {
+      this.resolvingRefundId.set(null);
+    }
   }
 }

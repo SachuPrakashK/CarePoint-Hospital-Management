@@ -19,7 +19,8 @@ describe('AppActionsMenu edit action', () => {
   it('emits Edit for an editable record', () => {
     let emitted = false;
     fixture.componentInstance.edit.subscribe(() => (emitted = true));
-    const button = fixture.debugElement.queryAll(By.css('[role="menuitem"]'))
+    const button = fixture.debugElement
+      .queryAll(By.css('[role="menuitem"]'))
       .find((item) => item.nativeElement.textContent.includes('Edit'))!;
 
     button.nativeElement.click();
@@ -31,10 +32,27 @@ describe('AppActionsMenu edit action', () => {
     fixture.componentRef.setInput('editDisabled', true);
     fixture.componentRef.setInput('editDisabledReason', 'Protected system roles cannot be edited');
     fixture.detectChanges();
-    const button: HTMLButtonElement = fixture.debugElement.queryAll(By.css('[role="menuitem"]'))
+    const button: HTMLButtonElement = fixture.debugElement
+      .queryAll(By.css('[role="menuitem"]'))
       .find((item) => item.nativeElement.textContent.includes('Edit'))!.nativeElement;
 
     expect(button.disabled).toBe(true);
     expect(button.title).toBe('Protected system roles cannot be edited');
+  });
+
+  it('renders the opened menu with a usable height after its view is created', async () => {
+    await Promise.resolve();
+    fixture.detectChanges();
+    const menu: HTMLElement = fixture.nativeElement.querySelector('[role="menu"]');
+
+    expect(menu).not.toBeNull();
+    expect(Number.parseFloat(menu.style.maxHeight)).toBeGreaterThan(0);
+  });
+
+  it('closes the active menu on Escape', () => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="menu"]')).toBeNull();
   });
 });

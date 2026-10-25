@@ -180,10 +180,7 @@ export class AuthStore {
 
   has(permission: Permission) {
     const user = this.user();
-    return (
-      !!user &&
-      user.permissions.includes(permission)
-    );
+    return !!user && user.permissions.includes(permission);
   }
 
   updateProfile(changes: Pick<SessionUser, 'name' | 'email'> & { phone?: string }) {

@@ -1,71 +1,80 @@
-<app-modal title="Create admission" description="Complete the required information below." size="xl" [dirty]="form.dirty" (closed)="close()">
-    <form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()">
-      <div class="crud-modal__body">
-        <div class="form-grid">
-          <label class="field"
-            ><span class="form-label">Patient <span class="required-indicator">*</span></span
-            ><select formControlName="patientId">
-              <option value="">Select patient</option>
-              @for (p of clinical.patients(); track p.id) {
-                <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} · {{ p.mrn }}</option>
-              }
-            </select></label
-          ><label class="field"
-            ><span class="form-label">Admission type</span
-            ><select formControlName="type">
-              <option>Emergency</option>
-              <option>Planned</option>
-              <option>Transfer</option>
-            </select></label
-          ><label class="field"
-            ><span class="form-label">Department</span
-            ><select formControlName="departmentId">
-              <option value="">Select department</option>
-              @for (department of store.lookups().departments; track department.id) {
-                <option [value]="department.id">{{ department.name }}</option>
-              }
-            </select></label
-          ><label class="field"
-            ><span class="form-label">Attending doctor</span
-            ><select formControlName="attendingDoctorId">
-              <option value="">Select attending doctor</option>
-              @for (doctor of store.lookups().doctors; track doctor.id) {
-                <option [value]="doctor.id">Dr. {{ doctor.firstName }} {{ doctor.lastName }}</option>
-              }
-            </select></label
-          ><label class="field"
-            ><span class="form-label">Admission date/time</span
-            ><input type="datetime-local" formControlName="admittedAt" /></label
-          ><label class="field"
-            ><span class="form-label">Available bed <span class="required-indicator">*</span></span
-            ><select formControlName="bedId">
-              <option value="">Select bed</option>
-              @for (b of store.availableBeds(); track b.id) {
-                <option [value]="b.id">{{ b.name }} · {{ b.ward }} · {{ b.roomType }}</option>
-              }
-            </select></label
-          ><label class="field full"
-            ><span class="form-label"
-              >Reason for admission <span class="required-indicator">*</span></span
-            ><textarea
-              formControlName="reason"
-              placeholder="Clinical reason for admission"
-            ></textarea></label
-          ><label class="field full"
-            ><span class="form-label"
-              >Initial diagnosis <span class="required-indicator">*</span></span
-            ><input formControlName="initialDiagnosis" placeholder="Working diagnosis" /></label
-          ><label class="field full"
-            ><span class="form-label">Notes</span
-            ><textarea formControlName="notes" placeholder="Admission notes"></textarea>
-          </label>
-          @if (error()) {
-            <div class="error full">{{ error() }}</div>
-          }
-        </div>
+﻿<app-modal
+  title="Create admission"
+  description="Complete the required information below."
+  size="xl"
+  [dirty]="form.dirty"
+  (closed)="close()"
+>
+  <form class="crud-modal__form" [formGroup]="form" (ngSubmit)="save()">
+    <div class="crud-modal__body">
+      <div class="form-grid">
+        <label class="field"
+          ><span class="form-label">Patient <span class="required-indicator">*</span></span
+          ><select formControlName="patientId">
+            <option value="" disabled>Select patient</option>
+            @for (p of clinical.patients(); track p.id) {
+              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} Â· {{ p.mrn }}</option>
+            }
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Admission type</span
+          ><select formControlName="type">
+            <option value="" disabled>Select admission type</option>
+            <option>Emergency</option>
+            <option>Planned</option>
+            <option>Transfer</option>
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Department</span
+          ><select formControlName="departmentId">
+            <option value="" disabled>Select department</option>
+            @for (department of store.lookups().departments; track department.id) {
+              <option [value]="department.id">{{ department.name }}</option>
+            }
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Attending doctor</span
+          ><select formControlName="attendingDoctorId">
+            <option value="" disabled>Select attending doctor</option>
+            @for (doctor of store.lookups().doctors; track doctor.id) {
+              <option [value]="doctor.id">Dr. {{ doctor.firstName }} {{ doctor.lastName }}</option>
+            }
+          </select></label
+        ><label class="field"
+          ><span class="form-label">Admission date/time</span
+          ><input type="datetime-local" formControlName="admittedAt" /></label
+        ><label class="field"
+          ><span class="form-label">Available bed <span class="required-indicator">*</span></span
+          ><select formControlName="bedId">
+            <option value="" disabled>Select bed</option>
+            @for (b of store.availableBeds(); track b.id) {
+              <option [value]="b.id">{{ b.name }} Â· {{ b.ward }} Â· {{ b.roomType }}</option>
+            }
+          </select></label
+        ><label class="field full"
+          ><span class="form-label"
+            >Reason for admission <span class="required-indicator">*</span></span
+          ><textarea
+            formControlName="reason"
+            placeholder="Clinical reason for admission"
+          ></textarea></label
+        ><label class="field full"
+          ><span class="form-label"
+            >Initial diagnosis <span class="required-indicator">*</span></span
+          ><input formControlName="initialDiagnosis" placeholder="Working diagnosis" /></label
+        ><label class="field full"
+          ><span class="form-label">Notes</span
+          ><textarea formControlName="notes" placeholder="Admission notes"></textarea>
+        </label>
+        @if (error()) {
+          <div class="error full">{{ error() }}</div>
+        }
       </div>
-      <div class="crud-modal__footer">
-        <button class="primary" [disabled]="form.invalid || submitting()">{{ submitting() ? 'Admitting…' : 'Admit patient' }}</button>
-      </div>
-    </form>
+    </div>
+    <div class="crud-modal__footer">
+      <button class="primary" [disabled]="form.invalid || submitting()">
+        {{ submitting() ? 'Admittingâ€¦' : 'Admit patient' }}
+      </button>
+    </div>
+  </form>
 </app-modal>

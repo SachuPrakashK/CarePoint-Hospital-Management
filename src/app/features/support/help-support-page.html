@@ -1,4 +1,4 @@
-<div class="page-head support-heading">
+﻿<div class="page-head support-heading">
   <div>
     <div class="breadcrumbs">Help & Support</div>
     <h1>Help & Support</h1>
@@ -20,7 +20,7 @@
     <span class="support-card__icon"><app-icon name="mail" [size]="24" /></span>
     <span
       ><b>Contact Support</b
-      ><small>View your organization’s configured support contacts.</small></span
+      ><small>View your organizationâ€™s configured support contacts.</small></span
     >
   </button>
   <button type="button" class="support-card" (click)="scrollTo('support-tickets')">
@@ -47,7 +47,7 @@
     />
   </div>
   @if (articleCategories().length) {
-    <div class="category-tabs" role="tablist" aria-label="Help article categories">
+    <div class="tabs" role="tablist" aria-label="Help article categories">
       <button
         type="button"
         role="tab"
@@ -72,7 +72,7 @@
   }
   @if (articlesLoading()) {
     <div class="loading-state loading-state--section" role="status" aria-live="polite">
-      Loading help articles…
+      Loading help articlesâ€¦
     </div>
   } @else if (articlesError()) {
     <div class="support-error" role="alert">
@@ -115,7 +115,7 @@
     </div>
   </div>
   @if (contactsLoading()) {
-    <div class="loading-state loading-state--compact" role="status">Loading contact details…</div>
+    <div class="loading-state loading-state--compact" role="status">Loading contact detailsâ€¦</div>
   } @else if (contactsError()) {
     <div class="support-error" role="alert">
       <span>{{ contactsError() }}</span
@@ -181,6 +181,7 @@
         (valueChange)="queryTickets($event)"
       />
       <app-shared-filter
+        [disabled]="ticketsLoading() || !!ticketsError() || total() === 0"
         [activeCount]="activeTicketFilters()"
         [loading]="ticketsLoading()"
         (applied)="applyTicketFilters()"
@@ -211,6 +212,7 @@
         >
       </app-shared-filter>
       <app-column-config
+        [disabled]="ticketsLoading() || !!ticketsError() || total() === 0"
         [columns]="columns"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
@@ -219,7 +221,7 @@
     </div>
   </div>
   @if (ticketsLoading()) {
-    <div class="loading-state loading-state--table" role="status">Loading support requests…</div>
+    <div class="loading-state loading-state--table" role="status">Loading support requestsâ€¦</div>
   } @else if (ticketsError()) {
     <div class="support-error" role="alert">
       <span>{{ ticketsError() }}</span
@@ -412,7 +414,7 @@
           <label class="field"
             ><span>Module *</span
             ><select formControlName="module">
-              <option value="">Select module</option>
+              <option value="" disabled>Select module</option>
               @for (module of modules; track module) {
                 <option [value]="module">{{ module }}</option>
               }
@@ -424,7 +426,7 @@
           <label class="field"
             ><span>Issue type *</span
             ><select formControlName="issueType">
-              <option value="">Select issue type</option>
+              <option value="" disabled>Select issue type</option>
               <option value="TECHNICAL">Technical</option>
               <option value="ACCESS">Access</option>
               <option value="WORKFLOW">Workflow</option>
@@ -438,6 +440,7 @@
           <label class="field"
             ><span>Priority</span
             ><select formControlName="priority">
+              <option value="" disabled>Select priority</option>
               <option value="LOW">Low</option>
               <option value="NORMAL">Normal</option>
               <option value="HIGH">High</option>
@@ -466,7 +469,7 @@
         <button type="button" class="secondary" [disabled]="submitting()" (click)="closeCreate()">
           Cancel</button
         ><button type="submit" class="primary" [disabled]="submitting()">
-          {{ submitting() ? 'Submitting…' : 'Create Ticket' }}
+          {{ submitting() ? 'Submittingâ€¦' : 'Create Ticket' }}
         </button>
       </footer>
     </form>
@@ -520,7 +523,7 @@
               <div>
                 <b>{{ event.status.replace('_', ' ') }}</b
                 ><small
-                  >{{ dates.formatDate(event.createdAt) }} · {{ event.actor.firstName }}
+                  >{{ dates.formatDate(event.createdAt) }} Â· {{ event.actor.firstName }}
                   {{ event.actor.lastName }}</small
                 >
               </div>

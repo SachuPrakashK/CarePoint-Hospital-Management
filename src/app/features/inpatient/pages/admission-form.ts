@@ -57,5 +57,7 @@ export class AdmissionForm {
       this.submitting.set(false);
     }
   }
-  close() { void this.router.navigateByUrl('/inpatient'); }
+  close() {
+    void this.router.navigateByUrl('/inpatient');
+  }
 }

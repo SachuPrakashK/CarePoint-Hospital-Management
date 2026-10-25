@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { PatientStore } from '../patient.store';
@@ -27,26 +35,41 @@ export class PatientDetails {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   readonly tabs: ReadonlyArray<{ id: DetailsTab; label: string }> = [
-    { id: 'overview', label: 'Overview' }, { id: 'appointments', label: 'Appointments' },
-    { id: 'visits', label: 'Visits' }, { id: 'prescriptions', label: 'Prescriptions' },
-    { id: 'documents', label: 'Documents' }, { id: 'medical-records', label: 'Medical Records' },
-    { id: 'laboratory', label: 'Laboratory' }, { id: 'radiology', label: 'Radiology' },
-    { id: 'billing', label: 'Billing' }, { id: 'insurance', label: 'Insurance' },
+    { id: 'overview', label: 'Overview' },
+    { id: 'appointments', label: 'Appointments' },
+    { id: 'visits', label: 'Visits' },
+    { id: 'prescriptions', label: 'Prescriptions' },
+    { id: 'documents', label: 'Documents' },
+    { id: 'medical-records', label: 'Medical Records' },
+    { id: 'laboratory', label: 'Laboratory' },
+    { id: 'radiology', label: 'Radiology' },
+    { id: 'billing', label: 'Billing' },
+    { id: 'insurance', label: 'Insurance' },
   ];
-  readonly activeTab = signal<DetailsTab>(this.validTab(this.route.snapshot.queryParamMap.get('tab')));
-  private readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  readonly activeTab = signal<DetailsTab>(
+    this.validTab(this.route.snapshot.queryParamMap.get('tab')),
+  );
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
   readonly appointmentOpen = signal(false);
   readonly rows = computed<any[]>(() => {
     const tab = this.activeTab();
     return tab === 'overview' || tab === 'medical-records' ? [] : (this.detail.data()[tab] ?? []);
   });
-  readonly medical = computed<Record<string, any[]>>(() => this.detail.data()['medical-records'] ?? {});
-  readonly hasMedicalRecords = computed(() => Object.values(this.medical()).some((items) => items.length));
+  readonly medical = computed<Record<string, any[]>>(
+    () => this.detail.data()['medical-records'] ?? {},
+  );
+  readonly hasMedicalRecords = computed(() =>
+    Object.values(this.medical()).some((items) => items.length),
+  );
   readonly activeError = computed(() => {
     const tab = this.activeTab();
     return tab === 'overview' ? undefined : this.detail.errors()[tab];
   });
-  private readonly patientLoader = effect(() => { void this.store.loadDetails(this.id()); });
+  private readonly patientLoader = effect(() => {
+    void this.store.loadDetails(this.id());
+  });
   private readonly queryTabLoader = effect(() => {
     const tab = this.validTab(this.queryParams().get('tab'));
     if (tab !== this.activeTab()) this.activeTab.set(tab);
@@ -58,10 +81,19 @@ export class PatientDetails {
   });
   selectTab(tab: DetailsTab) {
     this.activeTab.set(tab);
-    void this.router.navigate([], { relativeTo: this.route, queryParams: tab === 'overview' ? {} : { tab }, replaceUrl: true });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: tab === 'overview' ? {} : { tab },
+      replaceUrl: true,
+    });
   }
-  retry() { const tab = this.activeTab(); if (tab !== 'overview') void this.detail.load(this.id(), tab, true); }
-  age(dob: string) { return this.dates.calculateAge(dob); }
+  retry() {
+    const tab = this.activeTab();
+    if (tab !== 'overview') void this.detail.load(this.id(), tab, true);
+  }
+  age(dob: string) {
+    return this.dates.calculateAge(dob);
+  }
   async appointmentCreated() {
     this.detail.invalidate('appointments');
     await this.detail.load(this.id(), 'appointments', true);
@@ -69,6 +101,6 @@ export class PatientDetails {
     void this.router.navigate(['/appointments']);
   }
   private validTab(value: string | null): DetailsTab {
-    return this.tabs.some((tab) => tab.id === value) ? value as DetailsTab : 'overview';
+    return this.tabs.some((tab) => tab.id === value) ? (value as DetailsTab) : 'overview';
   }
 }

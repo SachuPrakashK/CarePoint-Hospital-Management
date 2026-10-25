@@ -1,4 +1,13 @@
-import { Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -13,7 +22,11 @@ import { TimelineEvent } from '../../../shared/models/inpatient.models';
 import { DashboardInvalidationService } from '../../../core/services/dashboard-invalidation.service';
 import { AppCalendar } from '../../../shared/components/calendar/app-calendar';
 import { SharedFilter } from '../../../shared/components/filters/shared-filter';
-@Component({ imports: [RouterLink, EmptyState, StatusBadge, DisplayValuePipe, AppCalendar, SharedFilter], templateUrl: './emr-page.html', styleUrl: './emr-page.scss' })
+@Component({
+  imports: [RouterLink, EmptyState, StatusBadge, DisplayValuePipe, AppCalendar, SharedFilter],
+  templateUrl: './emr-page.html',
+  styleUrl: './emr-page.scss',
+})
 export class EmrPage {
   id = input('');
   readonly clinical = inject(ClinicalStore);
@@ -72,25 +85,34 @@ export class EmrPage {
   constructor() {
     effect(() => {
       const patientId = this.id();
-      if (patientId) untracked(() => { void this.loadTimeline(patientId); void this.loadSummary(patientId); });
+      if (patientId)
+        untracked(() => {
+          void this.loadTimeline(patientId);
+          void this.loadSummary(patientId);
+        });
     });
-    this.invalidation.changed
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((domains) => {
-        if (domains.has('laboratory')) void this.loadTimeline();
-      });
+    this.invalidation.changed.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((domains) => {
+      if (domains.has('laboratory')) void this.loadTimeline();
+    });
   }
   async loadSummary(patientId = this.patient()?.id) {
     if (!patientId || this.summaryLoading()) return;
-    this.summaryLoading.set(true); this.summaryError.set(''); this.detailsNotFound.set(false); this.summary.set(null);
-    try { this.summary.set((await firstValueFrom(this.inpatientApi.clinicalSummary(patientId))).data); }
-    catch (error: any) {
+    this.summaryLoading.set(true);
+    this.summaryError.set('');
+    this.detailsNotFound.set(false);
+    this.summary.set(null);
+    try {
+      this.summary.set((await firstValueFrom(this.inpatientApi.clinicalSummary(patientId))).data);
+    } catch (error: any) {
       if (error?.status === 404) this.detailsNotFound.set(true);
       else this.summaryError.set('Unable to load the clinical record.');
+    } finally {
+      this.summaryLoading.set(false);
     }
-    finally { this.summaryLoading.set(false); }
   }
-  histories(type: string) { return this.summary()?.histories?.filter((item: any) => item.type === type) ?? []; }
+  histories(type: string) {
+    return this.summary()?.histories?.filter((item: any) => item.type === type) ?? [];
+  }
   async loadTimeline(patientId = this.patient()?.id) {
     if (!patientId || this.timelineLoading()) return;
     this.timelineLoading.set(true);

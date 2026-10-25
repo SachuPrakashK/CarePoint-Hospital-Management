@@ -33,7 +33,8 @@ export class UserApiService {
       search?: string;
       status?: string;
       role?: string;
-      sortBy?:string;sortOrder?:'asc'|'desc';
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
     } = {},
   ) {
     let params = new HttpParams()
@@ -42,7 +43,8 @@ export class UserApiService {
     if (query.search) params = params.set('search', query.search);
     if (query.status) params = params.set('status', query.status);
     if (query.role) params = params.set('role', query.role);
-    if(query.sortBy)params=params.set('sort_by',query.sortBy);if(query.sortOrder)params=params.set('sort_order',query.sortOrder);
+    if (query.sortBy) params = params.set('sort_by', query.sortBy);
+    if (query.sortOrder) params = params.set('sort_order', query.sortOrder);
     return this.http.get<{
       data: ManagedUser[];
       pagination: { page: number; page_size: number; total: number; total_pages: number };

@@ -124,12 +124,10 @@ export class DashboardStore {
     );
   }
   private refreshSummary() {
-    this.api
-      .summary()
-      .subscribe({
-        next: (r) => this.summary.set(r.data),
-        error: () => this.error.set('Dashboard summary could not be refreshed.'),
-      });
+    this.api.summary().subscribe({
+      next: (r) => this.summary.set(r.data),
+      error: () => this.error.set('Dashboard summary could not be refreshed.'),
+    });
   }
   refreshAppointments() {
     forkJoin({

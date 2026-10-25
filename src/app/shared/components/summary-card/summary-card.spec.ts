@@ -13,11 +13,15 @@ describe('SummaryCard', () => {
     fixture.detectChanges();
   });
   it('renders its API-backed value and semantic icon', () => {
-    expect(fixture.nativeElement.querySelector('.summary-card__title').textContent).toContain('Available Beds');
+    expect(fixture.nativeElement.querySelector('.summary-card__title').textContent).toContain(
+      'Available Beds',
+    );
     expect(fixture.nativeElement.querySelector('.summary-card__value').textContent).toContain('24');
     expect(fixture.nativeElement.querySelector('app-icon')).not.toBeNull();
   });
   it('applies the configured color variant', () => {
-    expect(fixture.nativeElement.querySelector('.summary-card').classList).toContain('summary-card--green');
+    expect(fixture.nativeElement.querySelector('.summary-card').classList).toContain(
+      'summary-card--green',
+    );
   });
 });

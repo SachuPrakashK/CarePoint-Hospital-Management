@@ -9,7 +9,7 @@ import { ApplicationSettingsService } from '../../../core/services/application-s
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppPagination {
-  private config=inject(ApplicationSettingsService);
+  private config = inject(ApplicationSettingsService);
   readonly page = input(1);
   readonly pageSize = input<number>(this.config.defaultRowsPerPage());
   readonly totalItems = input(0);
@@ -19,14 +19,26 @@ export class AppPagination {
   readonly pageChange = output<number>();
   readonly pageSizeChange = output<number>();
   readonly pageSizes = [10, 25, 50, 100];
-  readonly start = computed(() => this.totalItems() ? (this.page() - 1) * this.pageSize() + 1 : 0);
+  readonly start = computed(() =>
+    this.totalItems() ? (this.page() - 1) * this.pageSize() + 1 : 0,
+  );
   readonly end = computed(() => Math.min(this.page() * this.pageSize(), this.totalItems()));
   readonly pages = computed<Array<number | 'ellipsis'>>(() => {
     const total = this.totalPages();
     const current = this.page();
     if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
-    const selected = new Set([1, total, current - 2, current - 1, current, current + 1, current + 2]);
-    const values = [...selected].filter((value) => value >= 1 && value <= total).sort((a, b) => a - b);
+    const selected = new Set([
+      1,
+      total,
+      current - 2,
+      current - 1,
+      current,
+      current + 1,
+      current + 2,
+    ]);
+    const values = [...selected]
+      .filter((value) => value >= 1 && value <= total)
+      .sort((a, b) => a - b);
     const result: Array<number | 'ellipsis'> = [];
     values.forEach((value, index) => {
       if (index && value - values[index - 1] > 1) result.push('ellipsis');

@@ -47,7 +47,15 @@ export class RoleForm {
     return [...map.entries()];
   });
   readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.pattern(/\S/), Validators.minLength(2), Validators.maxLength(80)]],
+    name: [
+      '',
+      [
+        Validators.required,
+        Validators.pattern(/\S/),
+        Validators.minLength(2),
+        Validators.maxLength(80),
+      ],
+    ],
     description: ['', [Validators.maxLength(500)]],
     status: ['ACTIVE' as 'ACTIVE' | 'INACTIVE', Validators.required],
   });
@@ -69,7 +77,8 @@ export class RoleForm {
   }
   toggle(code: string, checked: boolean) {
     const next = new Set(this.selected());
-    if (checked) next.add(code); else next.delete(code);
+    if (checked) next.add(code);
+    else next.delete(code);
     this.selected.set(next);
     this.form.markAsDirty();
     this.dirtyChanged.emit(true);
@@ -83,7 +92,8 @@ export class RoleForm {
   }
   toggleGroup(values: PermissionRecord[], checked: boolean) {
     const next = new Set(this.selected());
-    for (const permission of values) checked ? next.add(permission.code) : next.delete(permission.code);
+    for (const permission of values)
+      checked ? next.add(permission.code) : next.delete(permission.code);
     this.selected.set(next);
     this.form.markAsDirty();
     this.dirtyChanged.emit(true);

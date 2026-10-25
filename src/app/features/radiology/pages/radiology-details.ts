@@ -21,17 +21,28 @@ export class RadiologyDetails {
   readonly loading = signal(true);
   readonly notFound = signal(false);
   readonly error = signal('');
-  constructor() { void this.load(); }
+  constructor() {
+    void this.load();
+  }
   async load() {
     const id = this.route.snapshot.paramMap.get('id');
-    this.loading.set(true); this.error.set(''); this.notFound.set(false);
-    if (!id) { this.notFound.set(true); this.loading.set(false); return; }
+    this.loading.set(true);
+    this.error.set('');
+    this.notFound.set(false);
+    if (!id) {
+      this.notFound.set(true);
+      this.loading.set(false);
+      return;
+    }
     try {
       const response = await firstValueFrom(this.api.radiologyOrder(id));
-      if (!response.data) this.notFound.set(true); else this.item.set(response.data);
+      if (!response.data) this.notFound.set(true);
+      else this.item.set(response.data);
     } catch (error: any) {
       if (error?.status === 404) this.notFound.set(true);
       else this.error.set('Unable to load the radiology order.');
-    } finally { this.loading.set(false); }
+    } finally {
+      this.loading.set(false);
+    }
   }
 }

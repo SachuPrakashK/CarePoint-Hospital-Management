@@ -1,4 +1,4 @@
-<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
+﻿<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
   <div class="crud-modal__body">
     <div class="form-grid">
       @if (kind() === 'inventory') {
@@ -14,7 +14,7 @@
             <option value="" disabled>
               {{
                 optionsLoading
-                  ? 'Loading categories…'
+                  ? 'Loading categoriesâ€¦'
                   : categories.length
                     ? 'Select category'
                     : 'No categories available'
@@ -115,7 +115,7 @@
             <option value="" disabled>
               {{
                 optionsLoading
-                  ? 'Loading suppliers…'
+                  ? 'Loading suppliersâ€¦'
                   : suppliers.length
                     ? 'Select supplier'
                     : 'No suppliers available'
@@ -128,6 +128,7 @@
         ><label class="field"
           ><span class="form-label">Item type <span class="required-indicator">*</span></span
           ><select formControlName="itemType">
+            <option value="" disabled>Select item type</option>
             <option>Inventory</option>
             <option>Medicine</option>
           </select></label
@@ -135,7 +136,7 @@
           ><span class="form-label">Item <span class="required-indicator">*</span></span
           ><select formControlName="itemId">
             <option value="" disabled>
-              {{ optionsLoading ? 'Loading items…' : 'Select item' }}
+              {{ optionsLoading ? 'Loading itemsâ€¦' : 'Select item' }}
             </option>
             @if (form.controls.itemType.value === 'Medicine') {
               @for (x of pharmacy.medicines(); track x.id) {
@@ -143,7 +144,7 @@
               }
             } @else {
               @for (x of inventoryItems; track x.id) {
-                <option [value]="x.id">{{ x.name }} · {{ x.code }}</option>
+                <option [value]="x.id">{{ x.name }} Â· {{ x.code }}</option>
               }
             }
           </select></label

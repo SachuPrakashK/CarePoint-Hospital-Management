@@ -9,7 +9,9 @@ describe('AppCalendar', () => {
     const emitted = vi.fn();
     calendar.valueChange.subscribe(emitted);
     calendar.select(calendar.days()[10]);
-    expect(emitted).toHaveBeenCalledWith(calendar.days().find((day) => day.selected)?.iso ?? expect.any(String));
+    expect(emitted).toHaveBeenCalledWith(
+      calendar.days().find((day) => day.selected)?.iso ?? expect.any(String),
+    );
   });
 
   it('moves between calendar months', () => {

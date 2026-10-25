@@ -1,7 +1,3 @@
-<a class="audit-back-link" routerLink="/audit-logs"
-  ><span aria-hidden="true">&#8592;</span> Audit logs</a
->
-
 @if (loading()) {
   <div class="loading-state loading-state--page" role="status" aria-live="polite">
     Loading audit event...
@@ -46,6 +42,10 @@
           <dt>Event ID</dt>
           <dd class="audit-mono">{{ item.id }}</dd>
         </div>
+        <div>
+          <dt>Description</dt>
+          <dd>{{ label(item.action) }} — {{ label(item.entityType) }}</dd>
+        </div>
       </dl>
     </section>
 
@@ -58,15 +58,15 @@
         </div>
         <div>
           <dt>Email</dt>
-          <dd>{{ item.actorEmail || 'Not available' }}</dd>
+          <dd>{{ item.actorEmail || '—' }}</dd>
         </div>
         <div>
           <dt>User ID</dt>
-          <dd class="audit-mono">{{ item.userId || 'System event' }}</dd>
+          <dd class="audit-mono">{{ item.userId || '—' }}</dd>
         </div>
         <div>
           <dt>IP address</dt>
-          <dd class="audit-mono">{{ item.ipAddress || 'Not recorded' }}</dd>
+          <dd class="audit-mono">{{ item.ipAddress || '—' }}</dd>
         </div>
       </dl>
     </section>
@@ -80,7 +80,7 @@
         </div>
         <div>
           <dt>Resource ID</dt>
-          <dd class="audit-mono">{{ item.entityId || 'Not recorded' }}</dd>
+          <dd class="audit-mono">{{ item.entityId || '—' }}</dd>
         </div>
       </dl>
     </section>

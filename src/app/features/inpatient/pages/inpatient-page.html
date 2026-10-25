@@ -1,4 +1,4 @@
-<div class="page-head">
+﻿<div class="page-head">
   <div>
     <div class="breadcrumbs">Clinical / Inpatient</div>
     <h1>Admissions & Bed Management</h1>
@@ -68,12 +68,14 @@
       />
       <div class="toolbar-actions">
         <app-column-config
+          [disabled]="store.loading() || !!store.error() || store.admissionsTotal() === 0"
           [columns]="columns"
           [visible]="visibleColumns()"
           (apply)="applyColumns($event)"
           (reset)="resetColumns()"
         />
         <app-shared-filter
+          [disabled]="store.loading() || !!store.error() || store.admissionsTotal() === 0"
           [activeCount]="activeFilterCount()"
           [loading]="store.loading()"
           (applied)="applyFilters()"
@@ -104,7 +106,7 @@
           >
         </app-shared-filter>
         <app-shared-export
-          [disabled]="!store.admissions().length"
+          [disabled]="store.loading() || !!store.error() || store.admissionsTotal() === 0"
           [exporting]="exporting()"
           (exportRequested)="export()"
         />
@@ -112,7 +114,7 @@
     </div>
     @if (store.loading()) {
       <div class="loading-state loading-state--table" role="status" aria-live="polite">
-        Loading admissions…
+        Loading admissionsâ€¦
       </div>
     } @else if (store.error()) {
       <div class="error-state" role="alert">
@@ -261,9 +263,9 @@
         <div class="bed-grid">
           @for (bed of beds(ward); track bed.id) {
             <article class="bed" [class]="bed.status.toLowerCase()">
-              <div class="bed-icon">▰</div>
+              <div class="bed-icon">â–°</div>
               <b>{{ bed.name }}</b
-              ><small>{{ bed.roomType }} · Room {{ bed.room }}</small
+              ><small>{{ bed.roomType }} Â· Room {{ bed.room }}</small
               ><app-status-badge [value]="bed.status" />
               @if (bed.patientId) {
                 <small>{{ patientName(bed.patientId) }}</small>
@@ -341,6 +343,7 @@
           ><label class="field"
             ><span class="form-label">Status <span class="required-indicator">*</span></span
             ><select formControlName="status">
+              <option value="" disabled>Select status</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select></label
@@ -352,7 +355,7 @@
       </div>
       <div class="crud-modal__footer">
         <button type="submit" class="primary" [disabled]="wardForm.invalid || wardSubmitting()">
-          {{ wardSubmitting() ? 'Creating…' : 'Create ward' }}
+          {{ wardSubmitting() ? 'Creatingâ€¦' : 'Create ward' }}
         </button>
       </div>
     </form>

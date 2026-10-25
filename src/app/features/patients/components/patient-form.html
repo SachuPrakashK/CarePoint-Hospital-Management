@@ -1,4 +1,4 @@
-<form
+﻿<form
   class="crud-modal__form patient-form"
   [formGroup]="form"
   [attr.aria-busy]="submitting()"
@@ -98,6 +98,7 @@
           <label class="field">
             <span class="form-label">Blood group</span>
             <select formControlName="bloodGroup">
+              <option value="" disabled>Select blood group</option>
               <option>Unknown</option>
               <option>A+</option>
               <option>A-</option>
@@ -208,7 +209,7 @@
     >
       @if (submitting()) {
         <span class="patient-form__spinner" aria-hidden="true"></span
-        >{{ mode() === 'edit' ? 'Updating…' : 'Creating…' }}
+        >{{ mode() === 'edit' ? 'Updatingâ€¦' : 'Creatingâ€¦' }}
       } @else {
         {{ mode() === 'edit' ? 'Update Patient' : 'Create Patient' }}
       }

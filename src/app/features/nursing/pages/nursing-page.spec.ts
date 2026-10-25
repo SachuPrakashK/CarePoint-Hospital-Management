@@ -13,10 +13,18 @@ describe('NursingPage', () => {
   let resolveNote: (() => void) | undefined;
   const addNursingNote = vi.fn(() => new Promise<void>((resolve) => (resolveNote = resolve)));
   const store = {
-    assignedPatients: signal<any[]>([]), activeAdmissions: signal<any[]>([]), nursingNotes: signal<any[]>([]), medications: signal<any[]>([]),
-    handovers: signal<any[]>([]), nursingStaff: signal<any[]>([]), nursingLoading: signal(false),
-    nursingError: signal(''), loadNursing: vi.fn(async () => undefined), addNursingNote,
-    administerMedication: vi.fn(async () => undefined), createHandover: vi.fn(async () => undefined),
+    assignedPatients: signal<any[]>([]),
+    activeAdmissions: signal<any[]>([]),
+    nursingNotes: signal<any[]>([]),
+    medications: signal<any[]>([]),
+    handovers: signal<any[]>([]),
+    nursingStaff: signal<any[]>([]),
+    nursingLoading: signal(false),
+    nursingError: signal(''),
+    loadNursing: vi.fn(async () => undefined),
+    addNursingNote,
+    administerMedication: vi.fn(async () => undefined),
+    createHandover: vi.fn(async () => undefined),
     acknowledgeHandover: vi.fn(async () => undefined),
   };
 
@@ -26,7 +34,10 @@ describe('NursingPage', () => {
       imports: [NursingPage],
       providers: [
         { provide: InpatientStore, useValue: store },
-        { provide: AuthStore, useValue: { has: () => true, user: signal({ roles: [{ code: 'HOSPITAL_ADMIN' }] }) } },
+        {
+          provide: AuthStore,
+          useValue: { has: () => true, user: signal({ roles: [{ code: 'HOSPITAL_ADMIN' }] }) },
+        },
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: AppDateTimeService, useValue: { formatDateTime: (value: string) => value } },
         { provide: ToastService, useValue: { success: vi.fn(), error: vi.fn() } },

@@ -12,17 +12,40 @@
   <div class="toolbar">
     <app-search-field placeholder="Search roles" (valueChange)="query($event)" />
     <div class="toolbar-actions">
-      <app-column-config [columns]="columns" [visible]="visibleColumns()" (apply)="applyColumns($event)" (reset)="resetColumns()" />
-      <app-shared-filter [activeCount]="status() ? 1 : 0" [loading]="loading()" (applied)="applyFilters()" (cleared)="clearFilters()">
-        <label class="field"><span>Status</span><select [value]="status()" (change)="status.set($any($event.target).value)">
-          <option value="">All statuses</option><option value="ACTIVE">Active</option><option value="INACTIVE">Inactive</option>
-        </select></label>
+      <app-column-config
+        [disabled]="loading() || !!error() || total() === 0"
+        [columns]="columns"
+        [visible]="visibleColumns()"
+        (apply)="applyColumns($event)"
+        (reset)="resetColumns()"
+      />
+      <app-shared-filter
+        [disabled]="loading() || !!error() || total() === 0"
+        [activeCount]="status() ? 1 : 0"
+        [loading]="loading()"
+        (applied)="applyFilters()"
+        (cleared)="clearFilters()"
+      >
+        <label class="field"
+          ><span>Status</span
+          ><select [value]="status()" (change)="status.set($any($event.target).value)">
+            <option value="">All statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select></label
+        >
       </app-shared-filter>
-      <app-shared-export [disabled]="!total()" [exporting]="exporting()" (exportRequested)="export()" />
+      <app-shared-export
+        [disabled]="loading() || !!error() || total() === 0"
+        [exporting]="exporting()"
+        (exportRequested)="export()"
+      />
     </div>
   </div>
   @if (loading()) {
-    <div class="loading-state loading-state--table" role="status" aria-live="polite">Loading roles...</div>
+    <div class="loading-state loading-state--table" role="status" aria-live="polite">
+      Loading roles...
+    </div>
   } @else if (error()) {
     <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
   } @else if (!items().length) {
@@ -32,39 +55,98 @@
       <table>
         <thead>
           <tr>
-            @if(columnVisible('role')){<th [attr.aria-sort]="ariaSort('name')"><app-table-sort-header label="Role" field="name" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('description')){<th [attr.aria-sort]="ariaSort('description')"><app-table-sort-header label="Description" field="description" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('users')){<th [attr.aria-sort]="ariaSort('users')"><app-table-sort-header label="Users" field="users" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('status')){<th [attr.aria-sort]="ariaSort('status')"><app-table-sort-header label="Status" field="status" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('created')){<th [attr.aria-sort]="ariaSort('createdAt')"><app-table-sort-header label="Created on" field="createdAt" [sort]="sort()" (sortChange)="changeSort($event)" /></th>}
-            @if(columnVisible('actions')){<th class="actions-column">Actions</th>}
+            @if (columnVisible('role')) {
+              <th [attr.aria-sort]="ariaSort('name')">
+                <app-table-sort-header
+                  label="Role"
+                  field="name"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('description')) {
+              <th [attr.aria-sort]="ariaSort('description')">
+                <app-table-sort-header
+                  label="Description"
+                  field="description"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('users')) {
+              <th [attr.aria-sort]="ariaSort('users')">
+                <app-table-sort-header
+                  label="Users"
+                  field="users"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('status')) {
+              <th [attr.aria-sort]="ariaSort('status')">
+                <app-table-sort-header
+                  label="Status"
+                  field="status"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('created')) {
+              <th [attr.aria-sort]="ariaSort('createdAt')">
+                <app-table-sort-header
+                  label="Created on"
+                  field="createdAt"
+                  [sort]="sort()"
+                  (sortChange)="changeSort($event)"
+                />
+              </th>
+            }
+            @if (columnVisible('actions')) {
+              <th class="actions-column">Actions</th>
+            }
           </tr>
         </thead>
         <tbody>
           @for (role of items(); track role.id) {
             <tr>
-              @if(columnVisible('role')){<td>
-                <b>{{ role.name }}</b
-                ><br /><small>{{ role.code }}</small>
-              </td>}
-              @if(columnVisible('description')){<td>{{ role.description || 'Not available' }}</td>}
-              @if(columnVisible('users')){<td>{{ role._count.users }}</td>}
-              @if(columnVisible('status')){<td><app-status-badge [value]="role.status" /></td>}
-              @if(columnVisible('created')){<td>{{ role.createdAt.slice(0, 10) }}</td>}
-              @if(columnVisible('actions')){<td class="actions actions-column">
-                <app-actions-menu
-                  [id]="role.id"
-                  [label]="'Actions for ' + role.name"
-                  [canView]="auth.has('roles.view')"
-                  [canEdit]="auth.has('roles.update')"
-                  [editDisabled]="role.isSystem"
-                  editDisabledReason="Protected system roles cannot be edited"
-                  [canDelete]="!role.isSystem && auth.has('roles.delete')"
-                  (view)="view(role)"
-                  (edit)="open(role)"
-                  (delete)="remove(role)"
-                />
-              </td>}
+              @if (columnVisible('role')) {
+                <td>
+                  <b>{{ role.name }}</b
+                  ><br /><small>{{ role.code }}</small>
+                </td>
+              }
+              @if (columnVisible('description')) {
+                <td>{{ role.description || 'Not available' }}</td>
+              }
+              @if (columnVisible('users')) {
+                <td>{{ role._count.users }}</td>
+              }
+              @if (columnVisible('status')) {
+                <td><app-status-badge [value]="role.status" /></td>
+              }
+              @if (columnVisible('created')) {
+                <td>{{ role.createdAt.slice(0, 10) }}</td>
+              }
+              @if (columnVisible('actions')) {
+                <td class="actions actions-column">
+                  <app-actions-menu
+                    [id]="role.id"
+                    [label]="'Actions for ' + role.name"
+                    [canView]="auth.has('roles.view')"
+                    [canEdit]="auth.has('roles.update')"
+                    [editDisabled]="role.isSystem"
+                    editDisabledReason="Protected system roles cannot be edited"
+                    [canDelete]="!role.isSystem && auth.has('roles.delete')"
+                    (view)="view(role)"
+                    (edit)="open(role)"
+                    (delete)="remove(role)"
+                  />
+                </td>
+              }
             </tr>
           }
         </tbody>
@@ -100,18 +182,36 @@
   <app-modal title="Role Details" size="lg" (closed)="viewing.set(null)">
     <div class="crud-modal__body role-details">
       <dl class="details-grid">
-        <div><dt>Role</dt><dd>{{ role.name }}</dd></div>
-        <div><dt>Code</dt><dd>{{ role.code }}</dd></div>
-        <div><dt>Status</dt><dd><app-status-badge [value]="role.status" /></dd></div>
-        <div><dt>Assigned users</dt><dd>{{ role._count.users }}</dd></div>
-        <div class="full"><dt>Description</dt><dd>{{ role.description || 'Not available' }}</dd></div>
+        <div>
+          <dt>Role</dt>
+          <dd>{{ role.name }}</dd>
+        </div>
+        <div>
+          <dt>Code</dt>
+          <dd>{{ role.code }}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd><app-status-badge [value]="role.status" /></dd>
+        </div>
+        <div>
+          <dt>Assigned users</dt>
+          <dd>{{ role._count.users }}</dd>
+        </div>
+        <div class="full">
+          <dt>Description</dt>
+          <dd>{{ role.description || 'Not available' }}</dd>
+        </div>
       </dl>
       <section class="role-permissions">
         <h3>Assigned Permissions</h3>
         @if (role.permissions.length) {
           <div class="permission-chip-list">
             @for (entry of role.permissions; track entry.permission.id) {
-              <span>{{ formatPermissionLabel(entry.permission.module) }} — {{ formatPermissionLabel(entry.permission.action) }}</span>
+              <span
+                >{{ formatPermissionLabel(entry.permission.module) }} —
+                {{ formatPermissionLabel(entry.permission.action) }}</span
+              >
             }
           </div>
         } @else {

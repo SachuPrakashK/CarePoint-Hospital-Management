@@ -1,2 +1,29 @@
-import {TableSort} from '../models/table.models';
-export function sortTableRows<T>(rows:readonly T[],sort:TableSort|null,accessors:Record<string,(row:T)=>unknown>):T[]{if(!sort)return[...rows];const read=accessors[sort.field];if(!read)return[...rows];const direction=sort.direction==='asc'?1:-1;return rows.map((row,index)=>({row,index})).sort((a,b)=>{const left=read(a.row),right=read(b.row);if(left==null&&right==null)return a.index-b.index;if(left==null)return 1;if(right==null)return-1;const result=typeof left==='number'&&typeof right==='number'?left-right:String(left).localeCompare(String(right),undefined,{numeric:true,sensitivity:'base'});return result===0?a.index-b.index:result*direction;}).map(item=>item.row);}
+import { TableSort } from '../models/table.models';
+export function sortTableRows<T>(
+  rows: readonly T[],
+  sort: TableSort | null,
+  accessors: Record<string, (row: T) => unknown>,
+): T[] {
+  if (!sort) return [...rows];
+  const read = accessors[sort.field];
+  if (!read) return [...rows];
+  const direction = sort.direction === 'asc' ? 1 : -1;
+  return rows
+    .map((row, index) => ({ row, index }))
+    .sort((a, b) => {
+      const left = read(a.row),
+        right = read(b.row);
+      if (left == null && right == null) return a.index - b.index;
+      if (left == null) return 1;
+      if (right == null) return -1;
+      const result =
+        typeof left === 'number' && typeof right === 'number'
+          ? left - right
+          : String(left).localeCompare(String(right), undefined, {
+              numeric: true,
+              sensitivity: 'base',
+            });
+      return result === 0 ? a.index - b.index : result * direction;
+    })
+    .map((item) => item.row);
+}

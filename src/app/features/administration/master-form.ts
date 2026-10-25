@@ -33,7 +33,11 @@ export class MasterForm {
     this.form.valueChanges.subscribe(() => this.dirtyChanged.emit(this.form.dirty));
   }
   private fill = effect(() => {
-    this.form.controls.category.setValidators(this.type() === 'laboratory-tests' ? [Validators.required, Validators.minLength(2), Validators.maxLength(80)] : [Validators.maxLength(80)]);
+    this.form.controls.category.setValidators(
+      this.type() === 'laboratory-tests'
+        ? [Validators.required, Validators.minLength(2), Validators.maxLength(80)]
+        : [Validators.maxLength(80)],
+    );
     this.form.controls.category.updateValueAndValidity({ emitEvent: false });
     const e = this.entity();
     this.form.reset({

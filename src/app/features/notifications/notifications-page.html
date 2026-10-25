@@ -10,7 +10,13 @@
 </div>
 <section class="card notification-page">
   @if (store.loading()) {
-    <div class="notification-state loading-state loading-state--section" role="status" aria-live="polite">Loading notifications…</div>
+    <div
+      class="notification-state loading-state loading-state--section"
+      role="status"
+      aria-live="polite"
+    >
+      Loading notifications…
+    </div>
   } @else if (store.error()) {
     <div class="notification-state error" role="alert">
       {{ store.error() }} <button class="secondary" (click)="store.load()">Retry</button>
@@ -32,5 +38,14 @@
       </button>
     }
   }
-  <app-pagination [loading]="store.loading()" [page]="store.pagination().page" [pageSize]="store.pagination().pageSize" [totalItems]="store.pagination().total" [totalPages]="store.pagination().totalPages" itemLabel="notifications" (pageChange)="store.changePage($event)" (pageSizeChange)="store.changePageSize($event)" />
+  <app-pagination
+    [loading]="store.loading()"
+    [page]="store.pagination().page"
+    [pageSize]="store.pagination().pageSize"
+    [totalItems]="store.pagination().total"
+    [totalPages]="store.pagination().totalPages"
+    itemLabel="notifications"
+    (pageChange)="store.changePage($event)"
+    (pageSizeChange)="store.changePageSize($event)"
+  />
 </section>

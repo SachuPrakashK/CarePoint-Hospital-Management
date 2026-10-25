@@ -1,5 +1,7 @@
-@if (loading()) {
-  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading admission details…</div>
+﻿@if (loading()) {
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">
+    Loading admission detailsâ€¦
+  </div>
 } @else if (error()) {
   <div class="error-state" role="alert">
     {{ error() }} <button type="button" class="secondary" (click)="loadAdmission()">Retry</button>
@@ -10,7 +12,7 @@
       <div class="breadcrumbs">Inpatient / {{ admission.number }}</div>
       <h1>{{ display(admission.patientName) }}</h1>
       <p class="muted">
-        {{ display(admission.department) }} · {{ display(admission.attendingDoctor) }}
+        {{ display(admission.department) }} Â· {{ display(admission.attendingDoctor) }}
       </p>
     </div>
     <app-status-badge [value]="admission.status" />
@@ -117,9 +119,9 @@
         <label class="field"
           ><span class="form-label">Transfer to available bed</span
           ><select [(ngModel)]="targetBed">
-            <option value="">Select bed</option>
+            <option value="" disabled>Select bed</option>
             @for (bed of store.availableBeds(); track bed.id) {
-              <option [value]="bed.id">{{ bed.name }} · {{ bed.ward }} · {{ bed.room }}</option>
+              <option [value]="bed.id">{{ bed.name }} Â· {{ bed.ward }} Â· {{ bed.room }}</option>
             }
           </select></label
         ><button
@@ -128,7 +130,7 @@
           [disabled]="!targetBed || actionSubmitting()"
           (click)="transfer()"
         >
-          {{ actionSubmitting() ? 'Processing…' : 'Transfer patient' }}
+          {{ actionSubmitting() ? 'Processingâ€¦' : 'Transfer patient' }}
         </button>
         <hr />
         <h3>Discharge patient</h3>
@@ -161,7 +163,9 @@
     </div>
   } @else {
     @if (tabState(activeTab()).loading) {
-      <div class="loading-state loading-state--section" role="status" aria-live="polite">Loading {{ activeTab() }} records…</div>
+      <div class="loading-state loading-state--section" role="status" aria-live="polite">
+        Loading {{ activeTab() }} recordsâ€¦
+      </div>
     } @else if (tabState(activeTab()).error) {
       <div class="error-state" role="alert">
         {{ tabState(activeTab()).error }}
@@ -192,7 +196,7 @@
                   <h3>Diagnoses</h3>
                   @for (diagnosis of record.diagnoses; track diagnosis.id) {
                     <p>
-                      {{ diagnosis.description }} · <app-status-badge [value]="diagnosis.status" />
+                      {{ diagnosis.description }} Â· <app-status-badge [value]="diagnosis.status" />
                     </p>
                   }
                 </div>
@@ -223,7 +227,12 @@
                 ><span
                   ><small>NOTES</small><b>{{ display(note.notes) }}</b></span
                 ><span
-                  ><small>RECORDED BY</small><b>{{ display(note.nurse ? (note.nurse.firstName + ' ' + note.nurse.lastName) : note.nurseId) }}</b></span
+                  ><small>RECORDED BY</small
+                  ><b>{{
+                    display(
+                      note.nurse ? note.nurse.firstName + ' ' + note.nurse.lastName : note.nurseId
+                    )
+                  }}</b></span
                 >
               </div>
             </article>
@@ -265,10 +274,10 @@
                   >{{
                     display(allocation.bed?.room?.wardModel?.name || allocation.bed?.room?.ward)
                   }}
-                  · {{ display(allocation.bed?.room?.name) }} ·
+                  Â· {{ display(allocation.bed?.room?.name) }} Â·
                   {{ display(allocation.bed?.name) }}</b
                 ><small
-                  >{{ format(allocation.startedAt) }} →
+                  >{{ format(allocation.startedAt) }} â†’
                   {{ allocation.endedAt ? format(allocation.endedAt) : 'Current' }}</small
                 >
               </div>
@@ -326,7 +335,7 @@
           @for (order of laboratory(); track order.id) {
             <article class="card record-card">
               <div class="section-title">
-                <h2>Laboratory · {{ display(order.number) }}</h2>
+                <h2>Laboratory Â· {{ display(order.number) }}</h2>
                 <app-status-badge [value]="order.status" />
               </div>
               <div class="detail-grid">
@@ -341,7 +350,9 @@
                   ><small>ORDERED</small><b>{{ format(order.createdAt) }}</b></span
                 ><span
                   ><small>RESULT</small
-                  ><b>{{ order.results?.length ? order.results[0].value : 'Not available' }}</b></span
+                  ><b>{{
+                    order.results?.length ? order.results[0].value : 'Not available'
+                  }}</b></span
                 >
               </div>
             </article>
@@ -349,7 +360,7 @@
           @for (order of radiology(); track order.id) {
             <article class="card record-card">
               <div class="section-title">
-                <h2>Radiology · {{ display(order.investigation) }}</h2>
+                <h2>Radiology Â· {{ display(order.investigation) }}</h2>
                 <app-status-badge [value]="order.status" />
               </div>
               <div class="detail-grid">

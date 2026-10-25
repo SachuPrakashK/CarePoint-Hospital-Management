@@ -1,0 +1,54 @@
+<form [formGroup]="state.forms.application" (ngSubmit)="state.save('application')">
+  <div class="section-title">
+    <div>
+      <h2>Application Settings</h2>
+      <p class="muted">Shared date, time and pagination defaults.</p>
+    </div>
+  </div>
+  <div class="form-grid">
+    <label class="field full"
+      ><span class="form-label">Application name <span class="required-indicator">*</span></span
+      ><input formControlName="applicationName"
+    /></label>
+    <label class="field"
+      ><span>Date format</span
+      ><select formControlName="dateFormat">
+        <option>DD-MM-YYYY</option>
+        <option>MM-DD-YYYY</option>
+        <option>YYYY-MM-DD</option>
+      </select></label
+    >
+    <label class="field"
+      ><span>Time format</span
+      ><select formControlName="timeFormat">
+        <option value="12-hour">12-hour</option>
+        <option value="24-hour">24-hour</option>
+      </select></label
+    >
+    <label class="field"
+      ><span>Timezone</span
+      ><select formControlName="timezone">
+        <option value="Asia/Kolkata">Asia/Kolkata</option>
+      </select></label
+    >
+    <label class="field"
+      ><span>Default rows per page</span
+      ><select formControlName="defaultRowsPerPage">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="25">25</option>
+        <option [ngValue]="50">50</option>
+        <option [ngValue]="100">100</option>
+      </select></label
+    >
+  </div>
+  <div class="form-actions">
+    <button
+      class="primary"
+      [disabled]="
+        state.forms.application.pristine || state.forms.application.invalid || state.saving()
+      "
+    >
+      {{ state.saving() === 'application' ? 'Saving...' : 'Save Changes' }}
+    </button>
+  </div>
+</form>

@@ -25,8 +25,16 @@ export interface AppointmentOptions {
   doctors: { id: string; firstName: string; lastName: string; departmentId: string | null }[];
 }
 export interface AppointmentQuery {
-  page?: number; pageSize?: number; search?: string; departmentId?: string; doctorId?: string;
-  status?: string; startDate?: string; endDate?: string; sortBy?: string; sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  departmentId?: string;
+  doctorId?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 export interface AppointmentPage {
   data: ApiAppointment[];
@@ -38,11 +46,19 @@ export class AppointmentApiService {
   list(query: AppointmentQuery = {}) {
     let params = new HttpParams();
     const values: Record<string, string | number | undefined> = {
-      page: query.page, page_size: query.pageSize, search: query.search,
-      department_id: query.departmentId, doctor_id: query.doctorId, status: query.status,
-      start_date: query.startDate, end_date: query.endDate, sort_by: query.sortBy, sort_order: query.sortOrder,
+      page: query.page,
+      page_size: query.pageSize,
+      search: query.search,
+      department_id: query.departmentId,
+      doctor_id: query.doctorId,
+      status: query.status,
+      start_date: query.startDate,
+      end_date: query.endDate,
+      sort_by: query.sortBy,
+      sort_order: query.sortOrder,
     };
-    for (const [key, value] of Object.entries(values)) if (value !== undefined && value !== '') params = params.set(key, value);
+    for (const [key, value] of Object.entries(values))
+      if (value !== undefined && value !== '') params = params.set(key, value);
     return this.http.get<AppointmentPage>('/api/v1/appointments', { params });
   }
   get(id: string) {

@@ -1,13 +1,21 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { ApiAppointment, AppointmentApiService, AppointmentOptions } from '../appointment-api.service';
+import {
+  ApiAppointment,
+  AppointmentApiService,
+  AppointmentOptions,
+} from '../appointment-api.service';
 import { AppointmentInvalidationService } from '../appointment-invalidation.service';
 import { NotificationStore } from '../../../core/notifications/notification.store';
 import { AppDateTimeService } from '../../../core/services/app-date-time.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { SafeApiError } from '../../../core/interceptors/api-error.interceptor';
-@Component({ selector: 'app-appointment-form', imports: [ReactiveFormsModule], templateUrl: './appointment-form.html' })
+@Component({
+  selector: 'app-appointment-form',
+  imports: [ReactiveFormsModule],
+  templateUrl: './appointment-form.html',
+})
 export class AppointmentForm {
   private api = inject(AppointmentApiService);
   private invalidation = inject(AppointmentInvalidationService);
@@ -25,7 +33,9 @@ export class AppointmentForm {
   readonly selectedDepartment = signal('');
   readonly filteredDoctors = computed(() => {
     const departmentId = this.selectedDepartment();
-    return this.options().doctors.filter((doctor) => !departmentId || doctor.departmentId === departmentId);
+    return this.options().doctors.filter(
+      (doctor) => !departmentId || doctor.departmentId === departmentId,
+    );
   });
   readonly isEdit = computed(() => Boolean(this.appointment()));
   readonly form = this.fb.nonNullable.group({
@@ -47,17 +57,28 @@ export class AppointmentForm {
     const item = this.appointment();
     if (!item) return;
     const [date, time] = this.dates.formDateTime(new Date(item.appointmentAt)).split('T');
-    this.form.patchValue({ patientId: item.patientId, departmentId: item.departmentId,
-      doctorId: item.doctorId, date, time, type: item.type,
-      consultationType: item.consultationType, reason: item.reason, fee: item.fee });
+    this.form.patchValue({
+      patientId: item.patientId,
+      departmentId: item.departmentId,
+      doctorId: item.doctorId,
+      date,
+      time,
+      type: item.type,
+      consultationType: item.consultationType,
+      reason: item.reason,
+      fee: item.fee,
+    });
     this.form.markAsPristine();
   });
   constructor() {
     void this.loadOptions();
     this.form.controls.departmentId.valueChanges.subscribe((departmentId) => {
       this.selectedDepartment.set(departmentId);
-      const selected = this.options().doctors.find((doctor) => doctor.id === this.form.controls.doctorId.value);
-      if (selected && selected.departmentId !== departmentId) this.form.controls.doctorId.setValue('');
+      const selected = this.options().doctors.find(
+        (doctor) => doctor.id === this.form.controls.doctorId.value,
+      );
+      if (selected && selected.departmentId !== departmentId)
+        this.form.controls.doctorId.setValue('');
     });
   }
   async loadOptions() {
@@ -75,24 +96,31 @@ export class AppointmentForm {
     const v = this.form.getRawValue();
     try {
       const payload = {
-          patientId: v.patientId,
-          departmentId: v.departmentId,
-          doctorId: v.doctorId,
-          appointmentAt: this.dates.formValueToApi(v.date, v.time),
-          type: v.type,
-          consultationType: v.consultationType,
-          reason: v.reason,
-          fee: v.fee,
+        patientId: v.patientId,
+        departmentId: v.departmentId,
+        doctorId: v.doctorId,
+        appointmentAt: this.dates.formValueToApi(v.date, v.time),
+        type: v.type,
+        consultationType: v.consultationType,
+        reason: v.reason,
+        fee: v.fee,
       };
       const current = this.appointment();
-      const response = await firstValueFrom(current ? this.api.update(current.id, payload) : this.api.create(payload));
+      const response = await firstValueFrom(
+        current ? this.api.update(current.id, payload) : this.api.create(payload),
+      );
       this.invalidation.notify();
       void this.notifications.load();
-      this.toast.success(current ? 'Appointment updated successfully.' : 'Appointment created successfully.');
+      this.toast.success(
+        current ? 'Appointment updated successfully.' : 'Appointment created successfully.',
+      );
       this.form.markAsPristine();
       this.saved.emit(response.data);
     } catch (e) {
-      this.error.set((e as SafeApiError).message || `Appointment could not be ${this.isEdit() ? 'updated' : 'created'}.`);
+      this.error.set(
+        (e as SafeApiError).message ||
+          `Appointment could not be ${this.isEdit() ? 'updated' : 'created'}.`,
+      );
     } finally {
       this.saving.set(false);
     }

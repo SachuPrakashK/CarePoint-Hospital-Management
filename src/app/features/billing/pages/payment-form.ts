@@ -6,13 +6,14 @@ import { Phase23Store } from '../../../core/services/phase23.store';
   selector: 'app-payment-form',
   imports: [ReactiveFormsModule],
   templateUrl: './payment-form.html',
+  styleUrl: './financial-form.scss',
 })
 export class PaymentForm {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Phase23Store);
-  readonly invoiceId = input.required<string>();
-  readonly initialAmount = input.required<number>();
+  readonly invoice = input.required<any>();
   readonly saved = output<void>();
+  readonly cancelled = output<void>();
   readonly dirtyChanged = output<boolean>();
   submitting = false;
   error = '';
@@ -28,7 +29,8 @@ export class PaymentForm {
   }
 
   ngOnInit() {
-    this.form.controls.amount.setValue(this.initialAmount());
+    this.form.controls.amount.addValidators(Validators.max(this.outstanding()));
+    this.form.controls.amount.setValue(this.outstanding());
     this.form.markAsPristine();
   }
 
@@ -40,7 +42,7 @@ export class PaymentForm {
     try {
       const value = this.form.getRawValue();
       await this.store.pay(
-        this.invoiceId(),
+        this.invoice().id,
         value.amount,
         value.method,
         value.reference.trim(),
@@ -54,5 +56,25 @@ export class PaymentForm {
     } finally {
       this.submitting = false;
     }
+  }
+  total() {
+    return Number(this.invoice().total ?? 0);
+  }
+  paid() {
+    return Number(this.invoice().paidAmount ?? 0);
+  }
+  outstanding() {
+    return Number(this.invoice().balance ?? 0);
+  }
+  patientName() {
+    const patient = this.invoice().patient;
+    return `${patient?.firstName ?? ''} ${patient?.lastName ?? ''}`.trim();
+  }
+  money(value: unknown) {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+    }).format(Number(value ?? 0));
   }
 }

@@ -12,7 +12,7 @@ export class AppModal {
   private readonly confirmation = inject(ConfirmationService);
   readonly title = input.required<string>();
   readonly description = input('');
-  readonly icon = input('');
+  readonly icon = input('documents');
   readonly size = input<'sm' | 'compact' | 'md' | 'lg' | 'xl'>('md');
   readonly dirty = input(false);
   readonly closed = output<void>();

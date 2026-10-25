@@ -1,124 +1,225 @@
-<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+﻿<form class="crud-modal__form invoice-editor" [formGroup]="form" (ngSubmit)="submit()" novalidate>
   <div class="crud-modal__body invoice-form-body">
     @if (error) {
-      <div class="form-error" role="alert">{{ error }}</div>
+      <div class="form-error" role="alert">
+        <app-icon name="help" [size]="18" /><span>{{ error }}</span>
+      </div>
     }
-    <section class="invoice-form-section">
+
+    <section
+      class="invoice-section invoice-information"
+      aria-labelledby="invoice-information-title"
+    >
       <div class="section-heading">
+        <span class="section-heading__icon"><app-icon name="patients" [size]="19" /></span>
         <div>
-          <h3>Patient information</h3>
-          <p>Select the registered patient who will receive this invoice.</p>
+          <h3 id="invoice-information-title">Invoice Information</h3>
+          <p>Choose the registered patient who will receive this invoice.</p>
         </div>
       </div>
-      <label class="field">
-        <span class="form-label">Patient <span class="required-indicator">*</span></span>
-        <select formControlName="patientId">
-          <option value="">Select patient</option>
-          @for (patient of patients.patients(); track patient.id) {
-            <option [value]="patient.id">
-              {{ patient.firstName }} {{ patient.lastName }} · {{ patient.mrn }}
-            </option>
+      <div class="information-grid">
+        <label class="field patient-field">
+          <span class="form-label">Patient <span class="required-indicator">*</span></span>
+          <div class="patient-picker">
+            <div class="patient-search-control">
+              <app-icon name="search" [size]="17" />
+              <input
+                type="search"
+                placeholder="Search by patient name or MRN"
+                aria-label="Search patients"
+                [value]="patientQuery()"
+                (input)="filterPatients($event)"
+              />
+            </div>
+            <div class="select-control">
+              <app-icon name="patients" [size]="17" />
+              <select formControlName="patientId" aria-describedby="patient-help">
+                <option value="" disabled>Select patient</option>
+                @for (patient of filteredPatients(); track patient.id) {
+                  <option [value]="patient.id">
+                    {{ patient.firstName }} {{ patient.lastName }} Â· {{ patient.mrn }}
+                  </option>
+                }
+              </select>
+            </div>
+          </div>
+          @if (form.controls.patientId.touched && form.controls.patientId.invalid) {
+            <span class="field-error">Select a valid patient.</span>
           }
-        </select>
-        @if (form.controls.patientId.touched && form.controls.patientId.invalid) {
-          <span class="field-error">Select a valid patient.</span>
-        }
-        @if (patients.loading()) {
-          <small class="field-hint">Loading registered patients…</small>
-        }
-        @if (patients.error()) {
-          <span class="field-error">{{ patients.error() }}</span>
-        }
-      </label>
-    </section>
-    <section class="invoice-form-section" formArrayName="items">
-      <div class="section-heading">
-        <div>
-          <h3>Invoice line items</h3>
-          <p>Amounts are validated again by the server before they are persisted.</p>
+          @if (patients.loading()) {
+            <small id="patient-help" class="field-hint">Loading registered patientsâ€¦</small>
+          } @else if (patients.error()) {
+            <span id="patient-help" class="field-error">{{ patients.error() }}</span>
+          } @else {
+            <small id="patient-help" class="field-hint"
+              >No patient is selected automatically.</small
+            >
+          }
+        </label>
+        <div class="invoice-context" aria-label="Invoice generation details">
+          <span class="invoice-context__icon"><app-icon name="calendar" [size]="18" /></span>
+          <div>
+            <strong>Invoice date</strong>
+            <span>Assigned securely by the server when the invoice is created.</span>
+          </div>
         </div>
-        <button type="button" class="secondary" (click)="add()">+ Add line item</button>
       </div>
-      <div class="line-items">
-        @for (row of items.controls; track $index; let index = $index) {
-          <article class="line-item" [formGroupName]="index">
-            <div class="line-item__title">
-              <strong>Item {{ index + 1 }}</strong
-              ><button
-                type="button"
-                class="line-item__remove"
-                [disabled]="items.length === 1"
-                (click)="remove(index)"
+    </section>
+
+    <section class="invoice-section invoice-items-section" aria-labelledby="invoice-items-title">
+      <div class="section-heading section-heading--actions">
+        <div class="section-heading__content">
+          <span class="section-heading__icon"><app-icon name="documents" [size]="19" /></span>
+          <div>
+            <h3 id="invoice-items-title">Invoice Items</h3>
+            <p>Add the services or charges included in this invoice.</p>
+          </div>
+        </div>
+        <button type="button" class="secondary add-item-button" (click)="add()">
+          <app-icon name="plus" [size]="17" /> Add Item
+        </button>
+      </div>
+
+      <div class="invoice-items" formArrayName="items">
+        @if (!items.length) {
+          <div class="items-empty">
+            <span><app-icon name="documents" [size]="24" /></span>
+            <strong>No invoice items yet</strong>
+            <p>Add at least one service or charge to create the invoice.</p>
+            <button type="button" class="secondary" (click)="add()">
+              <app-icon name="plus" [size]="17" /> Add first item
+            </button>
+          </div>
+        } @else {
+          <div class="items-table" role="table" aria-label="Invoice line items">
+            <div class="items-table__header" role="row">
+              <span role="columnheader">Service / Item</span><span role="columnheader">Source</span>
+              <span role="columnheader">Quantity</span><span role="columnheader">Unit Price</span>
+              <span role="columnheader">Amount</span
+              ><span role="columnheader" class="sr-only">Action</span>
+            </div>
+            @for (row of items.controls; track row; let index = $index) {
+              <div
+                class="item-row"
+                [formGroupName]="index"
+                role="row"
+                [attr.aria-label]="'Invoice item ' + (index + 1)"
               >
-                Remove
-              </button>
-            </div>
-            <div class="line-item__grid">
-              <label class="field line-item__description"
-                ><span class="form-label"
-                  >Description <span class="required-indicator">*</span></span
-                ><input
-                  formControlName="description"
-                  maxlength="240"
-                  placeholder="Enter service or charge description"
-                />
-                @if (row.get('description')?.touched && row.get('description')?.invalid) {
-                  <span class="field-error">Enter at least 2 characters.</span>
-                }
-              </label>
-              <label class="field"
-                ><span class="form-label">Source <span class="required-indicator">*</span></span
-                ><input formControlName="source" maxlength="80" placeholder="e.g. Manual" />
-                @if (row.get('source')?.touched && row.get('source')?.invalid) {
-                  <span class="field-error">Enter the charge source.</span>
-                }
-              </label>
-              <label class="field"
-                ><span class="form-label">Quantity <span class="required-indicator">*</span></span
-                ><input
-                  type="number"
-                  min="0.01"
-                  max="100000"
-                  step="0.01"
-                  formControlName="quantity"
-                />
-                @if (row.get('quantity')?.touched && row.get('quantity')?.invalid) {
-                  <span class="field-error">Enter a positive quantity.</span>
-                }
-              </label>
-              <label class="field"
-                ><span class="form-label">Unit price <span class="required-indicator">*</span></span
-                ><input
-                  type="number"
-                  min="0"
-                  max="100000000"
-                  step="0.01"
-                  formControlName="unitPrice"
-                  placeholder="Enter unit price"
-                />
-                @if (row.get('unitPrice')?.touched && row.get('unitPrice')?.invalid) {
-                  <span class="field-error">Enter a valid amount.</span>
-                }
-              </label>
-              <div class="line-total">
-                <span>Line total</span><strong>{{ money(lineTotal(index)) }}</strong>
+                <label class="field item-description" role="cell">
+                  <span class="mobile-label">Service / Item</span>
+                  <input
+                    formControlName="description"
+                    maxlength="240"
+                    placeholder="Enter service or charge"
+                    [attr.aria-label]="'Item ' + (index + 1) + ' description'"
+                  />
+                  @if (row.get('description')?.touched && row.get('description')?.invalid) {
+                    <span class="field-error">Enter at least 2 characters.</span>
+                  }
+                </label>
+                <label class="field" role="cell">
+                  <span class="mobile-label">Source</span>
+                  <input
+                    formControlName="source"
+                    maxlength="80"
+                    placeholder="Manual"
+                    [attr.aria-label]="'Item ' + (index + 1) + ' source'"
+                  />
+                  @if (row.get('source')?.touched && row.get('source')?.invalid) {
+                    <span class="field-error">Source is required.</span>
+                  }
+                </label>
+                <label class="field numeric-field" role="cell">
+                  <span class="mobile-label">Quantity</span>
+                  <input
+                    type="number"
+                    min="0.01"
+                    max="100000"
+                    step="0.01"
+                    formControlName="quantity"
+                    [attr.aria-label]="'Item ' + (index + 1) + ' quantity'"
+                  />
+                  @if (row.get('quantity')?.touched && row.get('quantity')?.invalid) {
+                    <span class="field-error">Use a positive quantity.</span>
+                  }
+                </label>
+                <label class="field price-field" role="cell">
+                  <span class="mobile-label">Unit Price</span>
+                  <span class="currency-input unit_price"
+                    ><span aria-hidden="true">â‚¹</span
+                    ><input
+                      type="number"
+                      min="0"
+                      max="100000000"
+                      step="0.01"
+                      formControlName="unitPrice"
+                      placeholder="0.00"
+                      [attr.aria-label]="'Item ' + (index + 1) + ' unit price in rupees'"
+                  /></span>
+                  @if (row.get('unitPrice')?.touched && row.get('unitPrice')?.invalid) {
+                    <span class="field-error">Enter a valid amount.</span>
+                  }
+                </label>
+                <div class="item-amount" role="cell">
+                  <span class="mobile-label">Amount</span
+                  ><strong>{{ money(lineTotal(index)) }}</strong>
+                </div>
+                <div class="item-action" role="cell">
+                  <button
+                    type="button"
+                    class="remove-item"
+                    [attr.aria-label]="'Remove invoice item ' + (index + 1)"
+                    (click)="remove(index)"
+                  >
+                    <app-icon name="trash" [size]="17" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </article>
+            }
+          </div>
         }
       </div>
     </section>
-    <aside class="invoice-summary" aria-live="polite">
-      <span>Grand total</span><strong>{{ money(total()) }}</strong
-      ><small>Discount and tax are not configured in the current billing model.</small>
-    </aside>
+
+    <section class="invoice-summary" aria-labelledby="invoice-summary-title">
+      <div class="summary-heading">
+        <span class="section-heading__icon"><app-icon name="billing" [size]="19" /></span>
+        <div>
+          <h3 id="invoice-summary-title">Invoice Summary</h3>
+          <p>Calculated from the line items above.</p>
+        </div>
+      </div>
+      <div class="summary-values">
+        <div>
+          <span>Subtotal</span><strong>{{ money(total()) }}</strong>
+        </div>
+        <div class="unsupported-total"><span>Discount</span><span>Not configured</span></div>
+        <div class="unsupported-total"><span>Tax</span><span>Not configured</span></div>
+        <div class="grand-total">
+          <span>Grand Total</span><strong>{{ money(total()) }}</strong>
+        </div>
+      </div>
+    </section>
   </div>
-  <footer class="crud-modal__footer">
-    <button type="button" class="secondary" [disabled]="submitting" (click)="cancelled.emit()">
-      Cancel
-    </button>
-    <button class="primary" type="submit" [disabled]="form.invalid || submitting">
-      {{ submitting ? 'Saving…' : entity() ? 'Update Invoice' : 'Create Invoice' }}
-    </button>
+
+  <footer class="crud-modal__footer invoice-footer">
+    <p><span aria-hidden="true">*</span> Patient and at least one valid item are required.</p>
+    <div class="invoice-footer__actions">
+      <button type="button" class="secondary" [disabled]="submitting" (click)="cancelled.emit()">
+        Cancel
+      </button>
+      <button
+        class="primary create-invoice-button"
+        type="submit"
+        [disabled]="form.invalid || submitting"
+      >
+        @if (submitting) {
+          <span class="button-spinner" aria-hidden="true"></span> Savingâ€¦
+        } @else {
+          <app-icon name="check-circle" [size]="18" />
+          {{ entity() ? 'Update Invoice' : 'Create Invoice' }}
+        }
+      </button>
+    </div>
   </footer>
 </form>

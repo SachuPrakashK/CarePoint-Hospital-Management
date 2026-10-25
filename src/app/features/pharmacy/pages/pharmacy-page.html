@@ -128,6 +128,7 @@
       />
       <div class="toolbar-actions">
         <app-column-config
+          [disabled]="store.stockLoading() || !!store.stockError() || store.stockTotal() === 0"
           [columns]="columns"
           [visible]="visibleColumns()"
           (apply)="applyColumns($event)"
@@ -135,7 +136,7 @@
         />
         <app-shared-filter
           [activeCount]="activeFilterCount()"
-          [disabled]="filtersDisabled()"
+          [disabled]="store.stockLoading() || !!store.stockError() || store.stockTotal() === 0"
           [loading]="store.stockLoading()"
           (applied)="applyFilters()"
           (cleared)="clearFilters()"
@@ -175,7 +176,7 @@
           >
         </app-shared-filter>
         <app-shared-export
-          [disabled]="!store.stockBatches().length"
+          [disabled]="store.stockLoading() || !!store.stockError() || store.stockTotal() === 0"
           [exporting]="exporting()"
           (exportRequested)="exportStock()"
         />

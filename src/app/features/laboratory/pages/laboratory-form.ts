@@ -41,10 +41,12 @@ export class LaboratoryForm implements OnChanges {
   });
   constructor() {
     void this.patients.load();
-    void firstValueFrom(this.mastersApi.list('laboratory-tests', '', 'Active')).then(
-      (r) => this.tests.set(r.data),
+    void firstValueFrom(this.mastersApi.list('laboratory-tests', '', 'Active')).then((r) =>
+      this.tests.set(r.data),
     );
-    void firstValueFrom(this.appointmentsApi.options()).then((r) => this.doctors.set(r.data.doctors));
+    void firstValueFrom(this.appointmentsApi.options()).then((r) =>
+      this.doctors.set(r.data.doctors),
+    );
     this.form.valueChanges.subscribe(() => this.dirtyChanged.emit(this.form.dirty));
   }
   ngOnChanges() {
@@ -53,7 +55,10 @@ export class LaboratoryForm implements OnChanges {
       this.form.patchValue({
         patientId: this.order().patientId,
         doctorId: this.order().doctorId ?? this.order().orderingDoctor?.id ?? '',
-        testDefinitionId: this.order().orderTests?.[0]?.testDefinitionId ?? this.order().orderTests?.[0]?.testDefinition?.id ?? '',
+        testDefinitionId:
+          this.order().orderTests?.[0]?.testDefinitionId ??
+          this.order().orderTests?.[0]?.testDefinition?.id ??
+          '',
       });
     this.mode() === 'result'
       ? this.form.controls.value.addValidators(Validators.required)

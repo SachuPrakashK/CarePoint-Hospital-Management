@@ -2,7 +2,16 @@ import { inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PatientApiService } from './patient-api.service';
 
-export type PatientTab = 'appointments' | 'visits' | 'prescriptions' | 'documents' | 'medical-records' | 'laboratory' | 'radiology' | 'billing' | 'insurance';
+export type PatientTab =
+  | 'appointments'
+  | 'visits'
+  | 'prescriptions'
+  | 'documents'
+  | 'medical-records'
+  | 'laboratory'
+  | 'radiology'
+  | 'billing'
+  | 'insurance';
 
 @Injectable()
 export class PatientDetailStore {
@@ -17,24 +26,38 @@ export class PatientDetailStore {
     this.loading.set(tab);
     this.errors.update((errors) => ({ ...errors, [tab]: undefined }));
     try {
-      const request = tab === 'appointments' ? this.api.appointments(patientId)
-        : tab === 'visits' ? this.api.visits(patientId)
-        : tab === 'prescriptions' ? this.api.prescriptions(patientId)
-        : tab === 'documents' ? this.api.documents(patientId)
-        : tab === 'laboratory' ? this.api.laboratory(patientId)
-        : tab === 'radiology' ? this.api.radiology(patientId)
-        : tab === 'billing' ? this.api.billing(patientId)
-        : tab === 'insurance' ? this.api.insurance(patientId)
-        : this.api.medicalRecords(patientId);
+      const request =
+        tab === 'appointments'
+          ? this.api.appointments(patientId)
+          : tab === 'visits'
+            ? this.api.visits(patientId)
+            : tab === 'prescriptions'
+              ? this.api.prescriptions(patientId)
+              : tab === 'documents'
+                ? this.api.documents(patientId)
+                : tab === 'laboratory'
+                  ? this.api.laboratory(patientId)
+                  : tab === 'radiology'
+                    ? this.api.radiology(patientId)
+                    : tab === 'billing'
+                      ? this.api.billing(patientId)
+                      : tab === 'insurance'
+                        ? this.api.insurance(patientId)
+                        : this.api.medicalRecords(patientId);
       const response: any = await firstValueFrom(request as any);
       this.data.update((data) => ({ ...data, [tab]: response.data }));
       this.loaded.add(tab);
     } catch {
-      this.errors.update((errors) => ({ ...errors, [tab]: `Unable to load ${tab.replace('-', ' ')}.` }));
+      this.errors.update((errors) => ({
+        ...errors,
+        [tab]: `Unable to load ${tab.replace('-', ' ')}.`,
+      }));
     } finally {
       if (this.loading() === tab) this.loading.set(null);
     }
   }
 
-  invalidate(tab: PatientTab) { this.loaded.delete(tab); }
+  invalidate(tab: PatientTab) {
+    this.loaded.delete(tab);
+  }
 }

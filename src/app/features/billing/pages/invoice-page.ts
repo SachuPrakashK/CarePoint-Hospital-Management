@@ -39,6 +39,9 @@ export class InvoicePage {
     try {
       const response = await firstValueFrom(this.api.invoice(id));
       this.invoice.set(response.data);
+      if (new URLSearchParams(window.location.search).get('print') === '1') {
+        window.setTimeout(() => window.print(), 100);
+      }
     } catch {
       this.invoice.set(null);
       this.error.set('Invoice details could not be loaded.');
