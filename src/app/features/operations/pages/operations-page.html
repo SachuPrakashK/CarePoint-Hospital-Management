@@ -1,11 +1,11 @@
-<div class="page-head">
+﻿<div class="page-head">
   <div>
     <div class="breadcrumbs">Operations / Inventory</div>
     <h1>Inventory & Operations</h1>
     <p class="muted">Hospital supplies, procurement, suppliers and ambulance fleet.</p>
   </div>
 </div>
-<div class="tabs">
+<div class="tabs" role="tablist" aria-label="Inventory and operations sections">
   <button [class.active]="tab() === 'inventory'" (click)="selectTab('inventory')">
     General inventory</button
   ><button [class.active]="tab() === 'procurement'" (click)="selectTab('procurement')">
@@ -26,6 +26,7 @@
       />
       <div class="toolbar-actions">
         <app-column-config
+          [disabled]="tableLoading() || total() === 0"
           [columns]="columns()"
           [visible]="visibleColumns()"
           (apply)="applyColumns($event)"
@@ -349,7 +350,7 @@
                     <td>{{ item.receivedQuantity }}</td>
                   }
                   @if (columnVisible('value')) {
-                    <td>₹{{ item.quantity * item.unitPrice }}</td>
+                    <td>â‚¹{{ item.quantity * item.unitPrice }}</td>
                   }
                   @if (columnVisible('status')) {
                     <td><app-status-badge [value]="item.status" /></td>
@@ -490,7 +491,7 @@
       <label class="field"
         ><span>Patient</span
         ><select [(ngModel)]="patientId">
-          <option value="">Select patient</option>
+          <option value="" disabled>Select patient</option>
           @for (p of patients.patients(); track p.id) {
             <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
           }
@@ -501,7 +502,7 @@
           <option value="">Assign later</option>
           @for (a of store.ambulances(); track a.id) {
             @if (a.status === 'Available') {
-              <option [value]="a.id">{{ a.number }} · {{ a.vehicleType }}</option>
+              <option [value]="a.id">{{ a.number }} Â· {{ a.vehicleType }}</option>
             }
           }
         </select></label

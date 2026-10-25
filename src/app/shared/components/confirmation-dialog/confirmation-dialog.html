@@ -9,7 +9,12 @@
       <button class="close" aria-label="Close" (click)="confirmation.answer(false)">
         <app-icon name="close" />
       </button>
-      <div class="danger-icon"><app-icon name="trash" [size]="24" /></div>
+      <div class="confirmation-icon" [class.approval-icon]="request.danger === false">
+        <app-icon
+          [name]="request.icon || (request.danger === false ? 'check-circle' : 'trash')"
+          [size]="24"
+        />
+      </div>
       <h2 id="confirm-title">{{ request.title }}</h2>
       <p>{{ request.message }}</p>
       @if (request.context) {

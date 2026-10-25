@@ -17,7 +17,9 @@ export class DashboardApiService {
   summary() {
     return this.http.get<ApiData<DashboardSummary>>(`${this.base}/summary`);
   }
-  patientTrends() { return this.http.get<ApiData<PatientTrend[]>>(`${this.base}/patient-trends`); }
+  patientTrends() {
+    return this.http.get<ApiData<PatientTrend[]>>(`${this.base}/patient-trends`);
+  }
   appointmentsByDepartment() {
     return this.http.get<ApiData<DepartmentAppointments[]>>(
       `${this.base}/appointments-by-department`,

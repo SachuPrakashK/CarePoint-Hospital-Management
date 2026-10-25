@@ -1,0 +1,31 @@
+<form [formGroup]="state.forms.notifications" (ngSubmit)="state.save('notifications')">
+  <div class="section-title">
+    <div>
+      <h2>Notification Settings</h2>
+      <p class="muted">Enable meaningful hospital workflow notifications.</p>
+    </div>
+  </div>
+  <div class="settings-switches">
+    @for (
+      item of [
+        ['appointmentCreated', 'Appointment created'],
+        ['appointmentCancelled', 'Appointment cancelled'],
+        ['laboratoryResultVerified', 'Laboratory result verified'],
+        ['radiologyResultVerified', 'Radiology result verified'],
+        ['lowInventory', 'Low inventory'],
+        ['paymentReceived', 'Payment received'],
+      ];
+      track item[0]
+    ) {
+      <label
+        ><span>{{ item[1] }}</span
+        ><input type="checkbox" [formControlName]="item[0]"
+      /></label>
+    }
+  </div>
+  <div class="form-actions">
+    <button class="primary" [disabled]="state.forms.notifications.pristine || state.saving()">
+      {{ state.saving() === 'notifications' ? 'Saving...' : 'Save Changes' }}
+    </button>
+  </div>
+</form>

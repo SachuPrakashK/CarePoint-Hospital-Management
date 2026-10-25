@@ -10,54 +10,49 @@
         alt=""
     /></a>
     <nav class="sidebar-nav" aria-label="Primary navigation" tabindex="0">
-      @for (item of nav; track item.path) {
+      @for (group of navigationGroups; track group.id) {
+        @if (groupVisible(group)) {
+          <section class="nav-group" [attr.aria-labelledby]="'nav-group-' + group.id">
+            <h2 class="nav-category" [id]="'nav-group-' + group.id">{{ group.label }}</h2>
+            @for (item of group.items; track item.path) {
+              @if (auth.has($any(item.permission))) {
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="active"
+                  (click)="closeMobile()"
+                  [attr.data-label]="item.translationKey | translate"
+                  (mouseenter)="showSidebarTooltip($event, t(item.translationKey))"
+                  (mouseleave)="hideSidebarTooltip()"
+                  (focus)="showSidebarTooltip($event, t(item.translationKey))"
+                  (blur)="hideSidebarTooltip()"
+                  ><span class="nav-icon"><app-icon [name]="item.icon" /></span
+                  ><span class="nav-label">{{ item.translationKey | translate }}</span></a
+                >
+              }
+            }
+          </section>
+        }
+      }
+    </nav>
+    <nav class="sidebar-bottom" aria-label="Support and settings navigation">
+      @for (item of bottomNavigation; track item.path) {
         @if (auth.has($any(item.permission))) {
           <a
+            class="settings-link"
             [routerLink]="item.path"
             routerLinkActive="active"
             (click)="closeMobile()"
-            [attr.data-label]="item.key | translate"
-            (mouseenter)="showSidebarTooltip($event, t(item.key))"
+            [attr.data-label]="item.translationKey | translate"
+            (mouseenter)="showSidebarTooltip($event, t(item.translationKey))"
             (mouseleave)="hideSidebarTooltip()"
-            (focus)="showSidebarTooltip($event, t(item.key))"
+            (focus)="showSidebarTooltip($event, t(item.translationKey))"
             (blur)="hideSidebarTooltip()"
             ><span class="nav-icon"><app-icon [name]="item.icon" /></span
-            ><span class="nav-label">{{ item.key | translate }}</span></a
+            ><span class="nav-label">{{ item.translationKey | translate }}</span></a
           >
         }
       }
     </nav>
-    <div class="sidebar-footer">
-      @if (auth.has('support.view')) {
-        <a
-          class="settings-link"
-          routerLink="/help-support"
-          routerLinkActive="active"
-          [attr.data-label]="'nav.support' | translate"
-          (mouseenter)="showSidebarTooltip($event, t('nav.support'))"
-          (mouseleave)="hideSidebarTooltip()"
-          (focus)="showSidebarTooltip($event, t('nav.support'))"
-          (blur)="hideSidebarTooltip()"
-        >
-          <span class="nav-icon"><app-icon name="help" /></span
-          ><span class="nav-label">{{ 'nav.support' | translate }}</span>
-        </a>
-      }
-      @if (auth.has('settings.view')) {
-        <a
-          class="settings-link"
-          routerLink="/settings"
-          routerLinkActive="active"
-          [attr.data-label]="'nav.settings' | translate"
-          (mouseenter)="showSidebarTooltip($event, t('nav.settings'))"
-          (mouseleave)="hideSidebarTooltip()"
-          (focus)="showSidebarTooltip($event, t('nav.settings'))"
-          (blur)="hideSidebarTooltip()"
-          ><span class="nav-icon"><app-icon name="settings" /></span
-          ><span class="nav-label">{{ 'nav.settings' | translate }}</span></a
-        >
-      }
-    </div>
   </aside>
   @if (sidebarTooltip(); as tooltip) {
     <div class="sidebar-tooltip" [style.top.px]="tooltip.top" role="tooltip">
@@ -73,6 +68,15 @@
       >
         <app-icon name="menu" />
       </button>
+      @if (activeNavigation(); as active) {
+        <div class="header-context" aria-label="Current location">
+          <strong>{{ active.group.label }}</strong>
+        </div>
+      } @else {
+        <div class="header-context" aria-label="Current location">
+          <strong>Overview</strong>
+        </div>
+      }
       <div class="header-actions">
         <div class="language-menu">
           <button

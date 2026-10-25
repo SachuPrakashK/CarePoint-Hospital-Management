@@ -7,14 +7,24 @@ describe('InpatientApiService', () => {
   let api: InpatientApiService;
   let http: HttpTestingController;
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     api = TestBed.inject(InpatientApiService);
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => http.verify());
 
   it('sends combined server-side search, department, status and pagination', () => {
-    api.admissions({ page: 3, pageSize: 25, search: 'Rahul', departmentId: 'department-id', status: 'ADMITTED' }).subscribe();
+    api
+      .admissions({
+        page: 3,
+        pageSize: 25,
+        search: 'Rahul',
+        departmentId: 'department-id',
+        status: 'ADMITTED',
+      })
+      .subscribe();
     const request = http.expectOne((item) => item.url === '/api/v1/admissions');
     expect(request.request.params.get('page')).toBe('3');
     expect(request.request.params.get('page_size')).toBe('25');
@@ -28,7 +38,9 @@ describe('InpatientApiService', () => {
     api.bedHistory('admission-id').subscribe();
     http.expectOne('/api/v1/admissions/admission-id/bed-history').flush({ data: [] });
     api.admissionNursing('admission-id').subscribe();
-    http.expectOne('/api/v1/admissions/admission-id/nursing').flush({ data: { notes: [], carePlans: [], intakeOutputs: [] } });
+    http
+      .expectOne('/api/v1/admissions/admission-id/nursing')
+      .flush({ data: { notes: [], carePlans: [], intakeOutputs: [] } });
   });
 
   it('uses database-backed nursing workflow endpoints', () => {
@@ -39,7 +51,9 @@ describe('InpatientApiService', () => {
     expect(notes.request.method).toBe('GET');
     notes.flush({ data: [] });
     api.medications('admission-id').subscribe();
-    http.expectOne('/api/v1/medication-administrations?admission_id=admission-id').flush({ data: [] });
+    http
+      .expectOne('/api/v1/medication-administrations?admission_id=admission-id')
+      .flush({ data: [] });
     api.createHandover({ admissionId: 'admission-id' }).subscribe();
     const handover = http.expectOne('/api/v1/nursing/handovers');
     expect(handover.request.method).toBe('POST');

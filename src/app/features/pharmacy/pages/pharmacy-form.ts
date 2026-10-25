@@ -1,5 +1,11 @@
 import { Component, inject, input, OnChanges, output } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { PharmacyStore } from '../../../core/services/pharmacy.store';
 import { AppDateTimeService } from '../../../core/services/app-date-time.service';
 @Component({
@@ -40,8 +46,11 @@ export class PharmacyForm implements OnChanges {
   }
   private futureDate(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    return new Date(`${control.value}T00:00:00`).getTime() > today.getTime() ? null : { futureDate: true };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(`${control.value}T00:00:00`).getTime() > today.getTime()
+      ? null
+      : { futureDate: true };
   }
   ngOnChanges() {
     for (const c of Object.values(this.form.controls)) {
@@ -56,13 +65,13 @@ export class PharmacyForm implements OnChanges {
       this.form.controls.genericName.addValidators(Validators.minLength(2));
     } else {
       req(
-          'medicineId',
-          'batchNumber',
-          'expiresAt',
-          'purchasePrice',
-          'sellingPrice',
-          'quantity',
-          'reorderLevel',
+        'medicineId',
+        'batchNumber',
+        'expiresAt',
+        'purchasePrice',
+        'sellingPrice',
+        'quantity',
+        'reorderLevel',
       );
       for (const key of ['purchasePrice', 'sellingPrice', 'reorderLevel'] as const)
         this.form.controls[key].addValidators(Validators.min(0));

@@ -41,6 +41,15 @@ describe('AppModal', () => {
     expect(fixture.nativeElement.querySelector('.crud-modal__header-icon')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('h2').textContent).toContain('Change Password');
   });
+  it('renders the standard form icon when a caller does not provide one', () => {
+    const fixture = TestBed.createComponent(AppModal);
+    fixture.componentRef.setInput('title', 'Create record');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('use')?.getAttribute('href')).toBe(
+      'icons.svg#documents',
+    );
+  });
   it('keeps editing when discard confirmation is declined', async () => {
     confirmation.confirm.mockResolvedValue(false);
     const fixture = TestBed.createComponent(AppModal);

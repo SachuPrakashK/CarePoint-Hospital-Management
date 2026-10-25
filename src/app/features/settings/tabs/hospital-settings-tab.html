@@ -1,0 +1,70 @@
+<form [formGroup]="state.forms.hospital" (ngSubmit)="state.save('hospital')">
+  <div class="section-title">
+    <div>
+      <h2>Hospital Settings</h2>
+      <p class="muted">Official hospital contact and registration details.</p>
+    </div>
+  </div>
+  <div class="logo-setting">
+    <div class="logo-preview">
+      @if (!state.logoError() && state.logoUrl()) {
+        <img [src]="state.logoUrl()" alt="Hospital logo" />
+      } @else {
+        <span>No logo uploaded</span>
+      }
+    </div>
+    <label class="secondary button-link"
+      >{{ state.uploadingLogo() ? 'Uploading...' : 'Upload logo'
+      }}<input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        [disabled]="state.uploadingLogo()"
+        (change)="state.uploadLogo($event)"
+    /></label>
+    <button
+      type="button"
+      class="danger"
+      [disabled]="state.uploadingLogo() || state.logoError()"
+      (click)="state.deleteLogo()"
+    >
+      Delete logo
+    </button>
+  </div>
+  <div class="form-grid">
+    <label class="field"
+      ><span class="form-label">Hospital name <span class="required-indicator">*</span></span
+      ><input formControlName="hospitalName" placeholder="Enter hospital name"
+    /></label>
+    <label class="field"
+      ><span class="form-label">Hospital code <span class="required-indicator">*</span></span
+      ><input formControlName="hospitalCode" placeholder="Enter hospital code"
+    /></label>
+    <label class="field full"
+      ><span>Address</span
+      ><textarea formControlName="address" placeholder="Enter hospital address"></textarea>
+    </label>
+    <label class="field"
+      ><span>Phone number</span
+      ><input type="tel" formControlName="phone" placeholder="Enter phone number"
+    /></label>
+    <label class="field"
+      ><span>Email</span
+      ><input type="email" formControlName="email" placeholder="Enter hospital email"
+    /></label>
+    <label class="field"
+      ><span>Website</span><input formControlName="website" placeholder="https://hospital.example"
+    /></label>
+    <label class="field"
+      ><span>Registration number</span
+      ><input formControlName="registrationNumber" placeholder="Enter registration number"
+    /></label>
+  </div>
+  <div class="form-actions">
+    <button
+      class="primary"
+      [disabled]="state.forms.hospital.pristine || state.forms.hospital.invalid || state.saving()"
+    >
+      {{ state.saving() === 'hospital' ? 'Saving...' : 'Save Changes' }}
+    </button>
+  </div>
+</form>

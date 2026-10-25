@@ -1,93 +1,211 @@
-<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()">
-  <div class="crud-modal__body">
-    <div class="form-grid">
-      @if (kind() === 'provider') {
-        <label class="field"
-          ><span class="form-label">Name <span class="required-indicator">*</span></span
-          ><input formControlName="name" /></label
-        ><label class="field"
-          ><span class="form-label">Code <span class="required-indicator">*</span></span
-          ><input formControlName="code" /></label
-        ><label class="field"
-          ><span class="form-label">Contact</span><input formControlName="contact" /></label
-        ><label class="field full"
-          ><span class="form-label">Address</span><textarea formControlName="address"></textarea>
-        </label>
-      } @else {
-        <label class="field"
-          ><span class="form-label">Patient <span class="required-indicator">*</span></span
-          ><select formControlName="patientId">
-            <option value="">Select</option>
-            @for (p of patients.patients(); track p.id) {
-              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
-            }
-          </select></label
-        >
-        @if (kind() === 'policy') {
+<form class="crud-modal__form insurance-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="crud-modal__body insurance-form__body">
+    @if (error) {
+      <div class="form-error" role="alert"><app-icon name="help" [size]="18" />{{ error }}</div>
+    }
+    <section class="form-section">
+      <header class="form-section__heading">
+        <span
+          ><app-icon
+            [name]="
+              kind() === 'provider' ? 'shield' : kind() === 'policy' ? 'documents' : 'insurance'
+            "
+            [size]="19"
+        /></span>
+        <div>
+          <h3>
+            {{
+              kind() === 'provider'
+                ? 'Provider Information'
+                : kind() === 'policy'
+                  ? 'Policy Information'
+                  : 'Claim Information'
+            }}
+          </h3>
+          <p>Complete the supported fields below. All relationships are validated by the server.</p>
+        </div>
+      </header>
+      <div class="form-grid insurance-grid">
+        @if (kind() === 'provider') {
           <label class="field"
-            ><span class="form-label">Provider <span class="required-indicator">*</span></span
-            ><select formControlName="providerId">
-              <option value="">Select</option>
-              @for (p of store.providers(); track p.id) {
-                <option [value]="p.id">{{ p.name }}</option>
-              }
-            </select></label
-          ><label class="field"
-            ><span class="form-label">Policy number <span class="required-indicator">*</span></span
-            ><input formControlName="policyNumber" /></label
-          ><label class="field"
-            ><span class="form-label">Member number</span
-            ><input formControlName="memberNumber" /></label
-          ><label class="field"
-            ><span class="form-label">Valid from <span class="required-indicator">*</span></span
-            ><input type="date" formControlName="startsAt" /></label
-          ><label class="field"
-            ><span class="form-label">Valid to <span class="required-indicator">*</span></span
-            ><input type="date" formControlName="endsAt" /></label
-          ><label class="field"
-            ><span class="form-label">Coverage limit <span class="required-indicator">*</span></span
-            ><input type="number" min="0" formControlName="coverageLimit" /></label
-          ><label class="field"
-            ><span class="form-label">Relationship <span class="required-indicator">*</span></span
-            ><input formControlName="relationship" /></label
-          ><label class="field"
-            ><span class="form-label">Priority <span class="required-indicator">*</span></span
-            ><select formControlName="priority">
-              <option>Primary</option>
-              <option>Secondary</option>
-            </select></label
-          >
+            ><span class="form-label">Provider name <span class="required-indicator">*</span></span
+            ><input formControlName="name" placeholder="Enter provider name" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="field-error">Enter at least 2 characters.</span>
+            }
+          </label>
+          <label class="field"
+            ><span class="form-label">Provider code <span class="required-indicator">*</span></span
+            ><input formControlName="code" placeholder="Enter unique provider code" />
+            @if (form.controls.code.touched && form.controls.code.invalid) {
+              <span class="field-error">Enter at least 2 characters.</span>
+            }
+          </label>
+          <label class="field"
+            ><span class="form-label">Contact information</span
+            ><input formControlName="contact" placeholder="Phone, email, or contact person"
+          /></label>
+          <label class="field"
+            ><span class="form-label">Status</span
+            ><select formControlName="isActive">
+              <option [ngValue]="null" disabled>Select status</option>
+              <option [ngValue]="true">Active</option>
+              <option [ngValue]="false">Inactive</option>
+            </select>
+            @if (form.controls.isActive.touched && form.controls.isActive.invalid) {
+              <span class="field-error">Select status.</span>
+            }
+          </label>
+          <label class="field full"
+            ><span class="form-label">Address</span
+            ><textarea formControlName="address" placeholder="Enter provider address"></textarea>
+          </label>
         } @else {
           <label class="field"
-            ><span class="form-label">Policy <span class="required-indicator">*</span></span
-            ><select formControlName="insuranceId">
-              <option value="">Select</option>
-              @for (p of policies(); track p.id) {
-                <option [value]="p.id">{{ p.policyNumber }}</option>
+            ><span class="form-label">Patient <span class="required-indicator">*</span></span
+            ><select formControlName="patientId">
+              <option value="" disabled>Select patient</option>
+              @for (patient of patients.patients(); track patient.id) {
+                <option [value]="patient.id">
+                  {{ patient.firstName }} {{ patient.lastName }} · {{ patient.mrn }}
+                </option>
               }
-            </select></label
-          ><label class="field"
-            ><span class="form-label">Invoice <span class="required-indicator">*</span></span
-            ><select formControlName="invoiceId">
-              <option value="">Select</option>
-              @for (i of invoices(); track i.id) {
-                <option [value]="i.id">{{ i.number }}</option>
+            </select>
+            @if (form.controls.patientId.touched && form.controls.patientId.invalid) {
+              <span class="field-error">Select a patient.</span>
+            }
+          </label>
+          @if (kind() === 'policy') {
+            <label class="field"
+              ><span class="form-label">Provider <span class="required-indicator">*</span></span
+              ><select formControlName="providerId">
+                <option value="" disabled>Select insurance provider</option>
+                @for (provider of store.providers(); track provider.id) {
+                  <option [value]="provider.id">{{ provider.name }}</option>
+                }
+              </select>
+              @if (form.controls.providerId.touched && form.controls.providerId.invalid) {
+                <span class="field-error">Select an insurance provider.</span>
               }
-            </select></label
-          ><label class="field"
-            ><span class="form-label">Claim amount <span class="required-indicator">*</span></span
-            ><input type="number" min="0.01" formControlName="claimedAmount"
-          /></label>
+            </label>
+            <label class="field"
+              ><span class="form-label"
+                >Policy number <span class="required-indicator">*</span></span
+              ><input formControlName="policyNumber" placeholder="Enter policy number"
+            /></label>
+            <label class="field"
+              ><span class="form-label">Member number</span
+              ><input formControlName="memberNumber" placeholder="Enter member number"
+            /></label>
+            <label class="field"
+              ><span class="form-label"
+                >Effective date <span class="required-indicator">*</span></span
+              ><input type="date" formControlName="startsAt"
+            /></label>
+            <label class="field"
+              ><span class="form-label">Expiry date <span class="required-indicator">*</span></span
+              ><input type="date" formControlName="endsAt"
+            /></label>
+            <label class="field"
+              ><span class="form-label"
+                >Coverage amount <span class="required-indicator">*</span></span
+              ><input type="number" min="0" formControlName="coverageLimit" placeholder="0.00"
+            /></label>
+            <label class="field"
+              ><span class="form-label">Relationship <span class="required-indicator">*</span></span
+              ><input formControlName="relationship" placeholder="e.g. Self"
+            /></label>
+            <label class="field"
+              ><span class="form-label">Priority <span class="required-indicator">*</span></span
+              ><select formControlName="priority">
+                <option value="" disabled>Select priority</option>
+                <option value="Primary">Primary</option>
+                <option value="Secondary">Secondary</option>
+              </select>
+              @if (form.controls.priority.touched && form.controls.priority.invalid) {
+                <span class="field-error">Select policy priority.</span>
+              }
+            </label>
+            <label class="field"
+              ><span class="form-label">Status</span
+              ><select formControlName="isActive">
+                <option [ngValue]="null" disabled>Select status</option>
+                <option [ngValue]="true">Active</option>
+                <option [ngValue]="false">Inactive</option>
+              </select>
+              @if (form.controls.isActive.touched && form.controls.isActive.invalid) {
+                <span class="field-error">Select status.</span>
+              }
+            </label>
+          } @else {
+            <label class="field"
+              ><span class="form-label"
+                >Active policy <span class="required-indicator">*</span></span
+              ><select formControlName="insuranceId">
+                <option value="" disabled>Select policy</option>
+                @for (policy of policies(); track policy.id) {
+                  <option [value]="policy.id">
+                    {{ policy.policyNumber }} · {{ policy.provider?.name }}
+                  </option>
+                }
+              </select>
+              @if (form.controls.insuranceId.touched && form.controls.insuranceId.invalid) {
+                <span class="field-error">Select an active policy for this patient.</span>
+              }
+            </label>
+            <label class="field"
+              ><span class="form-label"
+                >Related invoice <span class="required-indicator">*</span></span
+              ><select formControlName="invoiceId">
+                <option value="" disabled>Select patient invoice</option>
+                @for (invoice of invoices(); track invoice.id) {
+                  <option [value]="invoice.id">{{ invoice.number }}</option>
+                }
+              </select>
+              @if (form.controls.invoiceId.touched && form.controls.invoiceId.invalid) {
+                <span class="field-error">Select a related patient invoice.</span>
+              }
+            </label>
+            <label class="field"
+              ><span class="form-label">Claim amount <span class="required-indicator">*</span></span
+              ><input
+                type="number"
+                min="0.01"
+                step="0.01"
+                formControlName="claimedAmount"
+                placeholder="0.00"
+              />
+              @if (form.controls.claimedAmount.touched && form.controls.claimedAmount.invalid) {
+                <span class="field-error">Enter an amount greater than zero.</span>
+              }
+            </label>
+            <div class="server-note">
+              <app-icon name="shield" [size]="18" /><span
+                >Policy eligibility, invoice ownership, coverage, and claim amount are verified
+                again by the server.</span
+              >
+            </div>
+          }
         }
-      }
-    </div>
-    @if (error) {
-      <p class="error">{{ error }}</p>
-    }
+      </div>
+    </section>
   </div>
-  <div class="crud-modal__footer">
-    <button class="primary" [disabled]="form.invalid || submitting">
-      {{ submitting ? 'Saving...' : entity() ? 'Update' : 'Create' }}
+  <footer class="crud-modal__footer insurance-form__footer">
+    <button type="button" class="secondary" [disabled]="submitting" (click)="cancelled.emit()">
+      Cancel
     </button>
-  </div>
+    <button type="submit" class="primary button-icon" [disabled]="form.invalid || submitting">
+      <app-icon name="check-circle" [size]="18" />{{
+        submitting
+          ? 'Saving…'
+          : entity()
+            ? 'Save Changes'
+            : kind() === 'claim'
+              ? 'Create Claim'
+              : kind() === 'policy'
+                ? 'Add Policy'
+                : 'Add Provider'
+      }}
+    </button>
+  </footer>
 </form>

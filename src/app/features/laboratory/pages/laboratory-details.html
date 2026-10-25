@@ -6,32 +6,67 @@
   </div>
 </div>
 @if (loading()) {
-  <section class="card tab-state loading-state loading-state--page" role="status" aria-live="polite">Loading laboratory order…</section>
+  <section
+    class="card tab-state loading-state loading-state--page"
+    role="status"
+    aria-live="polite"
+  >
+    Loading laboratory order…
+  </section>
 } @else if (error()) {
-  <section class="card tab-state error-state" role="alert">{{ error() }} <button class="secondary" (click)="load()">Retry</button></section>
+  <section class="card tab-state error-state" role="alert">
+    {{ error() }} <button class="secondary" (click)="load()">Retry</button>
+  </section>
 } @else if (order(); as item) {
   <section class="card record-list">
-    <div class="section-title"><h2>{{ item.number }}</h2><app-status-badge [value]="item.status" /></div>
+    <div class="section-title">
+      <h2>{{ item.number }}</h2>
+      <app-status-badge [value]="item.status" />
+    </div>
     <div class="grid-2">
-      <div class="record-card"><span class="muted">Patient</span><b>{{ (item.patient?.firstName + ' ' + item.patient?.lastName) | displayValue }}</b></div>
-      <div class="record-card"><span class="muted">Ordering doctor</span><b>{{ item.doctor | displayValue }}</b></div>
-      <div class="record-card"><span class="muted">Tests</span><b>{{ item.tests?.join(', ') | displayValue }}</b></div>
-      <div class="record-card"><span class="muted">Priority</span><b>{{ item.priority | displayValue }}</b></div>
-      <div class="record-card"><span class="muted">Sample type</span><b>{{ item.sampleType | displayValue }}</b></div>
-      <div class="record-card"><span class="muted">Ordered</span><b>{{ item.createdAt | appDateTime }}</b></div>
-      <div class="record-card full"><span class="muted">Clinical notes</span><b>{{ item.clinicalNotes | displayValue }}</b></div>
+      <div class="record-card">
+        <span class="muted">Patient</span
+        ><b>{{ item.patient?.firstName + ' ' + item.patient?.lastName | displayValue }}</b>
+      </div>
+      <div class="record-card">
+        <span class="muted">Ordering doctor</span><b>{{ item.doctor | displayValue }}</b>
+      </div>
+      <div class="record-card">
+        <span class="muted">Tests</span><b>{{ item.tests?.join(', ') | displayValue }}</b>
+      </div>
+      <div class="record-card">
+        <span class="muted">Priority</span><b>{{ item.priority | displayValue }}</b>
+      </div>
+      <div class="record-card">
+        <span class="muted">Sample type</span><b>{{ item.sampleType | displayValue }}</b>
+      </div>
+      <div class="record-card">
+        <span class="muted">Ordered</span><b>{{ item.createdAt | appDateTime }}</b>
+      </div>
+      <div class="record-card full">
+        <span class="muted">Clinical notes</span><b>{{ item.clinicalNotes | displayValue }}</b>
+      </div>
     </div>
   </section>
   <section class="card">
     <div class="section-title"><h2>Results</h2></div>
     @for (result of item.results; track result.id) {
       <article class="record-card">
-        <div class="section-title"><b>{{ result.test }}</b><app-status-badge [value]="result.verifiedAt ? 'Verified' : 'Result Entered'" /></div>
+        <div class="section-title">
+          <b>{{ result.test }}</b
+          ><app-status-badge [value]="result.verifiedAt ? 'Verified' : 'Result Entered'" />
+        </div>
         <p>{{ result.value }} {{ result.unit | displayValue: '' }}</p>
-        <small class="muted">Reference range: {{ result.referenceRange | displayValue }} · Entered {{ result.enteredAt | appDateTime }}</small>
+        <small class="muted"
+          >Reference range: {{ result.referenceRange | displayValue }} · Entered
+          {{ result.enteredAt | appDateTime }}</small
+        >
       </article>
     } @empty {
-      <app-empty-state title="No results available" description="Results will appear after the sample is processed." />
+      <app-empty-state
+        title="No results available"
+        description="Results will appear after the sample is processed."
+      />
     }
   </section>
 }

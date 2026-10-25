@@ -6,7 +6,12 @@ import { AuthStore } from '../../core/auth/auth.store';
 import { ToastService } from '../../core/services/toast.service';
 import { AppModal } from '../../shared/components/modal/app-modal';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
-import { StaffDirectoryApiService, StaffKind, StaffOptions, StaffRecord } from './staff-directory-api.service';
+import {
+  StaffDirectoryApiService,
+  StaffKind,
+  StaffOptions,
+  StaffRecord,
+} from './staff-directory-api.service';
 import { StaffForm } from './staff-form';
 @Component({
   imports: [StatusBadge, AppModal, StaffForm],

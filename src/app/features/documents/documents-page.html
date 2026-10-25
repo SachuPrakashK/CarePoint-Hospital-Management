@@ -1,4 +1,4 @@
-<div class="page-head">
+﻿<div class="page-head">
   <div>
     <div class="breadcrumbs">Administration / Documents</div>
     <h1>Documents</h1>
@@ -13,12 +13,14 @@
     <app-search-field placeholder="Search documents" (valueChange)="query($event)" />
     <div class="toolbar-actions">
       <app-column-config
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [columns]="columns"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
         (reset)="resetColumns()"
       />
       <app-shared-filter
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [activeCount]="(ownerType() ? 1 : 0) + (mimeType() ? 1 : 0)"
         [loading]="store.loading()"
         (applied)="apply()"
@@ -196,7 +198,7 @@
           <label class="field full"
             ><span class="form-label">Patient <span class="required-indicator">*</span></span
             ><select name="ownerId" [(ngModel)]="ownerId" [disabled]="uploading()" required>
-              <option value="">Select patient</option>
+              <option value="" disabled>Select patient</option>
               @for (p of patients.patients(); track p.id) {
                 <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
               }

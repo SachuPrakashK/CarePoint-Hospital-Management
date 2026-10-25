@@ -7,6 +7,7 @@ import { ColumnConfig } from '../../shared/components/column-config/column-confi
 import { EmptyState } from '../../shared/components/empty-state/empty-state';
 import { SharedFilter } from '../../shared/components/filters/shared-filter';
 import { AppIcon } from '../../shared/components/icon/app-icon';
+import { AppActionsMenu } from '../../shared/components/actions-menu/app-actions-menu';
 import { AppPagination } from '../../shared/components/pagination/app-pagination';
 import { SearchField } from '../../shared/components/search/search-field';
 import { StatusBadge } from '../../shared/components/status-badge/status-badge';
@@ -23,6 +24,7 @@ import { TableColumnDefinition, TableSort } from '../../shared/models/table.mode
     TableSortHeader,
     ColumnConfig,
     AppIcon,
+    AppActionsMenu,
   ],
   templateUrl: './audit-page.html',
   styleUrl: './audit-page.scss',
@@ -77,6 +79,8 @@ export class AuditPage {
       sortKey: 'entityType',
     },
     { id: 'description', header: 'Details', visibleByDefault: true },
+    { id: 'ipAddress', header: 'IP address', visibleByDefault: true },
+    { id: 'actions', header: 'Actions', visibleByDefault: true, required: true },
   ];
   readonly visibleColumns = signal(this.tablePreferences.load('audit-log', this.columns));
 
@@ -184,8 +188,14 @@ export class AuditPage {
   }
 
   metadataSummary(value: unknown) {
-    if (!value) return 'No additional metadata';
+    if (!value) return '—';
     const text = JSON.stringify(value);
     return text.length > 100 ? `${text.slice(0, 97)}…` : text;
+  }
+
+  description(event: AuditEvent) {
+    const action = this.label(event.action);
+    const entity = this.label(event.entityType);
+    return event.entityId ? `${action} — ${entity} ${event.entityId}` : `${action} — ${entity}`;
   }
 }

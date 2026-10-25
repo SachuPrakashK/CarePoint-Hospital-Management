@@ -4,17 +4,21 @@
     <h1>Billing & Payments</h1>
     <p class="muted">Centralized charges, invoices, payments and refunds.</p>
   </div>
-  <button class="primary" (click)="openInvoice()">+ New invoice</button>
+  @if (auth.has('billing.create')) {
+    <button class="primary button-icon billing-create" (click)="openInvoice()">
+      <app-icon name="plus" [size]="18" /> Add New Invoice
+    </button>
+  }
 </div>
 <section class="stats">
   <app-summary-card
     title="Revenue Received"
-    [value]="'₹' + store.revenue()"
+    [value]="money(store.revenue())"
     icon="billing"
     variant="green"
   /><app-summary-card
     title="Outstanding"
-    [value]="'₹' + store.outstanding()"
+    [value]="money(store.outstanding())"
     icon="billing"
     variant="amber"
   /><app-summary-card
@@ -24,15 +28,34 @@
     variant="blue"
   /><app-summary-card
     title="Refund Requests"
-    [value]="store.refunds().length"
+    [value]="pendingRefunds()"
     icon="rotate-ccw"
     variant="purple"
   />
 </section>
-<div class="tabs">
-  <button [class.active]="tab() === 'invoices'" (click)="selectTab('invoices')">Invoices</button
-  ><button [class.active]="tab() === 'payments'" (click)="selectTab('payments')">Payments</button
-  ><button [class.active]="tab() === 'refunds'" (click)="selectTab('refunds')">Refunds</button>
+<div class="tabs billing-tabs" role="tablist" aria-label="Billing records">
+  <button
+    role="tab"
+    [attr.aria-selected]="tab() === 'invoices'"
+    [class.active]="tab() === 'invoices'"
+    (click)="selectTab('invoices')"
+  >
+    Invoices</button
+  ><button
+    role="tab"
+    [attr.aria-selected]="tab() === 'payments'"
+    [class.active]="tab() === 'payments'"
+    (click)="selectTab('payments')"
+  >
+    Payments</button
+  ><button
+    role="tab"
+    [attr.aria-selected]="tab() === 'refunds'"
+    [class.active]="tab() === 'refunds'"
+    (click)="selectTab('refunds')"
+  >
+    Refunds
+  </button>
 </div>
 <section class="card">
   <div class="toolbar">
@@ -43,10 +66,54 @@
     />
     <div class="toolbar-actions">
       <app-column-config
+        [disabled]="loading() || !!error() || total() === 0"
         [columns]="columns()"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
         (reset)="resetColumns()"
+      />
+      <app-shared-filter
+        [disabled]="loading() || !!error() || total() === 0"
+        [activeCount]="activeFilterCount()"
+        [loading]="loading()"
+        (applied)="applyFilters()"
+        (cleared)="clearFilters()"
+      >
+        @if (tab() === 'payments') {
+          <label class="field">
+            <span>Payment method</span>
+            <select [value]="methodFilter()" (change)="methodFilter.set($any($event.target).value)">
+              <option value="">All methods</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="UPI">UPI</option>
+              <option value="Bank Transfer">Bank transfer</option>
+            </select>
+          </label>
+        } @else {
+          <label class="field">
+            <span>Status</span>
+            <select [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+              <option value="">All statuses</option>
+              @if (tab() === 'invoices') {
+                <option value="Pending">Pending</option>
+                <option value="Partially Paid">Partially paid</option>
+                <option value="Paid">Paid</option>
+                <option value="Refunded">Refunded</option>
+                <option value="Cancelled">Cancelled</option>
+              } @else {
+                <option value="Requested">Requested</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              }
+            </select>
+          </label>
+        }
+      </app-shared-filter>
+      <app-shared-export
+        label="Export"
+        [disabled]="loading() || !!error() || total() === 0"
+        (exportRequested)="exportCurrentPage()"
       />
     </div>
   </div>
@@ -94,6 +161,9 @@
                   />
                 </th>
               }
+              @if (columnVisible('patientId')) {
+                <th>Patient ID</th>
+              }
               @if (columnVisible('total')) {
                 <th>Total</th>
               }
@@ -113,8 +183,11 @@
                   />
                 </th>
               }
+              @if (columnVisible('createdBy')) {
+                <th>Created by</th>
+              }
               @if (columnVisible('actions')) {
-                <th>Actions</th>
+                <th class="actions-column">Actions</th>
               }
             } @else if (tab() === 'payments') {
               @if (columnVisible('receipt')) {
@@ -137,11 +210,14 @@
                   />
                 </th>
               }
+              @if (columnVisible('patient')) {
+                <th>Patient</th>
+              }
               @if (columnVisible('date')) {
-                <th [attr.aria-sort]="ariaSort('paidAt')">
+                <th [attr.aria-sort]="ariaSort('createdAt')">
                   <app-table-sort-header
                     label="Date"
-                    field="paidAt"
+                    field="createdAt"
                     [sort]="sort()"
                     (sortChange)="changeSort($event)"
                   />
@@ -177,8 +253,14 @@
                   />
                 </th>
               }
+              @if (columnVisible('status')) {
+                <th>Status</th>
+              }
+              @if (columnVisible('recordedBy')) {
+                <th>Recorded by</th>
+              }
               @if (columnVisible('actions')) {
-                <th>Actions</th>
+                <th class="actions-column">Actions</th>
               }
             } @else {
               @if (columnVisible('date')) {
@@ -190,6 +272,12 @@
                     (sortChange)="changeSort($event)"
                   />
                 </th>
+              }
+              @if (columnVisible('invoice')) {
+                <th>Invoice</th>
+              }
+              @if (columnVisible('patient')) {
+                <th>Patient</th>
               }
               @if (columnVisible('payment')) {
                 <th [attr.aria-sort]="ariaSort('payment')">
@@ -231,15 +319,23 @@
                   />
                 </th>
               }
-              @if (columnVisible('approval')) {
-                <th>Approval</th>
+              @if (columnVisible('processedBy')) {
+                <th>Processed by</th>
+              }
+              @if (columnVisible('actions')) {
+                <th class="actions-column">Actions</th>
               }
             }
           </tr>
         </thead>
         <tbody>
           @for (item of rows(); track item.id) {
-            <tr>
+            <tr
+              class="clickable-row"
+              tabindex="0"
+              (click)="openDetails(item)"
+              (keydown.enter)="openDetails(item)"
+            >
               @if (tab() === 'invoices') {
                 @if (columnVisible('number')) {
                   <td>
@@ -252,35 +348,49 @@
                 @if (columnVisible('date')) {
                   <td>{{ format(item.createdAt) }}</td>
                 }
+                @if (columnVisible('patientId')) {
+                  <td>{{ item.patient?.mrn || 'Not assigned' }}</td>
+                }
                 @if (columnVisible('total')) {
-                  <td>₹{{ totals(item).total }}</td>
+                  <td>{{ money(totals(item).total) }}</td>
                 }
                 @if (columnVisible('paid')) {
-                  <td>₹{{ totals(item).paid }}</td>
+                  <td>{{ money(totals(item).paid) }}</td>
                 }
                 @if (columnVisible('balance')) {
                   <td>
-                    <b>₹{{ totals(item).balance }}</b>
+                    <b>{{ money(totals(item).balance) }}</b>
                   </td>
                 }
                 @if (columnVisible('status')) {
                   <td><app-status-badge [value]="item.status" /></td>
                 }
+                @if (columnVisible('createdBy')) {
+                  <td>{{ item.createdBy || 'Legacy record' }}</td>
+                }
                 @if (columnVisible('actions')) {
-                  <td>
-                    <a class="secondary button-link" [routerLink]="['invoice', item.id]">Open</a
-                    ><button class="secondary" (click)="openInvoice(item)">Edit</button>
-                    @if (totals(item).balance > 0) {
-                      <button
-                        class="primary"
-                        (click)="
-                          paymentInvoice.set({ id: item.id, amount: totals(item).balance });
-                          dirty.set(false)
-                        "
-                      >
-                        Pay
-                      </button>
-                    }
+                  <td class="actions actions-column" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [id]="item.id"
+                      [label]="'Actions for invoice ' + item.number"
+                      [canView]="true"
+                      [canEdit]="auth.has('billing.create')"
+                      [editDisabled]="item.payments?.length || item.status === 'Cancelled'"
+                      editDisabledReason="Paid or cancelled invoices cannot be edited."
+                      [canPrint]="true"
+                      [canPayment]="auth.has('billing.payment') && totals(item).balance > 0"
+                      [canDelete]="
+                        auth.has('billing.create') &&
+                        !item.payments?.length &&
+                        item.status !== 'Cancelled'
+                      "
+                      deleteLabel="Cancel / Void"
+                      (view)="openDetails(item)"
+                      (edit)="openInvoice(item)"
+                      (print)="printInvoice(item)"
+                      (payment)="paymentInvoice.set(item); dirty.set(false)"
+                      (delete)="cancelInvoice(item)"
+                    />
                   </td>
                 }
               } @else if (tab() === 'payments') {
@@ -290,39 +400,54 @@
                 @if (columnVisible('invoice')) {
                   <td>{{ item.invoice?.number || item.invoiceId }}</td>
                 }
+                @if (columnVisible('patient')) {
+                  <td>{{ patientName(item.invoice?.patient) }}</td>
+                }
                 @if (columnVisible('date')) {
-                  <td>{{ format(item.paidAt) }}</td>
+                  <td>{{ format(item.createdAt) }}</td>
                 }
                 @if (columnVisible('amount')) {
-                  <td>₹{{ item.amount }}</td>
+                  <td>{{ money(item.amount) }}</td>
                 }
                 @if (columnVisible('method')) {
                   <td>{{ item.method }}</td>
                 }
                 @if (columnVisible('reference')) {
-                  <td>{{ item.reference }}</td>
+                  <td>{{ item.reference || 'Not provided' }}</td>
+                }
+                @if (columnVisible('status')) {
+                  <td><app-status-badge [value]="item.status" /></td>
+                }
+                @if (columnVisible('recordedBy')) {
+                  <td>{{ item.recordedBy || 'Unknown user' }}</td>
                 }
                 @if (columnVisible('actions')) {
-                  <td>
-                    <button
-                      class="secondary"
-                      (click)="
-                        refundPayment.set({ id: item.id, amount: item.amount }); dirty.set(false)
-                      "
-                    >
-                      Refund
-                    </button>
+                  <td class="payment-actions actions-column" (click)="$event.stopPropagation()">
+                    @if (auth.has('billing.refund') && refundable(item) > 0) {
+                      <button
+                        class="refund-button"
+                        (click)="refundPayment.set(item); dirty.set(false)"
+                      >
+                        <app-icon name="rotate-ccw" [size]="15" /> Refund
+                      </button>
+                    }
                   </td>
                 }
               } @else {
                 @if (columnVisible('date')) {
                   <td>{{ format(item.createdAt) }}</td>
                 }
+                @if (columnVisible('invoice')) {
+                  <td>{{ item.payment?.invoice?.number || 'Unknown invoice' }}</td>
+                }
+                @if (columnVisible('patient')) {
+                  <td>{{ patientName(item.payment?.invoice?.patient) }}</td>
+                }
                 @if (columnVisible('payment')) {
                   <td>{{ item.payment?.receiptNumber || item.paymentId }}</td>
                 }
                 @if (columnVisible('amount')) {
-                  <td>₹{{ item.amount }}</td>
+                  <td>{{ money(item.amount) }}</td>
                 }
                 @if (columnVisible('reason')) {
                   <td>{{ item.reason }}</td>
@@ -330,17 +455,36 @@
                 @if (columnVisible('status')) {
                   <td><app-status-badge [value]="item.status" /></td>
                 }
-                @if (columnVisible('approval')) {
-                  <td>
-                    @if (item.status === 'Requested') {
-                      <button
-                        class="primary"
-                        (click)="store.approveRefund(item.id, 'Finance Manager'); loadTable()"
-                      >
-                        Approve & process
-                      </button>
-                    } @else {
-                      {{ item.approvedBy || 'Processed' }}
+                @if (columnVisible('processedBy')) {
+                  <td>{{ item.approvedBy || item.requestedBy || 'Unknown user' }}</td>
+                }
+                @if (columnVisible('actions')) {
+                  <td class="refund-actions actions-column" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [id]="item.id"
+                      [label]="'Actions for refund ' + item.id"
+                      [canView]="true"
+                      [canEdit]="false"
+                      [canDelete]="false"
+                      (view)="openDetails(item)"
+                    />
+                    @if (item.status === 'Requested' && auth.has('billing.refund')) {
+                      <div class="refund-approval-actions">
+                        <button
+                          class="primary"
+                          [disabled]="!!resolvingRefundId()"
+                          (click)="resolveRefund(item.id, 'Approved')"
+                        >
+                          Approve & process
+                        </button>
+                        <button
+                          class="danger"
+                          [disabled]="!!resolvingRefundId()"
+                          (click)="resolveRefund(item.id, 'Rejected')"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     }
                   </td>
                 }
@@ -367,31 +511,50 @@
 }
 @if (invoiceModal()) {
   <app-modal
-    [title]="editing() ? 'Edit invoice' : 'Create invoice'"
+    [title]="editing() ? 'Edit Invoice' : 'Add New Invoice'"
+    [description]="
+      editing()
+        ? 'Update eligible invoice line items.'
+        : 'Create an itemized patient billing invoice.'
+    "
+    icon="billing"
     size="xl"
     [dirty]="dirty()"
     (closed)="closeInvoice()"
     ><app-bill-form
       [entity]="editing()"
       (dirtyChanged)="dirty.set($event)"
+      (cancelled)="closeInvoice()"
       (saved)="invoiceSaved(); loadTable()"
   /></app-modal>
 }
 @if (paymentInvoice(); as payment) {
-  <app-modal title="Record payment" [dirty]="dirty()" (closed)="paymentInvoice.set(null)"
+  <app-modal
+    title="Record Payment"
+    description="Record a verified payment against this invoice."
+    icon="billing"
+    size="lg"
+    [dirty]="dirty()"
+    (closed)="paymentInvoice.set(null)"
     ><app-payment-form
-      [invoiceId]="payment.id"
-      [initialAmount]="payment.amount"
+      [invoice]="payment"
       (dirtyChanged)="dirty.set($event)"
+      (cancelled)="paymentInvoice.set(null)"
       (saved)="paymentSaved()"
   /></app-modal>
 }
 @if (refundPayment(); as payment) {
-  <app-modal title="Request refund" [dirty]="dirty()" (closed)="refundPayment.set(null)"
+  <app-modal
+    title="Refund Payment"
+    description="Submit a controlled refund request for approval."
+    icon="rotate-ccw"
+    size="lg"
+    [dirty]="dirty()"
+    (closed)="refundPayment.set(null)"
     ><app-refund-form
-      [paymentId]="payment.id"
-      [initialAmount]="payment.amount"
+      [payment]="payment"
       (dirtyChanged)="dirty.set($event)"
+      (cancelled)="refundPayment.set(null)"
       (saved)="refundSaved()"
   /></app-modal>
 }

@@ -1,4 +1,4 @@
-<div class="page-head">
+﻿<div class="page-head">
   <div>
     <div class="breadcrumbs">Clinical / Procedures & OT</div>
     <h1>Procedures & OT</h1>
@@ -51,12 +51,14 @@
     />
     <div class="toolbar-actions">
       <app-column-config
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [columns]="columns"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
         (reset)="resetColumns()"
       />
       <app-shared-filter
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [activeCount]="activeFilterCount()"
         [loading]="store.loading()"
         [applyDisabled]="!!(draftFromDate() && draftToDate() && draftFromDate() > draftToDate())"
@@ -100,7 +102,7 @@
         }
       </app-shared-filter>
       <app-shared-export
-        [disabled]="!store.records().length"
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [exporting]="exporting()"
         (exportRequested)="export()"
       />
@@ -108,7 +110,7 @@
   </div>
   @if (store.loading()) {
     <div class="loading-state loading-state--table" role="status" aria-live="polite">
-      Loading procedures…
+      Loading proceduresâ€¦
     </div>
   } @else if (store.error()) {
     <div class="error-state" role="alert">
@@ -283,10 +285,10 @@
           <label class="field"
             ><span class="form-label">Patient <span class="required-indicator">*</span></span
             ><select formControlName="patientId" (change)="onPatientChange()">
-              <option value="">Select patient</option>
+              <option value="" disabled>Select patient</option>
               @for (item of clinical.patients(); track item.id) {
                 <option [value]="item.id">
-                  {{ item.firstName }} {{ item.lastName }} · {{ item.mrn }}
+                  {{ item.firstName }} {{ item.lastName }} Â· {{ item.mrn }}
                 </option>
               }
             </select></label
@@ -295,7 +297,7 @@
             <label class="field"
               ><span class="form-label">Admission</span
               ><select formControlName="admissionId">
-                <option value="">Select admission if applicable</option>
+                <option value="" disabled>Select admission if applicable</option>
                 @for (item of admissionsForPatient(); track item.id) {
                   <option [value]="item.id">{{ item.number }}</option>
                 }
@@ -308,7 +310,7 @@
           ><label class="field"
             ><span class="form-label">Surgeon <span class="required-indicator">*</span></span
             ><select formControlName="doctorId">
-              <option value="">Select surgeon</option>
+              <option value="" disabled>Select surgeon</option>
               @for (item of store.lookups().doctors; track item.id) {
                 <option [value]="item.id">{{ item.firstName }} {{ item.lastName }}</option>
               }
@@ -316,7 +318,7 @@
           ><label class="field"
             ><span class="form-label">Theatre <span class="required-indicator">*</span></span
             ><select formControlName="theatreId">
-              <option value="">Select theatre</option>
+              <option value="" disabled>Select theatre</option>
               @for (item of store.lookups().theatres; track item.id) {
                 <option [value]="item.id">{{ item.name }}</option>
               }
@@ -336,7 +338,7 @@
           ><label class="field"
             ><span class="form-label">Status <span class="required-indicator">*</span></span
             ><select formControlName="status">
-              <option value="">Select status</option>
+              <option value="" disabled>Select status</option>
               @for (item of store.lookups().statuses; track item) {
                 <option [value]="item">{{ item }}</option>
               }
@@ -358,7 +360,7 @@
       </div>
       <footer class="crud-modal__footer">
         <button class="primary" type="submit" [disabled]="form.invalid || submitting()">
-          {{ submitting() ? 'Saving…' : editing() ? 'Update procedure' : 'Schedule procedure' }}
+          {{ submitting() ? 'Savingâ€¦' : editing() ? 'Update procedure' : 'Schedule procedure' }}
         </button>
       </footer>
     </form></app-modal

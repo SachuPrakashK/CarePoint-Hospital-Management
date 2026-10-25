@@ -11,7 +11,8 @@ export const APPOINTMENT_ROUTES: Routes = [
     path: 'new',
     canActivate: [permissionGuard],
     data: { permission: 'appointments.create' },
-    loadComponent: () => import('./pages/appointment-create-page').then((m) => m.AppointmentCreatePage),
+    loadComponent: () =>
+      import('./pages/appointment-create-page').then((m) => m.AppointmentCreatePage),
   },
   {
     path: ':id',

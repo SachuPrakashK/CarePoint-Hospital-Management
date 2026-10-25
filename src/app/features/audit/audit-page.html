@@ -8,15 +8,21 @@
 
 <section class="card audit-card">
   <div class="toolbar audit-toolbar">
-    <app-search-field placeholder="Search audit logs…" (valueChange)="query($event)" />
+    <app-search-field
+      placeholder="Search audit logs…"
+      [value]="search()"
+      (valueChange)="query($event)"
+    />
     <div class="toolbar-actions">
       <app-column-config
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [columns]="columns"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
         (reset)="resetColumns()"
       />
       <app-shared-filter
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [activeCount]="activeFilterCount()"
         [loading]="store.loading()"
         [applyDisabled]="dateRangeInvalid()"
@@ -89,7 +95,13 @@
   } @else if (!store.events().length) {
     <app-empty-state
       title="No audit logs found"
-      description="No immutable events match your search or filters."
+      [description]="
+        search() || activeFilterCount()
+          ? 'No immutable events match the current search or filters.'
+          : 'No audit activity has been recorded.'
+      "
+      [actionLabel]="search() || activeFilterCount() ? 'Clear search and filters' : ''"
+      (action)="search.set(''); clear()"
     />
   } @else {
     <div class="table-wrap audit-table-wrap">
@@ -149,6 +161,12 @@
             @if (columnVisible('description')) {
               <th class="audit-col-details">Details</th>
             }
+            @if (columnVisible('ipAddress')) {
+              <th class="audit-col-ip">IP address</th>
+            }
+            @if (columnVisible('actions')) {
+              <th class="actions-column">Actions</th>
+            }
           </tr>
         </thead>
         <tbody>
@@ -184,17 +202,38 @@
                   <span class="audit-primary-text" [title]="event.entityType">{{
                     label(event.entityType)
                   }}</span
-                  ><small [title]="event.entityId || 'No entity reference'">{{
-                    event.entityId || 'No reference'
+                  ><small [title]="event.entityId || 'No entity reference recorded'">{{
+                    event.entityId || '—'
                   }}</small>
                 </td>
               }
               @if (columnVisible('description')) {
                 <td>
-                  <span class="audit-detail-preview" [title]="metadataSummary(event.metadata)">{{
-                    metadataSummary(event.metadata)
-                  }}</span
-                  ><app-icon name="chevron-right" [size]="17" />
+                  <span class="audit-detail-preview" [title]="description(event)">{{
+                    description(event)
+                  }}</span>
+                  @if (event.metadata != null) {
+                    <small [title]="metadataSummary(event.metadata)">{{
+                      metadataSummary(event.metadata)
+                    }}</small>
+                  }
+                </td>
+              }
+              @if (columnVisible('ipAddress')) {
+                <td class="audit-ip" [title]="event.ipAddress || 'IP address not recorded'">
+                  {{ event.ipAddress || '—' }}
+                </td>
+              }
+              @if (columnVisible('actions')) {
+                <td class="actions actions-column" (click)="$event.stopPropagation()">
+                  <app-actions-menu
+                    [id]="event.id"
+                    [label]="'Actions for audit event ' + event.id"
+                    [canView]="true"
+                    [canEdit]="false"
+                    [canDelete]="false"
+                    (view)="open(event)"
+                  />
                 </td>
               }
             </tr>

@@ -7,8 +7,8 @@ export interface AdmissionQuery {
   search?: string;
   departmentId?: string;
   status?: string;
-  sortBy?:string;
-  sortOrder?:'asc'|'desc';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 export interface AdmissionPage {
   data: any[];
@@ -26,7 +26,8 @@ export class InpatientApiService {
       search: query.search,
       department_id: query.departmentId,
       status: query.status,
-      sort_by:query.sortBy,sort_order:query.sortOrder,
+      sort_by: query.sortBy,
+      sort_order: query.sortOrder,
     };
     for (const [key, value] of Object.entries(values))
       if (value !== undefined && value !== '') params = params.set(key, String(value));

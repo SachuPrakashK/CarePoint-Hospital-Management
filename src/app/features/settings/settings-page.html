@@ -5,247 +5,42 @@
     <p class="muted">Configure hospital-wide application behavior.</p>
   </div>
 </div>
-@if (loading()) {
-  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading settings...</div>
+@if (state.loading()) {
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">
+    Loading settings...
+  </div>
 } @else {
   <div class="settings-layout">
     <nav class="settings-nav" aria-label="Settings sections">
-      @for (section of ['hospital', 'application', 'notifications', 'security', 'languages', 'support']; track section) {
+      @for (
+        section of ['hospital', 'application', 'notifications', 'security', 'languages', 'support'];
+        track section
+      ) {
         <button type="button" [class.active]="tab() === section" (click)="tab.set($any(section))">
           {{ section[0].toUpperCase() + section.slice(1) }}
         </button>
       }
     </nav>
     <section class="card settings-card">
-      @if (tab() === 'hospital') {
-        <form [formGroup]="forms.hospital" (ngSubmit)="save('hospital')">
-          <div class="section-title">
-            <div>
-              <h2>Hospital Settings</h2>
-              <p class="muted">Official hospital contact and registration details.</p>
-            </div>
-          </div>
-          <div class="logo-setting">
-            <div class="logo-preview">
-              @if (!logoError() && logoUrl()) {
-                <img [src]="logoUrl()" alt="Hospital logo" />
-              } @else {
-                <span>No logo uploaded</span>
-              }
-            </div>
-            <label class="secondary button-link"
-              >{{ uploadingLogo() ? 'Uploading...' : 'Upload logo'
-              }}<input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                [disabled]="uploadingLogo()"
-                (change)="uploadLogo($event)"
-            /></label>
-            <button
-              type="button"
-              class="danger"
-              [disabled]="uploadingLogo() || logoError()"
-              (click)="deleteLogo()"
-            >
-              Delete logo
-            </button>
-          </div>
-          <div class="form-grid">
-            <label class="field"
-              ><span class="form-label"
-                >Hospital name <span class="required-indicator">*</span></span
-              ><input formControlName="hospitalName" placeholder="Enter hospital name" /></label
-            ><label class="field"
-              ><span class="form-label"
-                >Hospital code <span class="required-indicator">*</span></span
-              ><input formControlName="hospitalCode" placeholder="Enter hospital code" /></label
-            ><label class="field full"
-              ><span>Address</span
-              ><textarea
-                formControlName="address"
-                placeholder="Enter hospital address"
-              ></textarea></label
-            ><label class="field"
-              ><span>Phone number</span
-              ><input type="tel" formControlName="phone" placeholder="Enter phone number" /></label
-            ><label class="field"
-              ><span>Email</span
-              ><input
-                type="email"
-                formControlName="email"
-                placeholder="Enter hospital email" /></label
-            ><label class="field"
-              ><span>Website</span
-              ><input formControlName="website" placeholder="https://hospital.example" /></label
-            ><label class="field"
-              ><span>Registration number</span
-              ><input formControlName="registrationNumber" placeholder="Enter registration number"
-            /></label>
-          </div>
-          <div class="form-actions">
-            <button
-              class="primary"
-              [disabled]="forms.hospital.pristine || forms.hospital.invalid || saving()"
-            >
-              {{ saving() === 'hospital' ? 'Saving...' : 'Save Changes' }}
-            </button>
-          </div>
-        </form>
-      }
-      @if (tab() === 'application') {
-        <form [formGroup]="forms.application" (ngSubmit)="save('application')">
-          <div class="section-title">
-            <div>
-              <h2>Application Settings</h2>
-              <p class="muted">Shared date, time and pagination defaults.</p>
-            </div>
-          </div>
-          <div class="form-grid">
-            <label class="field full"
-              ><span class="form-label"
-                >Application name <span class="required-indicator">*</span></span
-              ><input formControlName="applicationName" /></label
-            ><label class="field"
-              ><span>Date format</span
-              ><select formControlName="dateFormat">
-                <option>DD-MM-YYYY</option>
-                <option>MM-DD-YYYY</option>
-                <option>YYYY-MM-DD</option>
-              </select></label
-            ><label class="field"
-              ><span>Time format</span
-              ><select formControlName="timeFormat">
-                <option value="12-hour">12-hour</option>
-                <option value="24-hour">24-hour</option>
-              </select></label
-            ><label class="field"
-              ><span>Timezone</span
-              ><select formControlName="timezone">
-                <option value="Asia/Kolkata">Asia/Kolkata</option>
-              </select></label
-            ><label class="field"
-              ><span>Default rows per page</span
-              ><select formControlName="defaultRowsPerPage">
-                <option [ngValue]="10">10</option>
-                <option [ngValue]="25">25</option>
-                <option [ngValue]="50">50</option>
-                <option [ngValue]="100">100</option>
-              </select></label
-            >
-          </div>
-          <div class="form-actions">
-            <button
-              class="primary"
-              [disabled]="forms.application.pristine || forms.application.invalid || saving()"
-            >
-              {{ saving() === 'application' ? 'Saving...' : 'Save Changes' }}
-            </button>
-          </div>
-        </form>
-      }
-      @if (tab() === 'notifications') {
-        <form [formGroup]="forms.notifications" (ngSubmit)="save('notifications')">
-          <div class="section-title">
-            <div>
-              <h2>Notification Settings</h2>
-              <p class="muted">Enable meaningful hospital workflow notifications.</p>
-            </div>
-          </div>
-          <div class="settings-switches">
-            @for (
-              item of [
-                ['appointmentCreated', 'Appointment created'],
-                ['appointmentCancelled', 'Appointment cancelled'],
-                ['laboratoryResultVerified', 'Laboratory result verified'],
-                ['radiologyResultVerified', 'Radiology result verified'],
-                ['lowInventory', 'Low inventory'],
-                ['paymentReceived', 'Payment received'],
-              ];
-              track item[0]
-            ) {
-              <label
-                ><span>{{ item[1] }}</span
-                ><input type="checkbox" [formControlName]="item[0]"
-              /></label>
-            }
-          </div>
-          <div class="form-actions">
-            <button class="primary" [disabled]="forms.notifications.pristine || saving()">
-              {{ saving() === 'notifications' ? 'Saving...' : 'Save Changes' }}
-            </button>
-          </div>
-        </form>
-      }
-      @if (tab() === 'security') {
-        <form [formGroup]="forms.security" (ngSubmit)="save('security')">
-          <div class="section-title">
-            <div>
-              <h2>Security Settings</h2>
-              <p class="muted">Applied by authentication and user password validation.</p>
-            </div>
-          </div>
-          <div class="form-grid">
-            <label class="field"
-              ><span>Session timeout (minutes)</span
-              ><input type="number" formControlName="sessionTimeoutMinutes" /></label
-            ><label class="field"
-              ><span>Password minimum length</span
-              ><input type="number" formControlName="passwordMinimumLength" /></label
-            ><label class="field"
-              ><span>Maximum login attempts</span
-              ><input type="number" formControlName="maximumLoginAttempts" /></label
-            ><label class="field"
-              ><span>Account lock duration (minutes)</span
-              ><input type="number" formControlName="accountLockMinutes"
-            /></label>
-            <div class="settings-switches full">
-              @for (
-                item of [
-                  ['requireUppercase', 'Require uppercase'],
-                  ['requireLowercase', 'Require lowercase'],
-                  ['requireNumber', 'Require number'],
-                  ['requireSpecial', 'Require special character'],
-                ];
-                track item[0]
-              ) {
-                <label
-                  ><span>{{ item[1] }}</span
-                  ><input type="checkbox" [formControlName]="item[0]"
-                /></label>
-              }
-            </div>
-          </div>
-          <div class="form-actions">
-            <button
-              class="primary"
-              [disabled]="forms.security.pristine || forms.security.invalid || saving()"
-            >
-              {{ saving() === 'security' ? 'Saving...' : 'Save Changes' }}
-            </button>
-          </div>
-        </form>
-      }
-      @if(tab()==='languages'){
-        <div class="section-title"><div><h2>Language Configuration</h2><p class="muted">Enable complete translation packs for the organization. English remains the required fallback.</p></div></div>
-        <div class="language-summary"><span>Default language</span><strong>English</strong></div>
-        <div class="language-settings" role="list" aria-label="Available languages">
-          @for(item of languages();track item.code){
-            <article role="listitem">
-              <div><strong>{{ item.nativeName }}</strong><small>{{ item.name }} · {{ item.code }} · {{ item.translationCoverage }}% translation coverage</small></div>
-              <div class="language-state"><span [class.enabled]="item.enabled">{{ item.enabled?'Enabled':'Disabled' }}</span>
-                @if(auth.has('settings.update')){<button type="button" class="secondary" [disabled]="item.isDefault||updatingLanguage()===item.code||item.translationCoverage<100" (click)="toggleLanguage(item)">{{ item.isDefault?'Required':item.enabled?'Disable':'Enable' }}</button>}
-              </div>
-            </article>
-          }@empty{<p class="muted">No translation packs are registered.</p>}
-        </div>
-        <p class="muted language-note">Only translation packs with 100% coverage of the registered application dictionary can be enabled or selected in the header.</p>
-      }
-      @if(tab()==='support'){
-        <div class="section-title"><div><h2>Support Configuration</h2><p class="muted">Configure real contact details and maintain help content shown to users.</p></div></div>
-        <form [formGroup]="supportForm" (ngSubmit)="saveSupport()"><div class="form-grid"><label class="field"><span>Support email</span><input type="email" formControlName="email" placeholder="Leave blank if unavailable"/></label><label class="field"><span>Support phone</span><input formControlName="phone" placeholder="Leave blank if unavailable"/></label><label class="field"><span>Working hours</span><input formControlName="workingHours" placeholder="For example: Mon–Fri, 09:00–17:00"/></label><label class="field"><span>Support portal</span><input type="url" formControlName="portalUrl" placeholder="https://"/></label></div><div class="form-actions"><button class="primary" [disabled]="supportForm.invalid||supportForm.pristine||saving()">{{saving()==='support'?'Saving...':'Save contact details'}}</button></div></form>
-        @if(auth.has('support.article.manage')){<div class="section-title"><div><h2>Help Articles</h2><p class="muted">Only published articles appear in Help & Support.</p></div><button type="button" class="primary" (click)="editArticle()">+ Add article</button></div>
-          @if(articleEditorOpen()){<form class="article-editor" [formGroup]="articleForm" (ngSubmit)="saveArticle()"><div class="form-grid"><label class="field"><span>Category *</span><input formControlName="category"/></label><label class="field"><span>Related module</span><input formControlName="relatedModule"/></label><label class="field full"><span>Title *</span><input formControlName="title"/></label><label class="field full"><span>Article content *</span><textarea rows="8" formControlName="content"></textarea></label><label class="field"><span>Publication status</span><select formControlName="status"><option value="DRAFT">Draft</option><option value="PUBLISHED">Published</option></select></label></div><div class="form-actions"><button type="button" class="secondary" (click)="closeArticleEditor()">Cancel</button><button class="primary" [disabled]="articleForm.invalid||savingArticle()">{{savingArticle()?'Saving...':'Save article'}}</button></div></form>}
-          <div class="article-admin-list">@for(article of articles();track article.id){<article><div><strong>{{article.title}}</strong><small>{{article.category}} · {{article.status}} · updated {{article.updatedAt.slice(0,10)}}</small></div><div><button type="button" class="secondary" (click)="editArticle(article)">Edit</button><button type="button" class="danger" (click)="removeArticle(article)">Delete</button></div></article>}@empty{<p class="muted">No help articles have been created.</p>}</div>}
+      @switch (tab()) {
+        @case ('hospital') {
+          <app-hospital-settings-tab />
+        }
+        @case ('application') {
+          <app-application-settings-tab />
+        }
+        @case ('notifications') {
+          <app-notification-settings-tab />
+        }
+        @case ('security') {
+          <app-security-settings-tab />
+        }
+        @case ('languages') {
+          <app-language-settings-tab />
+        }
+        @case ('support') {
+          <app-support-settings-tab />
+        }
       }
     </section>
   </div>

@@ -1,10 +1,21 @@
-import { ChangeDetectionStrategy, Component, HostListener, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  effect,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { ClickOutsideDirective } from '../../directives/click-outside.directive';
 import { AppIcon } from '../icon/app-icon';
 
 export type FilterValue = string | number | boolean | readonly (string | number | boolean)[] | null;
 export type FilterType = 'select' | 'multi-select' | 'date' | 'date-range' | 'boolean' | 'text';
-export interface FilterOption { value: string | number | boolean; label: string; }
+export interface FilterOption {
+  value: string | number | boolean;
+  label: string;
+}
 export interface FilterDefinition {
   key: string;
   label: string;
@@ -31,6 +42,12 @@ export class SharedFilter {
   readonly cleared = output<void>();
   readonly open = signal(false);
 
+  constructor() {
+    effect(() => {
+      if (this.disabled() || this.loading()) this.open.set(false);
+    });
+  }
+
   toggle() {
     if (!this.disabled() && !this.loading()) this.open.update((value) => !value);
   }
@@ -45,5 +62,7 @@ export class SharedFilter {
     this.cleared.emit();
   }
   @HostListener('document:keydown.escape')
-  close() { this.open.set(false); }
+  close() {
+    this.open.set(false);
+  }
 }

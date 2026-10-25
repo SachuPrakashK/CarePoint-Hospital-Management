@@ -1,0 +1,152 @@
+<div class="section-title settings-hero settings-hero--support">
+  <div>
+    <span class="eyebrow">Help & support</span>
+    <h2>Support Center Configuration</h2>
+    <p class="muted">Keep contact channels and self-service guidance accurate for every team.</p>
+  </div>
+</div>
+<div class="support-overview">
+  <article>
+    <app-icon name="mail" [size]="22" />
+    <div>
+      <span>Email support</span
+      ><strong>{{ state.supportForm.controls.email.value || 'Not configured' }}</strong>
+    </div>
+  </article>
+  <article>
+    <app-icon name="clock" [size]="22" />
+    <div>
+      <span>Availability</span
+      ><strong>{{ state.supportForm.controls.workingHours.value || 'Not configured' }}</strong>
+    </div>
+  </article>
+  <article>
+    <app-icon name="help" [size]="22" />
+    <div>
+      <span>Help resources</span><strong>{{ state.articles().length }} maintained</strong>
+    </div>
+  </article>
+</div>
+<form class="support-contact-card" [formGroup]="state.supportForm" (ngSubmit)="state.saveSupport()">
+  <div class="subsection-heading">
+    <div>
+      <h3>Contact support channels</h3>
+      <p class="muted">Blank channels are not shown to users in Help & Support.</p>
+    </div>
+  </div>
+  <div class="form-grid">
+    <label class="field"
+      ><span>Support email</span
+      ><input
+        type="email"
+        formControlName="email"
+        placeholder="Leave blank if unavailable" /></label
+    ><label class="field"
+      ><span>Support phone</span
+      ><input formControlName="phone" placeholder="Leave blank if unavailable" /></label
+    ><label class="field"
+      ><span>Working hours</span
+      ><input
+        formControlName="workingHours"
+        placeholder="For example: Mon–Fri, 09:00–17:00" /></label
+    ><label class="field"
+      ><span>Support portal</span
+      ><input type="url" formControlName="portalUrl" placeholder="https://"
+    /></label>
+  </div>
+  <div class="form-actions">
+    <button
+      class="primary"
+      [disabled]="state.supportForm.invalid || state.supportForm.pristine || state.saving()"
+    >
+      <app-icon name="check-circle" [size]="17" />{{
+        state.saving() === 'support' ? 'Saving...' : 'Save contact details'
+      }}
+    </button>
+  </div>
+</form>
+@if (state.auth.has('support.article.manage')) {
+  <div class="section-title subsection-title">
+    <div>
+      <h2>Help Articles</h2>
+      <p class="muted">Only published articles appear in Help & Support.</p>
+    </div>
+    <button type="button" class="primary" (click)="state.editArticle()">
+      <app-icon name="plus" [size]="17" /> Add article
+    </button>
+  </div>
+  @if (state.articleEditorOpen()) {
+    <app-modal
+      [title]="state.editingArticle() ? 'Edit help article' : 'Add help article'"
+      description="Maintain guidance displayed in the Help & Support module."
+      icon="help"
+      size="lg"
+      [dirty]="state.articleForm.dirty"
+      (closed)="state.closeArticleEditor()"
+      ><form
+        class="crud-modal__form"
+        [formGroup]="state.articleForm"
+        (ngSubmit)="state.saveArticle()"
+      >
+        <div class="crud-modal__body">
+          <div class="form-grid">
+            <label class="field"
+              ><span>Category *</span
+              ><input formControlName="category" placeholder="Enter article category" /></label
+            ><label class="field"
+              ><span>Related module</span
+              ><input
+                formControlName="relatedModule"
+                placeholder="Enter related module (optional)" /></label
+            ><label class="field full"
+              ><span>Title *</span
+              ><input formControlName="title" placeholder="Enter article title" /></label
+            ><label class="field full"
+              ><span>Article content *</span
+              ><textarea
+                rows="8"
+                formControlName="content"
+                placeholder="Enter article content"
+              ></textarea></label
+            ><label class="field"
+              ><span>Publication status</span
+              ><select formControlName="status">
+                <option value="" disabled>Select publication status</option>
+                <option value="DRAFT">Draft</option>
+                <option value="PUBLISHED">Published</option>
+              </select></label
+            >
+          </div>
+        </div>
+        <footer class="crud-modal__footer">
+          <button type="button" class="secondary" (click)="state.closeArticleEditor()">
+            Cancel</button
+          ><button class="primary" [disabled]="state.articleForm.invalid || state.savingArticle()">
+            {{ state.savingArticle() ? 'Saving...' : 'Save article' }}
+          </button>
+        </footer>
+      </form></app-modal
+    >
+  }
+  <div class="article-admin-list">
+    @for (article of state.articles(); track article.id) {
+      <article>
+        <div>
+          <strong>{{ article.title }}</strong
+          ><small
+            >{{ article.category }} · {{ article.status }} · updated
+            {{ article.updatedAt.slice(0, 10) }}</small
+          >
+        </div>
+        <div>
+          <button type="button" class="secondary" (click)="state.editArticle(article)">Edit</button
+          ><button type="button" class="danger" (click)="state.removeArticle(article)">
+            Delete
+          </button>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted">No help articles have been created.</p>
+    }
+  </div>
+}

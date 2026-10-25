@@ -6,7 +6,9 @@
   </div>
 </div>
 @if (loading()) {
-  <div class="card state loading-state loading-state--page" role="status" aria-live="polite">Loading procedure details…</div>
+  <div class="card state loading-state loading-state--page" role="status" aria-live="polite">
+    Loading procedure details…
+  </div>
 } @else if (error()) {
   <div class="card error-state" role="alert">
     {{ error() }} <button class="secondary" type="button" (click)="load()">Retry</button>

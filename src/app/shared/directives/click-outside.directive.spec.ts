@@ -8,7 +8,9 @@ describe('ClickOutsideDirective', () => {
     const host = document.createElement('div');
     const child = document.createElement('button');
     host.append(child);
-    TestBed.configureTestingModule({ providers: [ClickOutsideDirective, { provide: ElementRef, useValue: new ElementRef(host) }] });
+    TestBed.configureTestingModule({
+      providers: [ClickOutsideDirective, { provide: ElementRef, useValue: new ElementRef(host) }],
+    });
     const directive = TestBed.inject(ClickOutsideDirective);
     const emitted = vi.fn();
     directive.appClickOutside.subscribe(emitted);

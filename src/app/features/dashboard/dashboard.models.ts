@@ -14,7 +14,10 @@ export interface PatientTrend {
   date: string;
   count: number;
 }
-export interface OperationalDatum { label: string; count: number; }
+export interface OperationalDatum {
+  label: string;
+  count: number;
+}
 export interface DepartmentAppointments {
   department: string;
   count: number;

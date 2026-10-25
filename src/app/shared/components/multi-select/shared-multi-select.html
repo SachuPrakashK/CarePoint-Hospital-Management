@@ -1,0 +1,62 @@
+<div class="multi-select" appClickOutside (appClickOutside)="open.set(false)">
+  <button
+    type="button"
+    class="multi-select__trigger"
+    aria-haspopup="listbox"
+    [attr.aria-expanded]="open()"
+    (click)="open.set(!open())"
+  >
+    <span>{{ selected().length ? selected().length + ' selected' : placeholder() }}</span>
+    <app-icon name="chevron-down" [size]="16" />
+  </button>
+  @if (selectedOptions().length) {
+    <div class="multi-select__chips" aria-label="Selected options">
+      @for (option of selectedOptions(); track option.value) {
+        <span class="multi-select__chip">
+          {{ option.label }}
+          <button
+            type="button"
+            [attr.aria-label]="'Remove ' + option.label"
+            (click)="remove(option.value, $event)"
+          >
+            <app-icon name="close" [size]="13" />
+          </button>
+        </span>
+      }
+    </div>
+  }
+  @if (open()) {
+    <section class="multi-select__panel" role="listbox" aria-multiselectable="true">
+      <app-search-field
+        [placeholder]="searchPlaceholder()"
+        [value]="search()"
+        (valueChange)="search.set($event)"
+      />
+      <div class="multi-select__options">
+        @for (option of filtered(); track option.value) {
+          <label [class.disabled]="option.disabled">
+            <input
+              type="checkbox"
+              [checked]="selected().includes(option.value)"
+              [disabled]="option.disabled"
+              (change)="toggle(option)"
+            />
+            <span
+              ><strong>{{ option.label }}</strong
+              ><small>{{ option.secondary }}</small></span
+            >
+            <code>{{ option.value }}</code>
+          </label>
+        } @empty {
+          <p>No matching languages.</p>
+        }
+      </div>
+      <footer>
+        <span>{{ selected().length }} selected</span>
+        <button type="button" class="secondary" [disabled]="!selected().length" (click)="clear()">
+          Clear selection
+        </button>
+      </footer>
+    </section>
+  }
+</div>

@@ -6,6 +6,7 @@
   </div>
   <div class="reports-actions">
     <app-shared-filter
+      [disabled]="loading() || !!error() || !data()"
       [activeCount]="activeFilterCount()"
       [loading]="loading()"
       [applyDisabled]="dateInvalid()"

@@ -18,6 +18,12 @@
       <span aria-label="active filters">({{ activeCount() }})</span>
     }
   </button>
+  @if (disabled() && activeCount() > 0 && !loading()) {
+    <button type="button" class="filter-recovery-btn" (click)="clear()">
+      <app-icon name="rotate-ccw" [size]="15" />
+      Clear filters
+    </button>
+  }
   @if (open()) {
     <section class="filter-panel" role="dialog" aria-label="Filters">
       <div class="filter-grid"><ng-content /></div>

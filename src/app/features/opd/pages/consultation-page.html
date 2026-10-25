@@ -26,7 +26,7 @@
         </p>
       </aside>
       <main>
-        <div class="tabs">
+        <div class="tabs" role="tablist" aria-label="Consultation sections">
           @for (t of tabs; track t) {
             <button type="button" [class.active]="tab() === t" (click)="tab.set(t)">
               {{ t }}

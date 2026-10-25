@@ -102,10 +102,25 @@ export class StaffForm {
       });
     else
       this.form.reset({
-        firstName: '', lastName: '', gender: '', dateOfBirth: '', phone: '', email: '',
-        address: '', employeeCode: '', departmentId: '', specializationId: '',
-        medicalRegistration: '', qualification: '', yearsOfExperience: 0, consultationFee: 0,
-        designation: '', joiningDate: '', employmentType: 'FULL_TIME', status: 'ACTIVE', roleCode: '',
+        firstName: '',
+        lastName: '',
+        gender: '',
+        dateOfBirth: '',
+        phone: '',
+        email: '',
+        address: '',
+        employeeCode: '',
+        departmentId: '',
+        specializationId: '',
+        medicalRegistration: '',
+        qualification: '',
+        yearsOfExperience: 0,
+        consultationFee: 0,
+        designation: '',
+        joiningDate: '',
+        employmentType: 'FULL_TIME',
+        status: 'ACTIVE',
+        roleCode: '',
       });
     this.form.markAsPristine();
     this.dirtyChanged.emit(false);

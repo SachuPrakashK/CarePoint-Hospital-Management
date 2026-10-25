@@ -1,26 +1,68 @@
-<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-  @if (error) {
-    <div class="form-error" role="alert">{{ error }}</div>
-  }
-  <div class="modal-form-grid">
-    <label class="field">
-      <span class="form-label">Amount <span class="required-indicator">*</span></span>
-      <input type="number" min="0.01" step="0.01" formControlName="amount" />
-      @if (form.controls.amount.touched && form.controls.amount.invalid) {
-        <span class="field-error">Enter a valid refund amount.</span>
-      }
-    </label>
-    <label class="field modal-form-span">
-      <span class="form-label">Reason <span class="required-indicator">*</span></span>
-      <textarea formControlName="reason" maxlength="500"></textarea>
-      @if (form.controls.reason.touched && form.controls.reason.invalid) {
-        <span class="field-error">Enter a refund reason.</span>
-      }
-    </label>
+<form class="crud-modal__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="crud-modal__body financial-form-body">
+    @if (error) {
+      <div class="form-error" role="alert">{{ error }}</div>
+    }
+    <section class="transaction-context">
+      <div>
+        <small>PAYMENT</small><strong>{{ payment().receiptNumber }}</strong>
+      </div>
+      <div>
+        <small>INVOICE</small><strong>{{ payment().invoice?.number }}</strong>
+      </div>
+      <div>
+        <small>PATIENT</small><strong>{{ patientName() }}</strong
+        ><span>{{ payment().invoice?.patient?.mrn }}</span>
+      </div>
+    </section>
+    <section class="financial-summary">
+      <div>
+        <span>Original payment</span><strong>{{ money(payment().amount) }}</strong>
+      </div>
+      <div>
+        <span>Previously refunded/requested</span><strong>{{ money(refunded()) }}</strong>
+      </div>
+      <div class="highlight">
+        <span>Refundable balance</span><strong>{{ money(remaining()) }}</strong>
+      </div>
+    </section>
+    <div class="modal-form-grid">
+      <label class="field"
+        ><span class="form-label">Refund amount <span class="required-indicator">*</span></span
+        ><input
+          type="number"
+          min="0.01"
+          [max]="remaining()"
+          step="0.01"
+          formControlName="amount"
+          placeholder="Enter refund amount"
+        />
+        @if (form.controls.amount.touched && form.controls.amount.invalid) {
+          <span class="field-error">Enter an amount up to the refundable balance.</span>
+        }
+      </label>
+      <label class="field modal-form-span"
+        ><span class="form-label">Refund reason <span class="required-indicator">*</span></span
+        ><textarea
+          formControlName="reason"
+          maxlength="500"
+          placeholder="Explain why this refund is required"
+        ></textarea>
+        @if (form.controls.reason.touched && form.controls.reason.invalid) {
+          <span class="field-error">Enter a reason of at least 3 characters.</span>
+        }
+      </label>
+    </div>
+    <p class="workflow-note">
+      This creates a refund request with status <strong>Requested</strong>. It affects collections
+      only after authorized approval.
+    </p>
   </div>
-  <footer class="modal-form-footer">
-    <button class="danger" type="submit" [disabled]="form.invalid || submitting">
-      {{ submitting ? 'Requesting…' : 'Request refund' }}
+  <footer class="crud-modal__footer">
+    <button type="button" class="secondary" [disabled]="submitting" (click)="cancelled.emit()">
+      Cancel</button
+    ><button class="danger" type="submit" [disabled]="form.invalid || submitting">
+      {{ submitting ? 'Submitting…' : 'Refund Payment' }}
     </button>
   </footer>
 </form>

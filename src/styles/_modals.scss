@@ -11,14 +11,28 @@
 }
 .crud-modal {
   position: relative;
-  width: min(620px, 100%);
-  max-height: calc(100dvh - 48px);
+  width: min(1000px, 100%);
+  max-width: 620px;
+  max-height: min(90dvh, calc(100dvh - 48px));
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-dialog);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+.crud-modal__content {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.crud-modal__content > * {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
 }
 .crud-modal--sm {
   max-width: 420px;
@@ -33,7 +47,7 @@
   max-width: 860px;
 }
 .crud-modal--xl {
-  max-width: 1120px;
+  max-width: 1000px;
 }
 .crud-modal__header {
   flex: 0 0 auto;
@@ -42,6 +56,8 @@
   justify-content: space-between;
   padding: 20px 24px;
   border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  z-index: 1;
 }
 .crud-modal__heading {
   display: flex;
@@ -72,10 +88,25 @@
   flex: 1;
 }
 .crud-modal__body {
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
+  background: #f8fbff;
+  scrollbar-width: thin;
+  scrollbar-color: #8eafc0 #edf4f8;
+}
+.crud-modal__body::-webkit-scrollbar {
+  width: 0.55rem;
+}
+.crud-modal__body::-webkit-scrollbar-track {
+  background: #edf4f8;
+}
+.crud-modal__body::-webkit-scrollbar-thumb {
+  border: 2px solid #edf4f8;
+  border-radius: 999px;
+  background: #8eafc0;
 }
 .crud-modal__footer {
   flex: 0 0 auto;
@@ -85,6 +116,10 @@
   padding: 16px 22px;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
+  z-index: 1;
+}
+.crud-modal__footer button {
+  min-height: 42px;
 }
 .dialog-backdrop {
   position: fixed;

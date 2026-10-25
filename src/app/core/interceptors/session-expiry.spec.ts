@@ -116,9 +116,7 @@ describe('session expiry handling', () => {
 
   it('does not treat a 403 response as session expiry', () => {
     http.get('/api/v1/admin-only').subscribe({ error: () => undefined });
-    controller
-      .expectOne('/api/v1/admin-only')
-      .flush({}, { status: 403, statusText: 'Forbidden' });
+    controller.expectOne('/api/v1/admin-only').flush({}, { status: 403, statusText: 'Forbidden' });
     expect(auth.authenticated()).toBe(true);
     expect(router.navigateByUrl).not.toHaveBeenCalled();
     expect(toast.toasts()[0].message).toContain('permission');

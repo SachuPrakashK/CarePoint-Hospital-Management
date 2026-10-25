@@ -23,10 +23,24 @@ export interface Page<T> {
   data: T[];
   pagination: { page: number; page_size: number; total: number; total_pages: number };
 }
+export interface LanguageCatalogEntry {
+  code: string;
+  name: string;
+  nativeName: string;
+}
 @Injectable({ providedIn: 'root' })
 export class AdministrationApiService {
   private http = inject(HttpClient);
-  roles(query: { page?: number; pageSize?: number; search?: string; status?: string; sortBy?: string; sortOrder?: 'asc'|'desc' } = {}) {
+  roles(
+    query: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      status?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    } = {},
+  ) {
     let params = new HttpParams()
       .set('page', query.page ?? 1)
       .set('page_size', query.pageSize ?? 10);
@@ -63,17 +77,66 @@ export class AdministrationApiService {
     return this.http.post<{ data: { url: string } }>('/api/v1/settings/hospital/logo', body);
   }
   logo() {
-    return this.http.get('/api/v1/settings/hospital/logo', { responseType: 'blob' });
+    return this.http.get('/api/v1/settings/hospital/logo', {
+      responseType: 'blob',
+      headers: { 'X-Handle-Error-Locally': 'true' },
+    });
   }
   deleteLogo() {
     return this.http.delete('/api/v1/settings/hospital/logo');
   }
-  languages(){return this.http.get<{data:AppLanguage[]}>('/api/v1/languages/configuration');}
-  setLanguageEnabled(code:string,enabled:boolean){return this.http.patch<{data:AppLanguage}>(`/api/v1/languages/${encodeURIComponent(code)}`,{enabled});}
-  supportContacts(){return this.http.get<{data:any}>('/api/v1/support/contacts');}
-  saveSupportContacts(value:any){return this.http.put<{data:any}>('/api/v1/support/contacts',value);}
-  supportArticles(){return this.http.get<{data:any[]}>('/api/v1/support/articles/manage');}
-  createSupportArticle(value:any){return this.http.post<{data:any}>('/api/v1/support/articles',value);}
-  updateSupportArticle(id:string,value:any){return this.http.put<{data:any}>(`/api/v1/support/articles/${id}`,value);}
-  deleteSupportArticle(id:string){return this.http.delete(`/api/v1/support/articles/${id}`);}
+  languages() {
+    return this.http.get<{ data: AppLanguage[] }>('/api/v1/languages/configuration');
+  }
+  setLanguageEnabled(id: string, enabled: boolean) {
+    return this.http.patch<{ data: AppLanguage }>(`/api/v1/languages/${encodeURIComponent(id)}`, {
+      enabled,
+    });
+  }
+  languageCatalog(search = '') {
+    return this.http.get<{ data: LanguageCatalogEntry[] }>('/api/v1/languages/catalog', {
+      params: search ? { search } : {},
+    });
+  }
+  addLanguage(code: string) {
+    return this.http.post<{ data: AppLanguage }>('/api/v1/languages', { code });
+  }
+  addLanguages(codes: string[]) {
+    return this.http.post<{ data: AppLanguage[] }>('/api/v1/languages/batch', { codes });
+  }
+  updateLanguage(id: string, value: { enabled?: boolean; isDefault?: boolean }) {
+    return this.http.patch<{ data: AppLanguage }>(
+      `/api/v1/languages/${encodeURIComponent(id)}`,
+      value,
+    );
+  }
+  removeLanguage(id: string) {
+    return this.http.delete(`/api/v1/languages/${encodeURIComponent(id)}`);
+  }
+  languageTranslations(id: string) {
+    return this.http.get<{
+      data: { code: string; keys: string[]; values: Record<string, string> };
+    }>(`/api/v1/languages/${encodeURIComponent(id)}/translations`);
+  }
+  saveLanguageTranslations(id: string, values: Record<string, string>) {
+    return this.http.put(`/api/v1/languages/${encodeURIComponent(id)}/translations`, { values });
+  }
+  supportContacts() {
+    return this.http.get<{ data: any }>('/api/v1/support/contacts');
+  }
+  saveSupportContacts(value: any) {
+    return this.http.put<{ data: any }>('/api/v1/support/contacts', value);
+  }
+  supportArticles() {
+    return this.http.get<{ data: any[] }>('/api/v1/support/articles/manage');
+  }
+  createSupportArticle(value: any) {
+    return this.http.post<{ data: any }>('/api/v1/support/articles', value);
+  }
+  updateSupportArticle(id: string, value: any) {
+    return this.http.put<{ data: any }>(`/api/v1/support/articles/${id}`, value);
+  }
+  deleteSupportArticle(id: string) {
+    return this.http.delete(`/api/v1/support/articles/${id}`);
+  }
 }

@@ -1,43 +1,86 @@
 <div class="page-head">
   <div>
-    <div class="breadcrumbs">Finance / Insurance</div>
     <h1>Insurance & Claims</h1>
-    <p class="muted">Providers, patient coverage, pre-authorizations and claim lifecycle.</p>
+    <p class="muted">Manage patient coverage, providers, and the complete claim lifecycle.</p>
   </div>
-  <button class="primary" (click)="open('claim')">+ Create claim</button>
+  @if (tab() === 'claims' && auth.has('insurance.create')) {
+    <button class="primary button-icon" (click)="open('claim')">
+      <app-icon name="plus" [size]="18" /> Create Claim
+    </button>
+  }
 </div>
-<section class="stats">
-  <app-summary-card
-    title="Open Claims"
-    [value]="store.claims().length"
-    icon="insurance"
-    variant="blue"
-  /><app-summary-card
-    title="Claimed"
-    [value]="'₹' + claimed()"
-    icon="billing"
-    variant="purple"
-  /><app-summary-card
-    title="Approved"
-    [value]="'₹' + approved()"
-    icon="check-circle"
-    variant="green"
-  /><app-summary-card
-    title="Patient Responsibility"
-    [value]="'₹' + responsibility()"
-    icon="patients"
-    variant="amber"
-  />
-</section>
-<div class="tabs">
-  <button [class.active]="tab() === 'claims'" (click)="selectTab('claims')">Claims</button
-  ><button [class.active]="tab() === 'coverage'" (click)="selectTab('coverage')">
-    Patient insurance</button
-  ><button [class.active]="tab() === 'providers'" (click)="selectTab('providers')">
+
+@if (summary(); as metrics) {
+  <section class="insurance-stats" aria-label="Insurance summary">
+    <app-summary-card
+      title="Total Claims"
+      [value]="metrics.totalClaims"
+      icon="insurance"
+      variant="blue"
+    />
+    <app-summary-card
+      title="Pending Claims"
+      [value]="metrics.pendingClaims"
+      icon="clock"
+      variant="amber"
+    />
+    <app-summary-card
+      title="Approved Claims"
+      [value]="metrics.approvedClaims"
+      icon="check-circle"
+      variant="green"
+    />
+    <app-summary-card
+      title="Claim Amount"
+      [value]="money(metrics.totalClaimAmount)"
+      icon="billing"
+      variant="purple"
+    />
+    <app-summary-card
+      title="Active Policies"
+      [value]="metrics.activePolicies"
+      icon="documents"
+      variant="cyan"
+    />
+    <app-summary-card
+      title="Providers"
+      [value]="metrics.activeProviders"
+      icon="shield"
+      variant="teal"
+    />
+  </section>
+} @else {
+  <div class="summary-unavailable">Insurance summary is currently unavailable.</div>
+}
+
+<nav class="tabs insurance-tabs" role="tablist" aria-label="Insurance sections">
+  <button
+    role="tab"
+    [attr.aria-selected]="tab() === 'claims'"
+    [class.active]="tab() === 'claims'"
+    (click)="selectTab('claims')"
+  >
+    Claims
+  </button>
+  <button
+    role="tab"
+    [attr.aria-selected]="tab() === 'coverage'"
+    [class.active]="tab() === 'coverage'"
+    (click)="selectTab('coverage')"
+  >
+    Patient Insurance
+  </button>
+  <button
+    role="tab"
+    [attr.aria-selected]="tab() === 'providers'"
+    [class.active]="tab() === 'providers'"
+    (click)="selectTab('providers')"
+  >
     Providers
   </button>
-</div>
-<section class="card">
+</nav>
+
+<section class="card insurance-table-card">
   <div class="toolbar">
     <app-search-field
       [placeholder]="'Search ' + tab()"
@@ -46,288 +89,223 @@
     />
     <div class="toolbar-actions">
       <app-column-config
+        [disabled]="loading() || !!error() || total() === 0"
         [columns]="columns()"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
         (reset)="resetColumns()"
       />
-      @if (tab() === 'coverage') {
-        <button class="primary" (click)="open('policy')">+ Add policy</button>
+      <app-shared-filter
+        [disabled]="loading() || !!error() || total() === 0"
+        [activeCount]="activeFilterCount()"
+        (applied)="applyFilters()"
+        (cleared)="clearFilters()"
+      >
+        @if (tab() !== 'providers') {
+          <label class="field"
+            ><span>Patient</span
+            ><select
+              [ngModel]="draftFilters()['patientId'] || ''"
+              (ngModelChange)="updateDraft('patientId', $event)"
+            >
+              <option value="">All patients</option>
+              @for (patient of patients.patients(); track patient.id) {
+                <option [value]="patient.id">{{ patient.firstName }} {{ patient.lastName }}</option>
+              }
+            </select></label
+          >
+        }
+        @if (tab() !== 'providers') {
+          <label class="field"
+            ><span>Provider</span
+            ><select
+              [ngModel]="draftFilters()['providerId'] || ''"
+              (ngModelChange)="updateDraft('providerId', $event)"
+            >
+              <option value="">All providers</option>
+              @for (provider of store.providers(); track provider.id) {
+                <option [value]="provider.id">{{ provider.name }}</option>
+              }
+            </select></label
+          >
+        }
+        <label class="field"
+          ><span>Status</span
+          ><select
+            [ngModel]="draftFilters()['status'] || ''"
+            (ngModelChange)="updateDraft('status', $event)"
+          >
+            <option value="">All statuses</option>
+            @if (tab() === 'claims') {
+              <option>Draft</option>
+              <option>Submitted</option>
+              <option>Under Review</option>
+              <option>Approved</option>
+              <option>Rejected</option>
+              <option>Settled</option>
+              <option>Cancelled</option>
+            } @else {
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              @if (tab() === 'providers') {
+                <option value="all">All</option>
+              }
+            }
+          </select></label
+        >
+        @if (tab() === 'claims') {
+          <label class="field"
+            ><span>Claim date from</span
+            ><input
+              type="date"
+              [ngModel]="draftFilters()['dateFrom'] || ''"
+              (ngModelChange)="updateDraft('dateFrom', $event)"
+          /></label>
+          <label class="field"
+            ><span>Claim date to</span
+            ><input
+              type="date"
+              [ngModel]="draftFilters()['dateTo'] || ''"
+              (ngModelChange)="updateDraft('dateTo', $event)"
+          /></label>
+        } @else if (tab() === 'coverage') {
+          <label class="field"
+            ><span>Expiry from</span
+            ><input
+              type="date"
+              [ngModel]="draftFilters()['expiryFrom'] || ''"
+              (ngModelChange)="updateDraft('expiryFrom', $event)"
+          /></label>
+          <label class="field"
+            ><span>Expiry to</span
+            ><input
+              type="date"
+              [ngModel]="draftFilters()['expiryTo'] || ''"
+              (ngModelChange)="updateDraft('expiryTo', $event)"
+          /></label>
+        }
+      </app-shared-filter>
+      <app-shared-export
+        [disabled]="loading() || !!error() || total() === 0"
+        [exporting]="exporting()"
+        (exportRequested)="exportFiltered()"
+      />
+      @if (tab() === 'coverage' && auth.has('insurance.create')) {
+        <button class="primary button-icon" (click)="open('policy')">
+          <app-icon name="plus" [size]="17" /> Add Policy
+        </button>
       }
-      @if (tab() === 'providers') {
-        <button class="primary" (click)="open('provider')">+ Add provider</button>
+      @if (tab() === 'providers' && auth.has('insurance.create')) {
+        <button class="primary button-icon" (click)="open('provider')">
+          <app-icon name="plus" [size]="17" /> Add Provider
+        </button>
       }
     </div>
   </div>
+
   @if (loading()) {
-    <div class="loading-state loading-state--table" role="status" aria-live="polite">
-      Loading insurance records...
-    </div>
+    <div class="loading-state loading-state--table" role="status">Loading insurance records…</div>
   } @else if (error()) {
-    <div class="error-state">{{ error() }} <button (click)="loadTable()">Retry</button></div>
+    <div class="error-state" role="alert">
+      {{ error() }} <button class="secondary" (click)="loadTable()">Retry</button>
+    </div>
   } @else if (!rows().length) {
-    <div class="empty">No {{ tab() }} found.</div>
+    <div class="empty">No matching {{ tab() }} records found.</div>
   } @else {
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            @if (tab() === 'claims') {
-              @if (columnVisible('claim')) {
-                <th [attr.aria-sort]="ariaSort('number')">
-                  <app-table-sort-header
-                    label="Claim"
-                    field="number"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
+            @for (column of columns(); track column.id) {
+              @if (columnVisible(column.id)) {
+                <th
+                  [class.actions-column]="column.id === 'actions'"
+                  [attr.aria-sort]="column.sortKey ? ariaSort(column.sortKey) : null"
+                >
+                  @if (column.sortable && column.sortKey) {
+                    <app-table-sort-header
+                      [label]="column.header"
+                      [field]="column.sortKey"
+                      [sort]="sort()"
+                      (sortChange)="changeSort($event)"
+                    />
+                  } @else {
+                    {{ column.header }}
+                  }
                 </th>
-              }
-              @if (columnVisible('patient')) {
-                <th [attr.aria-sort]="ariaSort('patient')">
-                  <app-table-sort-header
-                    label="Patient"
-                    field="patient"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('invoice')) {
-                <th [attr.aria-sort]="ariaSort('invoice')">
-                  <app-table-sort-header
-                    label="Invoice"
-                    field="invoice"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('claimed')) {
-                <th [attr.aria-sort]="ariaSort('claimedAmount')">
-                  <app-table-sort-header
-                    label="Claimed"
-                    field="claimedAmount"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('approved')) {
-                <th [attr.aria-sort]="ariaSort('approvedAmount')">
-                  <app-table-sort-header
-                    label="Approved"
-                    field="approvedAmount"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('responsibility')) {
-                <th [attr.aria-sort]="ariaSort('patientResponsibility')">
-                  <app-table-sort-header
-                    label="Responsibility"
-                    field="patientResponsibility"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('status')) {
-                <th [attr.aria-sort]="ariaSort('status')">
-                  <app-table-sort-header
-                    label="Status"
-                    field="status"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('actions')) {
-                <th>Actions</th>
-              }
-            } @else if (tab() === 'coverage') {
-              @if (columnVisible('patient')) {
-                <th [attr.aria-sort]="ariaSort('patient')">
-                  <app-table-sort-header
-                    label="Patient"
-                    field="patient"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('provider')) {
-                <th [attr.aria-sort]="ariaSort('provider')">
-                  <app-table-sort-header
-                    label="Provider"
-                    field="provider"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('policy')) {
-                <th [attr.aria-sort]="ariaSort('policyNumber')">
-                  <app-table-sort-header
-                    label="Policy"
-                    field="policyNumber"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('member')) {
-                <th [attr.aria-sort]="ariaSort('memberNumber')">
-                  <app-table-sort-header
-                    label="Member"
-                    field="memberNumber"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('coverage')) {
-                <th [attr.aria-sort]="ariaSort('coverageLimit')">
-                  <app-table-sort-header
-                    label="Coverage"
-                    field="coverageLimit"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('validity')) {
-                <th [attr.aria-sort]="ariaSort('startsAt')">
-                  <app-table-sort-header
-                    label="Validity"
-                    field="startsAt"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('priority')) {
-                <th [attr.aria-sort]="ariaSort('priority')">
-                  <app-table-sort-header
-                    label="Priority"
-                    field="priority"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-            } @else {
-              @if (columnVisible('provider')) {
-                <th [attr.aria-sort]="ariaSort('name')">
-                  <app-table-sort-header
-                    label="Provider"
-                    field="name"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('code')) {
-                <th [attr.aria-sort]="ariaSort('code')">
-                  <app-table-sort-header
-                    label="Code"
-                    field="code"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('contact')) {
-                <th [attr.aria-sort]="ariaSort('contact')">
-                  <app-table-sort-header
-                    label="Contact"
-                    field="contact"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('address')) {
-                <th [attr.aria-sort]="ariaSort('address')">
-                  <app-table-sort-header
-                    label="Address"
-                    field="address"
-                    [sort]="sort()"
-                    (sortChange)="changeSort($event)"
-                  />
-                </th>
-              }
-              @if (columnVisible('status')) {
-                <th>Status</th>
               }
             }
           </tr>
         </thead>
         <tbody>
           @for (item of rows(); track item.id) {
-            @if (tab() === 'claims') {
-              <tr>
+            <tr
+              class="clickable-row"
+              tabindex="0"
+              (click)="details(item)"
+              (keydown)="rowKey($event, item)"
+            >
+              @if (tab() === 'claims') {
                 @if (columnVisible('claim')) {
-                  <td>{{ item.number }}</td>
+                  <td>
+                    <strong>{{ item.number }}</strong>
+                  </td>
                 }
                 @if (columnVisible('patient')) {
-                  <td>{{ item.patient?.firstName }} {{ item.patient?.lastName }}</td>
+                  <td>{{ patientName(item.patient) }}</td>
+                }
+                @if (columnVisible('provider')) {
+                  <td>{{ item.insurance?.provider?.name || '—' }}</td>
+                }
+                @if (columnVisible('policy')) {
+                  <td>{{ item.insurance?.policyNumber || '—' }}</td>
                 }
                 @if (columnVisible('invoice')) {
-                  <td>{{ item.invoice?.number }}</td>
+                  <td>{{ item.invoice?.number || '—' }}</td>
+                }
+                @if (columnVisible('date')) {
+                  <td>{{ item.createdAt | date: 'mediumDate' }}</td>
                 }
                 @if (columnVisible('claimed')) {
-                  <td>₹{{ item.claimedAmount }}</td>
+                  <td>{{ money(item.claimedAmount) }}</td>
                 }
                 @if (columnVisible('approved')) {
-                  <td>₹{{ item.approvedAmount }}</td>
-                }
-                @if (columnVisible('responsibility')) {
-                  <td>₹{{ item.patientResponsibility }}</td>
+                  <td>{{ money(item.approvedAmount) }}</td>
                 }
                 @if (columnVisible('status')) {
                   <td><app-status-badge [value]="item.status" /></td>
                 }
                 @if (columnVisible('actions')) {
-                  <td>
-                    @if (item.status === 'Submitted') {
-                      <button
-                        class="primary"
-                        (click)="
-                          store.updateClaim(
-                            item.id,
-                            'Approved',
-                            item.claimedAmount,
-                            'Approved by provider'
-                          );
-                          loadTable()
-                        "
-                      >
-                        Approve
-                      </button>
-                    } @else {
-                      <span class="muted">No action</span>
-                    }
+                  <td class="actions actions-column" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [id]="item.id"
+                      [canView]="true"
+                      [canEdit]="false"
+                      [canDelete]="false"
+                      [canStatus]="item.status === 'Submitted' && auth.has('insurance.edit')"
+                      statusLabel="Approve Claim"
+                      (view)="details(item)"
+                      (statusChange)="approve(item)"
+                    />
                   </td>
                 }
-              </tr>
-            } @else if (tab() === 'coverage') {
-              <tr class="clickable-row" (click)="open('policy', item)">
+              } @else if (tab() === 'coverage') {
                 @if (columnVisible('patient')) {
-                  <td>{{ item.patient?.firstName }} {{ item.patient?.lastName }}</td>
+                  <td>{{ patientName(item.patient) }}</td>
                 }
                 @if (columnVisible('provider')) {
-                  <td>{{ item.provider?.name }}</td>
+                  <td>{{ item.provider?.name || '—' }}</td>
                 }
                 @if (columnVisible('policy')) {
-                  <td>{{ item.policyNumber }}</td>
+                  <td>
+                    <strong>{{ item.policyNumber }}</strong>
+                  </td>
                 }
                 @if (columnVisible('member')) {
-                  <td>{{ item.memberNumber }}</td>
+                  <td>{{ item.memberNumber || '—' }}</td>
                 }
                 @if (columnVisible('coverage')) {
-                  <td>₹{{ item.coverageLimit }}</td>
+                  <td>{{ money(item.coverageLimit) }}</td>
                 }
                 @if (columnVisible('validity')) {
                   <td>
@@ -335,31 +313,57 @@
                     {{ item.endsAt | date: 'mediumDate' }}
                   </td>
                 }
-                @if (columnVisible('priority')) {
-                  <td>{{ item.priority }}</td>
+                @if (columnVisible('status')) {
+                  <td><app-status-badge [value]="policyStatus(item)" /></td>
                 }
-              </tr>
-            } @else {
-              <tr class="clickable-row" (click)="open('provider', item)">
+                @if (columnVisible('actions')) {
+                  <td class="actions actions-column" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [id]="item.id"
+                      [canView]="true"
+                      [canEdit]="auth.has('insurance.edit')"
+                      [canDelete]="item.isActive && auth.has('insurance.edit')"
+                      deleteLabel="Deactivate"
+                      (view)="details(item)"
+                      (edit)="open('policy', item)"
+                      (delete)="remove('policy', item)"
+                    />
+                  </td>
+                }
+              } @else {
                 @if (columnVisible('provider')) {
                   <td>
-                    <b>{{ item.name }}</b>
+                    <strong>{{ item.name }}</strong>
                   </td>
                 }
                 @if (columnVisible('code')) {
                   <td>{{ item.code }}</td>
                 }
                 @if (columnVisible('contact')) {
-                  <td>{{ item.contact }}</td>
+                  <td>{{ item.contact || '—' }}</td>
                 }
                 @if (columnVisible('address')) {
-                  <td>{{ item.address }}</td>
+                  <td>{{ item.address || '—' }}</td>
                 }
                 @if (columnVisible('status')) {
                   <td><app-status-badge [value]="item.isActive ? 'Active' : 'Inactive'" /></td>
                 }
-              </tr>
-            }
+                @if (columnVisible('actions')) {
+                  <td class="actions actions-column" (click)="$event.stopPropagation()">
+                    <app-actions-menu
+                      [id]="item.id"
+                      [canView]="true"
+                      [canEdit]="auth.has('insurance.edit')"
+                      [canDelete]="item.isActive && auth.has('insurance.edit')"
+                      deleteLabel="Deactivate"
+                      (view)="details(item)"
+                      (edit)="open('provider', item)"
+                      (delete)="remove('provider', item)"
+                    />
+                  </td>
+                }
+              }
+            </tr>
           }
         </tbody>
       </table>
@@ -376,19 +380,36 @@
     (pageSizeChange)="resize($event)"
   />
 </section>
-@if (message()) {
-  <div class="toast" role="status">{{ message() }}</div>
-}
-@if (formKind()) {
+
+@if (formKind(); as kind) {
   <app-modal
-    [title]="(editing() ? 'Edit ' : 'Create ') + formKind()"
-    size="lg"
+    [title]="
+      editing()
+        ? 'Edit ' + kind
+        : kind === 'claim'
+          ? 'Create Claim'
+          : kind === 'policy'
+            ? 'Add Policy'
+            : 'Add Provider'
+    "
+    [description]="
+      kind === 'claim'
+        ? 'Submit an eligible invoice against an active patient policy.'
+        : kind === 'policy'
+          ? 'Register patient insurance coverage.'
+          : 'Register an insurance provider.'
+    "
+    [icon]="kind === 'provider' ? 'shield' : kind === 'policy' ? 'documents' : 'insurance'"
+    size="xl"
     [dirty]="dirty()"
     (closed)="close()"
-    ><app-insurance-form
-      [kind]="formKind()!"
+  >
+    <app-insurance-form
+      [kind]="kind"
       [entity]="editing()"
       (dirtyChanged)="dirty.set($event)"
-      (saved)="saved(); loadTable()"
-  /></app-modal>
+      (cancelled)="close()"
+      (saved)="saved()"
+    />
+  </app-modal>
 }

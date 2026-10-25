@@ -1,0 +1,47 @@
+<form [formGroup]="state.forms.security" (ngSubmit)="state.save('security')">
+  <div class="section-title">
+    <div>
+      <h2>Security Settings</h2>
+      <p class="muted">Applied by authentication and user password validation.</p>
+    </div>
+  </div>
+  <div class="form-grid">
+    <label class="field"
+      ><span>Session timeout (minutes)</span
+      ><input type="number" formControlName="sessionTimeoutMinutes" /></label
+    ><label class="field"
+      ><span>Password minimum length</span
+      ><input type="number" formControlName="passwordMinimumLength" /></label
+    ><label class="field"
+      ><span>Maximum login attempts</span
+      ><input type="number" formControlName="maximumLoginAttempts" /></label
+    ><label class="field"
+      ><span>Account lock duration (minutes)</span
+      ><input type="number" formControlName="accountLockMinutes"
+    /></label>
+    <div class="settings-switches full">
+      @for (
+        item of [
+          ['requireUppercase', 'Require uppercase'],
+          ['requireLowercase', 'Require lowercase'],
+          ['requireNumber', 'Require number'],
+          ['requireSpecial', 'Require special character'],
+        ];
+        track item[0]
+      ) {
+        <label
+          ><span>{{ item[1] }}</span
+          ><input type="checkbox" [formControlName]="item[0]"
+        /></label>
+      }
+    </div>
+  </div>
+  <div class="form-actions">
+    <button
+      class="primary"
+      [disabled]="state.forms.security.pristine || state.forms.security.invalid || state.saving()"
+    >
+      {{ state.saving() === 'security' ? 'Saving...' : 'Save Changes' }}
+    </button>
+  </div>
+</form>

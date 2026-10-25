@@ -29,6 +29,13 @@ label.field textarea,
   padding: 9px 11px;
   background: var(--color-surface);
   color: var(--color-text);
+  box-sizing: border-box;
+  width: 100%;
+}
+.field select,
+label.field select,
+.toolbar select {
+  height: var(--input-height);
 }
 .field textarea {
   min-height: 88px;
@@ -138,8 +145,28 @@ input[type='radio'] {
   accent-color: var(--color-secondary);
 }
 .error {
-  color: var(--color-danger);
+  color: #dc2626;
   font-size: 12px;
+}
+.field-error {
+  display: block;
+  min-height: 1rem;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.field select.ng-invalid.ng-touched,
+.field input.ng-invalid.ng-touched,
+.field textarea.ng-invalid.ng-touched {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+.field select.ng-invalid.ng-touched:focus,
+.field input.ng-invalid.ng-touched:focus,
+.field textarea.ng-invalid.ng-touched:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgb(220 38 38 / 12%);
 }
 .form-grid {
   display: grid;

@@ -2,7 +2,9 @@
   >‹ {{ kind === 'doctors' ? 'Doctors' : 'Employees' }}</a
 > -->
 @if (loading()) {
-  <div class="loading-state loading-state--page" role="status" aria-live="polite">Loading details...</div>
+  <div class="loading-state loading-state--page" role="status" aria-live="polite">
+    Loading details...
+  </div>
 } @else if (error()) {
   <div class="error-state">{{ error() }} <button (click)="load()">Retry</button></div>
 } @else if (record(); as item) {

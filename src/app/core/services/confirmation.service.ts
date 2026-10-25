@@ -6,6 +6,7 @@ export interface ConfirmationOptions {
   cancelLabel?: string;
   danger?: boolean;
   context?: string;
+  icon?: string;
 }
 interface ConfirmationRequest extends ConfirmationOptions {
   resolve: (answer: boolean) => void;

@@ -3,6 +3,27 @@
 }
 .filter-anchor {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.filter-recovery-btn {
+  min-height: 40px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-blue-900);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.filter-recovery-btn:hover {
+  color: var(--color-teal-600, #0f766e);
+  text-decoration: underline;
 }
 .filter-panel {
   right: 0;

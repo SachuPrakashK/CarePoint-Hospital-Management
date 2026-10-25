@@ -19,7 +19,21 @@ import { ColumnConfig } from '../../shared/components/column-config/column-confi
 import { TableColumnDefinition, TableSort } from '../../shared/models/table.models';
 import { TablePreferencesService } from '../../core/services/table-preferences.service';
 @Component({
-  imports: [RouterLink, AppModal, AppPagination, EmptyState, MasterForm, AppActionsMenu, SearchField, StatusBadge, DisplayValuePipe, AppIcon, SharedFilter, TableSortHeader, ColumnConfig],
+  imports: [
+    RouterLink,
+    AppModal,
+    AppPagination,
+    EmptyState,
+    MasterForm,
+    AppActionsMenu,
+    SearchField,
+    StatusBadge,
+    DisplayValuePipe,
+    AppIcon,
+    SharedFilter,
+    TableSortHeader,
+    ColumnConfig,
+  ],
   templateUrl: './entity-page.html',
 })
 export class EntityPage {
@@ -27,10 +41,8 @@ export class EntityPage {
   private api = inject(MasterApiService);
   private confirm = inject(ConfirmationService);
   private toast = inject(ToastService);
-  private tablePreferences=inject(TablePreferencesService);
-  readonly key = computed(
-    () => this.route.snapshot.parent?.data['entity'] ?? 'departments',
-  );
+  private tablePreferences = inject(TablePreferencesService);
+  readonly key = computed(() => this.route.snapshot.parent?.data['entity'] ?? 'departments');
   readonly supported = computed(() =>
     ['departments', 'specializations', 'radiology-investigations', 'laboratory-tests'].includes(
       this.key(),
@@ -80,21 +92,68 @@ export class EntityPage {
   readonly total = signal(0);
   readonly totalPages = signal(0);
   readonly deletingId = signal('');
-  readonly sort=signal<TableSort|null>(null);
-  readonly columns:readonly TableColumnDefinition[]=[{id:'name',header:'Name',visibleByDefault:true,required:true,sortable:true,sortKey:'name'},{id:'code',header:'Code',visibleByDefault:true,sortable:true,sortKey:'code'},{id:'department',header:'Department',visibleByDefault:true,sortable:true,sortKey:'department'},{id:'modality',header:'Modality',visibleByDefault:true,sortable:true,sortKey:'modality'},{id:'category',header:'Category',visibleByDefault:true,sortable:true,sortKey:'category'},{id:'unit',header:'Unit',visibleByDefault:true,sortable:true,sortKey:'unit'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'},{id:'actions',header:'Actions',visibleByDefault:true,required:true}];
-  readonly visibleColumns=signal<string[]>([]);
-  private tableId(){return `administration-${this.type()}`;}
+  readonly sort = signal<TableSort | null>(null);
+  readonly columns: readonly TableColumnDefinition[] = [
+    {
+      id: 'name',
+      header: 'Name',
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'name',
+    },
+    { id: 'code', header: 'Code', visibleByDefault: true, sortable: true, sortKey: 'code' },
+    {
+      id: 'department',
+      header: 'Department',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'department',
+    },
+    {
+      id: 'modality',
+      header: 'Modality',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'modality',
+    },
+    {
+      id: 'category',
+      header: 'Category',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'category',
+    },
+    { id: 'unit', header: 'Unit', visibleByDefault: true, sortable: true, sortKey: 'unit' },
+    { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
+    { id: 'actions', header: 'Actions', visibleByDefault: true, required: true },
+  ];
+  readonly visibleColumns = signal<string[]>([]);
+  private tableId() {
+    return `administration-${this.type()}`;
+  }
   constructor() {
-    this.visibleColumns.set(this.tablePreferences.load(this.tableId(),this.applicableColumns()));
+    this.visibleColumns.set(this.tablePreferences.load(this.tableId(), this.applicableColumns()));
     void this.load();
-    void this.tablePreferences.loadRemote(this.tableId(),this.applicableColumns()).then(ids=>this.visibleColumns.set(ids));
+    void this.tablePreferences
+      .loadRemote(this.tableId(), this.applicableColumns())
+      .then((ids) => this.visibleColumns.set(ids));
   }
   async load() {
     if (!this.supported()) return;
     this.loading.set(true);
     try {
       const r = await firstValueFrom(
-        this.api.list(this.type(), this.search(), this.status(), this.page(), this.pageSize(), this.category(),this.sort()?.field,this.sort()?.direction??''),
+        this.api.list(
+          this.type(),
+          this.search(),
+          this.status(),
+          this.page(),
+          this.pageSize(),
+          this.category(),
+          this.sort()?.field,
+          this.sort()?.direction ?? '',
+        ),
       );
       this.items.set(r.data);
       this.total.set(r.pagination.total);
@@ -113,7 +172,11 @@ export class EntityPage {
     this.page.set(1);
     void this.load();
   }
-  clearFilters() { this.status.set(''); this.category.set(''); this.queryChanged(); }
+  clearFilters() {
+    this.status.set('');
+    this.category.set('');
+    this.queryChanged();
+  }
   go(page: number) {
     this.page.set(page);
     void this.load();
@@ -123,12 +186,43 @@ export class EntityPage {
     this.page.set(1);
     void this.load();
   }
-  applicableColumns(){return this.columns.filter(column=>!['department','modality','category','unit'].includes(column.id)||(column.id==='department'&&this.type()==='specializations')||(column.id==='modality'&&this.type()==='radiology-investigations')||(['category','unit'].includes(column.id)&&this.type()==='laboratory-tests'));}
-  changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);void this.load();}
-  ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}
-  columnVisible(id:string){return this.visibleColumns().includes(id);}
-  async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.applicableColumns().some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save(this.tableId(),ids);}
-  async resetColumns(){await this.tablePreferences.reset(this.tableId());this.visibleColumns.set(this.tablePreferences.load(this.tableId(),this.applicableColumns()));}
+  applicableColumns() {
+    return this.columns.filter(
+      (column) =>
+        !['department', 'modality', 'category', 'unit'].includes(column.id) ||
+        (column.id === 'department' && this.type() === 'specializations') ||
+        (column.id === 'modality' && this.type() === 'radiology-investigations') ||
+        (['category', 'unit'].includes(column.id) && this.type() === 'laboratory-tests'),
+    );
+  }
+  changeSort(value: TableSort | null) {
+    this.sort.set(value);
+    this.page.set(1);
+    void this.load();
+  }
+  ariaSort(field: string): 'ascending' | 'descending' | 'none' {
+    const sort = this.sort();
+    return sort?.field === field ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  }
+  columnVisible(id: string) {
+    return this.visibleColumns().includes(id);
+  }
+  async applyColumns(ids: string[]) {
+    const active = this.sort();
+    if (
+      active &&
+      !this.applicableColumns().some(
+        (column) => ids.includes(column.id) && column.sortKey === active.field,
+      )
+    )
+      this.sort.set(null);
+    this.visibleColumns.set(ids);
+    await this.tablePreferences.save(this.tableId(), ids);
+  }
+  async resetColumns() {
+    await this.tablePreferences.reset(this.tableId());
+    this.visibleColumns.set(this.tablePreferences.load(this.tableId(), this.applicableColumns()));
+  }
   open(item: any = null) {
     this.editing.set(item);
     this.masterDirty.set(false);
@@ -138,7 +232,8 @@ export class EntityPage {
     if (this.deletingId()) return;
     const ok = await this.confirm.confirm({
       title: `Delete ${item.name}?`,
-      message: 'Unused records may be removed. Records referenced by hospital history will be safely retired so existing relationships remain valid.',
+      message:
+        'Unused records may be removed. Records referenced by hospital history will be safely retired so existing relationships remain valid.',
       confirmLabel: 'Delete',
       danger: true,
     });

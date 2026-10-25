@@ -5,7 +5,16 @@ export type MasterType =
 @Injectable({ providedIn: 'root' })
 export class MasterApiService {
   private http = inject(HttpClient);
-  list(type: MasterType, search = '', status = '', page = 1, pageSize = 10, category = '', sortBy = '', sortOrder: 'asc'|'desc'|'' = '') {
+  list(
+    type: MasterType,
+    search = '',
+    status = '',
+    page = 1,
+    pageSize = 10,
+    category = '',
+    sortBy = '',
+    sortOrder: 'asc' | 'desc' | '' = '',
+  ) {
     let params = new HttpParams().set('page', page).set('page_size', pageSize);
     if (search) params = params.set('search', search);
     if (status) params = params.set('status', status);

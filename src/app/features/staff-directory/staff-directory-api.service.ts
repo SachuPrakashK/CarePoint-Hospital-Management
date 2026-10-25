@@ -66,7 +66,8 @@ export class StaffDirectoryApiService {
       specializationId?: string;
       designation?: string;
       status?: string;
-      sortBy?:string;sortOrder?:'asc'|'desc';
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
     },
   ) {
     let p = new HttpParams().set('page', q.page).set('page_size', q.pageSize);
@@ -76,7 +77,8 @@ export class StaffDirectoryApiService {
       specialization_id: q.specializationId,
       designation: q.designation,
       status: q.status,
-      sort_by:q.sortBy,sort_order:q.sortOrder,
+      sort_by: q.sortBy,
+      sort_order: q.sortOrder,
     }))
       if (value) p = p.set(key, value);
     return this.http.get<{

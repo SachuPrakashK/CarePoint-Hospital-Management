@@ -1,0 +1,152 @@
+<div class="section-title settings-hero settings-hero--language">
+  <div>
+    <span class="eyebrow">Organization languages</span>
+    <h2>Language Management</h2>
+    <p class="muted">Configure translated experiences while keeping a reliable default fallback.</p>
+  </div>
+</div>
+<div class="language-summary">
+  <div>
+    <span>Default language</span><strong>{{ state.defaultLanguage()?.name || 'English' }}</strong>
+  </div>
+  <div>
+    <span>Enabled for users</span><strong>{{ state.language.enabled().length }}</strong>
+  </div>
+  <div>
+    <span>Configured</span><strong>{{ state.languages().length }}</strong>
+  </div>
+</div>
+@if (state.isSuperAdmin()) {
+  <section class="add-language-card" aria-labelledby="add-language-title">
+    <div>
+      <h3 id="add-language-title">Add languages</h3>
+      <p class="muted">Select one or more languages by name, native name, or code.</p>
+    </div>
+    <div class="language-picker">
+      <div class="language-combobox">
+        <app-shared-multi-select
+          [options]="state.catalogOptions()"
+          [selected]="state.selectedLanguageCodes()"
+          placeholder="Select languages"
+          searchPlaceholder="Search languages..."
+          (selectedChange)="state.selectedLanguageCodes.set($event)"
+        />
+      </div>
+      <button
+        type="button"
+        class="primary"
+        [disabled]="!state.selectedLanguageCodes().length || state.addingLanguage()"
+        (click)="state.addSelectedLanguages()"
+      >
+        {{
+          state.addingLanguage()
+            ? 'Adding...'
+            : 'Add ' + state.selectedLanguageCodes().length + ' Languages'
+        }}
+      </button>
+    </div>
+  </section>
+}
+<div class="language-list-toolbar">
+  <app-search-field
+    label="Search configured languages"
+    placeholder="Search languages..."
+    [value]="state.configuredLanguageSearch()"
+    (valueChange)="state.configuredLanguageSearch.set($event)"
+  />
+</div>
+<div class="language-table" role="list" aria-label="Configured languages">
+  @for (item of state.filteredLanguages(); track item.code) {
+    <article role="listitem">
+      <div class="language-identity">
+        <span class="language-avatar">{{ item.code.slice(0, 2).toUpperCase() }}</span>
+        <div>
+          <strong>{{ item.name }}</strong
+          ><small
+            >{{ item.nativeName }} · <code>{{ item.code }}</code></small
+          >
+        </div>
+      </div>
+      <div class="language-badges">
+        @if (item.isDefault) {
+          <span class="status-pill default">Default</span>
+        }
+        <span class="status-pill" [class.enabled]="item.enabled">{{
+          item.enabled ? 'Enabled' : 'Disabled'
+        }}</span
+        ><span class="status-pill" [class.translation-ready]="item.translationCoverage >= 100">{{
+          item.translationCoverage >= 100 ? 'Translation available' : 'Translation required'
+        }}</span>
+      </div>
+      @if (state.isSuperAdmin() && item.code !== 'en') {
+        <div class="language-actions">
+          <app-actions-menu
+            [id]="'language-' + item.code"
+            [label]="'Actions for ' + item.name"
+            [canView]="false"
+            [canEdit]="true"
+            [editDisabled]="!item.enabled || state.updatingLanguage() === item.code"
+            editDisabledReason="Enable this language before managing translations."
+            [editLabel]="
+              item.translationCoverage >= 100 ? 'Manage translations' : 'Translation required'
+            "
+            [canStatus]="!item.isDefault"
+            [statusLabel]="item.enabled ? 'Disable for users' : 'Enable for users'"
+            [canDefault]="!item.isDefault && item.translationCoverage >= 100"
+            [canDelete]="!item.isDefault"
+            deleteLabel="Remove"
+            (edit)="state.openTranslations(item)"
+            (statusChange)="state.toggleLanguage(item)"
+            (setDefault)="state.setDefaultLanguage(item)"
+            (delete)="state.removeLanguage(item)"
+          />
+        </div>
+      }
+    </article>
+  } @empty {
+    <p class="empty-inline">
+      {{
+        state.configuredLanguageSearch()
+          ? 'No languages match your search.'
+          : 'No configured languages were found.'
+      }}
+    </p>
+  }
+</div>
+<p class="muted language-note">
+  Catalog availability does not mean an application translation exists. Only complete translation
+  packs can be enabled or selected by users.
+</p>
+@if (state.translationLanguage(); as selectedLanguage) {
+  <app-modal
+    [title]="'Translations — ' + selectedLanguage.name"
+    description="Complete translated labels. Missing values safely fall back to English."
+    icon="documents"
+    size="lg"
+    [dirty]="state.translationsDirty()"
+    (closed)="state.closeTranslations()"
+    ><form class="crud-modal__form" (ngSubmit)="state.saveTranslations()">
+      <div class="crud-modal__body translation-editor">
+        @if (state.translationsLoading()) {
+          <div class="loading-state" role="status">Loading translations...</div>
+        } @else {
+          @for (key of state.translationKeys(); track key) {
+            <label class="field translation-field"
+              ><span>{{ key }}</span
+              ><input
+                [value]="state.translationValues()[key] || ''"
+                [placeholder]="'English fallback: ' + state.language.translate(key)"
+                (input)="state.setTranslation(key, $any($event.target).value)"
+            /></label>
+          }
+        }
+      </div>
+      <footer class="crud-modal__footer">
+        <button type="button" class="secondary" (click)="state.closeTranslations()">Cancel</button
+        ><button type="submit" class="primary" [disabled]="state.translationsSaving()">
+          {{ state.translationsSaving() ? 'Saving...' : 'Save translations' }}
+        </button>
+      </footer>
+    </form></app-modal
+  >
+}

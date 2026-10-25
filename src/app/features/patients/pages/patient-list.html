@@ -18,6 +18,7 @@
     />
     <div class="toolbar-actions">
       <app-column-config
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [columns]="columns"
         [visible]="visibleColumns()"
         (apply)="applyColumns($event)"
@@ -25,7 +26,7 @@
       />
       <app-shared-filter
         [activeCount]="activeFilterCount()"
-        [disabled]="store.allTotal() === 0 && !activeFilterCount()"
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [loading]="store.loading()"
         [applyDisabled]="filterForm.invalid"
         (applied)="applyFilters()"
@@ -78,7 +79,7 @@
         </form>
       </app-shared-filter>
       <app-shared-export
-        [disabled]="store.allTotal() === 0"
+        [disabled]="store.loading() || !!store.error() || store.total() === 0"
         [exporting]="exporting()"
         (exportRequested)="export()"
       />

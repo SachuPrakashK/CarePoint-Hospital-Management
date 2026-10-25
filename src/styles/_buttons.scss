@@ -42,6 +42,17 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
+.toolbar-actions button:disabled {
+  background: var(--color-background);
+  border-color: var(--color-border);
+  color: var(--color-muted);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+.toolbar-actions button:disabled app-icon {
+  opacity: 0.65;
+}
 .button-link {
   text-decoration: none;
   display: inline-flex;

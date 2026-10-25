@@ -29,16 +29,31 @@ describe('SharedFilter', () => {
     expect(cleared).toBe(1);
     expect(fixture.componentInstance.open()).toBe(false);
   });
-  it('renders the shared clear icon and blocks clear while loading', () => {
+  it('closes the panel and blocks clear while loading', () => {
     let cleared = 0;
     fixture.componentInstance.cleared.subscribe(() => cleared++);
     fixture.componentRef.setInput('loading', true);
     fixture.componentInstance.open.set(true);
     fixture.detectChanges();
-    const clear = fixture.nativeElement.querySelector('.filter-clear-btn') as HTMLButtonElement;
-    expect(clear.disabled).toBe(true);
-    expect(clear.querySelector('app-icon')).not.toBeNull();
-    clear.click();
+    expect(fixture.componentInstance.open()).toBe(false);
+    expect(fixture.nativeElement.querySelector('.filter-clear-btn')).toBeNull();
     expect(cleared).toBe(0);
+  });
+  it('keeps an accessible clear action available for an empty filtered result', () => {
+    let cleared = 0;
+    fixture.componentInstance.cleared.subscribe(() => cleared++);
+    fixture.componentRef.setInput('activeCount', 2);
+    fixture.componentRef.setInput('disabled', true);
+    fixture.detectChanges();
+
+    expect(
+      (fixture.nativeElement.querySelector('.button-icon') as HTMLButtonElement).disabled,
+    ).toBe(true);
+    const recovery = fixture.nativeElement.querySelector(
+      '.filter-recovery-btn',
+    ) as HTMLButtonElement;
+    expect(recovery.textContent).toContain('Clear filters');
+    recovery.click();
+    expect(cleared).toBe(1);
   });
 });

@@ -20,7 +20,10 @@ import {
   StaffRecord,
 } from './staff-directory-api.service';
 import { StaffForm } from './staff-form';
-import { TableSortHeader } from '../../shared/components/table-sort-header/table-sort-header';import { ColumnConfig } from '../../shared/components/column-config/column-config';import { TableColumnDefinition, TableSort } from '../../shared/models/table.models';import { TablePreferencesService } from '../../core/services/table-preferences.service';
+import { TableSortHeader } from '../../shared/components/table-sort-header/table-sort-header';
+import { ColumnConfig } from '../../shared/components/column-config/column-config';
+import { TableColumnDefinition, TableSort } from '../../shared/models/table.models';
+import { TablePreferencesService } from '../../core/services/table-preferences.service';
 @Component({
   imports: [
     AppActionsMenu,
@@ -32,7 +35,8 @@ import { TableSortHeader } from '../../shared/components/table-sort-header/table
     SharedFilter,
     SharedExport,
     StaffForm,
-    TableSortHeader,ColumnConfig,
+    TableSortHeader,
+    ColumnConfig,
   ],
   templateUrl: './staff-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,7 +47,7 @@ export class StaffPage {
   private api = inject(StaffDirectoryApiService);
   private confirm = inject(ConfirmationService);
   private toast = inject(ToastService);
-  private tablePreferences=inject(TablePreferencesService);
+  private tablePreferences = inject(TablePreferencesService);
   readonly auth = inject(AuthStore);
   readonly kind = this.route.snapshot.data['kind'] as StaffKind;
   readonly singular = this.kind === 'doctors' ? 'Doctor' : 'Employee';
@@ -67,11 +71,57 @@ export class StaffPage {
   readonly dirty = signal(false);
   readonly deleting = signal('');
   readonly exporting = signal(false);
-  readonly sort=signal<TableSort|null>(null);readonly columns:readonly TableColumnDefinition[]=[{id:'code',header:`${this.singular} ID`,visibleByDefault:true,required:true,sortable:true,sortKey:'employeeCode'},{id:'name',header:this.singular,visibleByDefault:true,required:true,sortable:true,sortKey:'firstName'},{id:'department',header:'Department',visibleByDefault:true,sortable:true,sortKey:'department'},{id:'position',header:this.kind==='doctors'?'Specialization':'Designation',visibleByDefault:true,sortable:true,sortKey:this.kind==='doctors'?'specialization':'designation'},{id:'phone',header:'Phone',visibleByDefault:true,sortable:true,sortKey:'phone'},{id:'email',header:'Email',visibleByDefault:true,sortable:true,sortKey:'email'},{id:'experience',header:this.kind==='doctors'?'Experience':'Joining date',visibleByDefault:true,sortable:true,sortKey:this.kind==='doctors'?'yearsOfExperience':'joiningDate'},{id:'status',header:'Status',visibleByDefault:true,sortable:true,sortKey:'status'},{id:'actions',header:'Actions',visibleByDefault:true,required:true}];readonly visibleColumns=signal(this.tablePreferences.load(this.kind,this.columns));
+  readonly sort = signal<TableSort | null>(null);
+  readonly columns: readonly TableColumnDefinition[] = [
+    {
+      id: 'code',
+      header: `${this.singular} ID`,
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'employeeCode',
+    },
+    {
+      id: 'name',
+      header: this.singular,
+      visibleByDefault: true,
+      required: true,
+      sortable: true,
+      sortKey: 'firstName',
+    },
+    {
+      id: 'department',
+      header: 'Department',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: 'department',
+    },
+    {
+      id: 'position',
+      header: this.kind === 'doctors' ? 'Specialization' : 'Designation',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: this.kind === 'doctors' ? 'specialization' : 'designation',
+    },
+    { id: 'phone', header: 'Phone', visibleByDefault: true, sortable: true, sortKey: 'phone' },
+    { id: 'email', header: 'Email', visibleByDefault: true, sortable: true, sortKey: 'email' },
+    {
+      id: 'experience',
+      header: this.kind === 'doctors' ? 'Experience' : 'Joining date',
+      visibleByDefault: true,
+      sortable: true,
+      sortKey: this.kind === 'doctors' ? 'yearsOfExperience' : 'joiningDate',
+    },
+    { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
+    { id: 'actions', header: 'Actions', visibleByDefault: true, required: true },
+  ];
+  readonly visibleColumns = signal(this.tablePreferences.load(this.kind, this.columns));
   constructor() {
     void this.load();
     void firstValueFrom(this.api.options(this.kind)).then((r) => this.options.set(r.data));
-    void this.tablePreferences.loadRemote(this.kind,this.columns).then(ids=>this.visibleColumns.set(ids));
+    void this.tablePreferences
+      .loadRemote(this.kind, this.columns)
+      .then((ids) => this.visibleColumns.set(ids));
   }
   async load() {
     if (this.loading()) return;
@@ -86,7 +136,8 @@ export class StaffPage {
           departmentId: this.department(),
           specializationId: this.specialization(),
           status: this.status(),
-          sortBy:this.sort()?.field,sortOrder:this.sort()?.direction,
+          sortBy: this.sort()?.field,
+          sortOrder: this.sort()?.direction,
         }),
       );
       this.items.set(r.data);
@@ -132,7 +183,32 @@ export class StaffPage {
     this.page.set(1);
     void this.load();
   }
-  changeSort(value:TableSort|null){this.sort.set(value);this.page.set(1);void this.load();}ariaSort(field:string):'ascending'|'descending'|'none'{const sort=this.sort();return sort?.field===field?(sort.direction==='asc'?'ascending':'descending'):'none';}columnVisible(id:string){return this.visibleColumns().includes(id);}async applyColumns(ids:string[]){const active=this.sort();if(active&&!this.columns.some(column=>ids.includes(column.id)&&column.sortKey===active.field))this.sort.set(null);this.visibleColumns.set(ids);await this.tablePreferences.save(this.kind,ids);}async resetColumns(){await this.tablePreferences.reset(this.kind);this.visibleColumns.set(this.tablePreferences.load(this.kind,this.columns));}
+  changeSort(value: TableSort | null) {
+    this.sort.set(value);
+    this.page.set(1);
+    void this.load();
+  }
+  ariaSort(field: string): 'ascending' | 'descending' | 'none' {
+    const sort = this.sort();
+    return sort?.field === field ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  }
+  columnVisible(id: string) {
+    return this.visibleColumns().includes(id);
+  }
+  async applyColumns(ids: string[]) {
+    const active = this.sort();
+    if (
+      active &&
+      !this.columns.some((column) => ids.includes(column.id) && column.sortKey === active.field)
+    )
+      this.sort.set(null);
+    this.visibleColumns.set(ids);
+    await this.tablePreferences.save(this.kind, ids);
+  }
+  async resetColumns() {
+    await this.tablePreferences.reset(this.kind);
+    this.visibleColumns.set(this.tablePreferences.load(this.kind, this.columns));
+  }
   async open(item: StaffRecord | null = null) {
     if (item) {
       if (this.editLoading()) return;
@@ -196,11 +272,39 @@ export class StaffPage {
           departmentId: this.department(),
           specializationId: this.specialization(),
           status: this.status(),
-          sortBy:this.sort()?.field,sortOrder:this.sort()?.direction,
+          sortBy: this.sort()?.field,
+          sortOrder: this.sort()?.direction,
         }),
       );
-      const exportColumns=[{id:'code',header:'ID',value:(x:StaffRecord)=>x.employeeCode},{id:'name',header:'Name',value:(x:StaffRecord)=>`${x.firstName} ${x.lastName}`},{id:'department',header:'Department',value:(x:StaffRecord)=>x.department?.name??''},{id:'position',header:this.kind==='doctors'?'Specialization':'Designation',value:(x:StaffRecord)=>x.specialization?.name??x.designation??''},{id:'phone',header:'Phone',value:(x:StaffRecord)=>x.phone??''},{id:'email',header:'Email',value:(x:StaffRecord)=>x.email},{id:'experience',header:this.kind==='doctors'?'Experience':'Joining date',value:(x:StaffRecord)=>this.kind==='doctors'?x.yearsOfExperience??0:x.joiningDate??''},{id:'status',header:'Status',value:(x:StaffRecord)=>x.status}].filter(column=>this.columnVisible(column.id));
-      const csv=[exportColumns.map(column=>column.header),...r.data.map(item=>exportColumns.map(column=>column.value(item)))].map(row=>row.map(value=>`"${String(value).replaceAll('"','""')}"`).join(',')).join('\n');
+      const exportColumns = [
+        { id: 'code', header: 'ID', value: (x: StaffRecord) => x.employeeCode },
+        { id: 'name', header: 'Name', value: (x: StaffRecord) => `${x.firstName} ${x.lastName}` },
+        {
+          id: 'department',
+          header: 'Department',
+          value: (x: StaffRecord) => x.department?.name ?? '',
+        },
+        {
+          id: 'position',
+          header: this.kind === 'doctors' ? 'Specialization' : 'Designation',
+          value: (x: StaffRecord) => x.specialization?.name ?? x.designation ?? '',
+        },
+        { id: 'phone', header: 'Phone', value: (x: StaffRecord) => x.phone ?? '' },
+        { id: 'email', header: 'Email', value: (x: StaffRecord) => x.email },
+        {
+          id: 'experience',
+          header: this.kind === 'doctors' ? 'Experience' : 'Joining date',
+          value: (x: StaffRecord) =>
+            this.kind === 'doctors' ? (x.yearsOfExperience ?? 0) : (x.joiningDate ?? ''),
+        },
+        { id: 'status', header: 'Status', value: (x: StaffRecord) => x.status },
+      ].filter((column) => this.columnVisible(column.id));
+      const csv = [
+        exportColumns.map((column) => column.header),
+        ...r.data.map((item) => exportColumns.map((column) => column.value(item))),
+      ]
+        .map((row) => row.map((value) => `"${String(value).replaceAll('"', '""')}"`).join(','))
+        .join('\n');
       const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
       const a = document.createElement('a');
       a.href = url;

@@ -1,23 +1,29 @@
-@if (invoice(); as i) {
+@if (loading()) {
+  <div class="empty" role="status">Loading invoice…</div>
+} @else if (error()) {
+  <div class="empty" role="alert">
+    {{ error() }} <button class="secondary" (click)="back()">Back</button>
+  </div>
+} @else if (invoice(); as invoice) {
   <div class="print-actions">
-    <button class="secondary" (click)="back()">Back</button
-    ><button class="primary" (click)="print()">Print invoice</button>
+    <button class="primary" (click)="print()">Print invoice</button>
   </div>
   <article class="document">
     <header>
       <div>
         <h1>MediCare+</h1>
-        <p>Tax Invoice</p>
+        <p>Patient Invoice</p>
       </div>
       <div>
-        <b>{{ i.number }}</b>
-        <p>{{ format(i.createdAt) }}</p>
+        <b>{{ invoice.number }}</b>
+        <p>{{ format(invoice.createdAt) }}</p>
+        <span class="invoice-status">{{ invoice.status }}</span>
       </div>
     </header>
     <div class="bill-to">
       <small>BILL TO</small>
-      <h2>{{ i.patientName }}</h2>
-      <p>Patient ID: {{ i.patientId }} · Encounter: {{ i.encounterRef || '—' }}</p>
+      <h2>{{ patientName(invoice.patient) }}</h2>
+      <p>Patient ID: {{ invoice.patient?.mrn || 'Not assigned' }}</p>
     </div>
     <table>
       <thead>
@@ -26,43 +32,34 @@
           <th>Source</th>
           <th>Qty</th>
           <th>Unit price</th>
-          <th>Discount</th>
-          <th>Tax</th>
           <th>Amount</th>
         </tr>
       </thead>
       <tbody>
-        @for (x of i.items; track x.id) {
+        @for (item of invoice.items; track item.id) {
           <tr>
-            <td>{{ x.description }}</td>
-            <td>{{ x.source }}</td>
-            <td>{{ x.quantity }}</td>
-            <td>₹{{ x.unitPrice }}</td>
-            <td>₹{{ x.discount }}</td>
-            <td>{{ x.taxRate }}%</td>
-            <td>₹{{ x.quantity * x.unitPrice - x.discount }}</td>
+            <td>{{ item.description }}</td>
+            <td>{{ item.source }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ money(item.unitPrice) }}</td>
+            <td>{{ money(item.quantity * item.unitPrice) }}</td>
           </tr>
         }
       </tbody>
     </table>
     <div class="totals">
       <span
-        >Subtotal <b>₹{{ totals().subtotal }}</b></span
+        >Total <b>{{ money(totals().total) }}</b></span
       ><span
-        >Discount <b>₹{{ totals().discount }}</b></span
-      ><span
-        >Tax <b>₹{{ totals().tax }}</b></span
-      ><span
-        >Insurance <b>− ₹{{ i.insuranceAmount }}</b></span
-      ><span class="total"
-        >Total <b>₹{{ totals().total }}</b></span
-      ><span
-        >Paid <b>₹{{ totals().paid }}</b></span
+        >Net paid <b>{{ money(totals().paid) }}</b></span
       ><span class="balance"
-        >Patient payable <b>₹{{ totals().balance }}</b></span
+        >Balance due <b>{{ money(totals().balance) }}</b></span
       >
     </div>
-    <footer>This is a system-generated invoice. Payment receipts are issued separately.</footer>
+    <footer>
+      This system-generated invoice reflects persisted line items, payments, and approved refunds.
+      Payment receipts are issued separately.
+    </footer>
   </article>
 } @else {
   <div class="empty">Invoice not found.</div>
