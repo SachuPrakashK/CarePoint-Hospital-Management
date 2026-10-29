@@ -12,7 +12,7 @@ const schema = z
     REFRESH_TOKEN_EXPIRATION_DAYS: z.coerce.number().int().positive().default(7),
     FRONTEND_URL: z.string().url().default('http://localhost:4200'),
     FILE_UPLOAD_PATH: z.string().default('./uploads'),
-    STORAGE_DRIVER: z.enum(['local', 'vercel-blob']).default('local'),
+    FILE_STORAGE_DRIVER: z.enum(['local', 'vercel-blob']).default('local'),
     BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
     BLOB_STORE_ID: z.string().min(1).optional(),
     VERCEL_OIDC_TOKEN: z.string().min(1).optional(),
@@ -32,15 +32,15 @@ const schema = z
     SMTP_FROM: z.string().email().optional(),
   })
   .superRefine((value, context) => {
-    if (value.NODE_ENV === 'production' && value.STORAGE_DRIVER !== 'vercel-blob') {
+    if (value.NODE_ENV === 'production' && value.FILE_STORAGE_DRIVER !== 'vercel-blob') {
       context.addIssue({
         code: 'custom',
-        path: ['STORAGE_DRIVER'],
+        path: ['FILE_STORAGE_DRIVER'],
         message: 'Production requires durable private object storage.',
       });
     }
     if (
-      value.STORAGE_DRIVER === 'vercel-blob' &&
+      value.FILE_STORAGE_DRIVER === 'vercel-blob' &&
       !value.BLOB_READ_WRITE_TOKEN &&
       !(value.BLOB_STORE_ID && value.VERCEL_OIDC_TOKEN)
     ) {
