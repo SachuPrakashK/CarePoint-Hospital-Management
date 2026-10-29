@@ -40,10 +40,40 @@ export class SettingsState implements OnDestroy {
   readonly languageMenu = signal('');
   readonly translationLanguage = signal<AppLanguage | null>(null);
   readonly translationKeys = signal<string[]>([]);
+  readonly translationSource = signal<Record<string, string>>({});
   readonly translationValues = signal<Record<string, string>>({});
+  readonly translationChanges = signal<Record<string, string>>({});
+  private savedTranslationValues: Record<string, string> = {};
   readonly translationsLoading = signal(false);
   readonly translationsSaving = signal(false);
   readonly translationsDirty = signal(false);
+  readonly translationSearch = signal('');
+  readonly translationMode = signal<'all' | 'missing'>('all');
+  readonly translationPage = signal(0);
+  readonly translationPageSize = 100;
+  readonly filteredTranslationKeys = computed(() => {
+    const search = this.translationSearch().trim().toLocaleLowerCase();
+    return this.translationKeys().filter((key) => {
+      const value = this.translationValues()[key]?.trim() ?? '';
+      if (this.translationMode() === 'missing' && value) return false;
+      return (
+        !search ||
+        key.toLocaleLowerCase().includes(search) ||
+        (this.translationSource()[key] ?? '').toLocaleLowerCase().includes(search) ||
+        value.toLocaleLowerCase().includes(search)
+      );
+    });
+  });
+  readonly visibleTranslationKeys = computed(() => {
+    const start = this.translationPage() * this.translationPageSize;
+    return this.filteredTranslationKeys().slice(start, start + this.translationPageSize);
+  });
+  readonly translationPageCount = computed(() =>
+    Math.max(1, Math.ceil(this.filteredTranslationKeys().length / this.translationPageSize)),
+  );
+  readonly completedTranslationCount = computed(
+    () => Object.values(this.translationValues()).filter((value) => value.trim()).length,
+  );
   readonly isSuperAdmin = computed(
     () => this.auth.user()?.roles.some((role) => role.code === 'HOSPITAL_ADMIN') ?? false,
   );
@@ -85,6 +115,7 @@ export class SettingsState implements OnDestroy {
   readonly editingArticle = signal<any | null>(null);
   readonly articleEditorOpen = signal(false);
   readonly savingArticle = signal(false);
+  private translationLoadVersion = 0;
   readonly forms: Record<Exclude<SettingsSection, 'languages' | 'support'>, FormGroup> = {
     hospital: this.fb.nonNullable.group({
       hospitalName: ['', Validators.required],
@@ -193,8 +224,10 @@ export class SettingsState implements OnDestroy {
     try {
       this.languages.set((await firstValueFrom(this.api.languages())).data);
       if (this.isSuperAdmin()) await this.loadCatalog();
+      return true;
     } catch {
       this.toast.error('Language configuration could not be loaded.');
+      return false;
     }
   }
   async loadCatalog() {
@@ -251,30 +284,65 @@ export class SettingsState implements OnDestroy {
     }
   }
   async openTranslations(item: AppLanguage) {
-    if (!item.enabled || this.translationsLoading()) return;
+    if (!item.enabled) return;
+    const loadVersion = ++this.translationLoadVersion;
     this.translationLanguage.set(item);
+    this.translationSearch.set('');
+    this.translationMode.set('all');
+    this.translationPage.set(0);
+    this.translationKeys.set([]);
+    this.translationSource.set({});
+    this.translationValues.set({});
+    this.translationChanges.set({});
+    this.savedTranslationValues = {};
+    this.translationsDirty.set(false);
     this.translationsLoading.set(true);
     try {
       const response = await firstValueFrom(this.api.languageTranslations(item.id));
+      if (loadVersion !== this.translationLoadVersion || this.translationLanguage()?.id !== item.id)
+        return;
       this.translationKeys.set(response.data.keys);
-      this.translationValues.set(response.data.values);
+      this.translationSource.set(response.data.source);
+      this.savedTranslationValues = { ...response.data.values };
+      this.translationValues.set({ ...response.data.values });
+      this.translationChanges.set({});
       this.translationsDirty.set(false);
     } catch {
-      this.translationLanguage.set(null);
-      this.toast.error('Translations could not be loaded.');
+      if (loadVersion === this.translationLoadVersion) {
+        this.translationLanguage.set(null);
+        this.toast.error('Translations could not be loaded.');
+      }
     } finally {
-      this.translationsLoading.set(false);
+      if (loadVersion === this.translationLoadVersion) this.translationsLoading.set(false);
     }
   }
   setTranslation(key: string, value: string) {
     this.translationValues.update((values) => ({ ...values, [key]: value }));
-    this.translationsDirty.set(true);
+    this.translationChanges.update((changes) => {
+      const next = { ...changes };
+      if (value === (this.savedTranslationValues[key] ?? '')) delete next[key];
+      else next[key] = value;
+      return next;
+    });
+    this.translationsDirty.set(Object.keys(this.translationChanges()).length > 0);
+  }
+  filterTranslations(value: string) {
+    this.translationSearch.set(value);
+    this.translationPage.set(0);
+  }
+  showTranslations(mode: 'all' | 'missing') {
+    this.translationMode.set(mode);
+    this.translationPage.set(0);
   }
   closeTranslations() {
     if (this.translationsSaving()) return;
+    this.translationLoadVersion++;
     this.translationLanguage.set(null);
     this.translationKeys.set([]);
+    this.translationSource.set({});
     this.translationValues.set({});
+    this.translationChanges.set({});
+    this.savedTranslationValues = {};
     this.translationsDirty.set(false);
   }
   async saveTranslations() {
@@ -282,10 +350,28 @@ export class SettingsState implements OnDestroy {
     if (!item || this.translationsSaving()) return;
     this.translationsSaving.set(true);
     try {
-      await firstValueFrom(this.api.saveLanguageTranslations(item.id, this.translationValues()));
-      await Promise.all([this.loadLanguages(), this.language.load()]);
+      const changes = { ...this.translationChanges() };
+      if (Object.keys(changes).length === 0) {
+        this.translationsDirty.set(false);
+        return;
+      }
+      const response = await firstValueFrom(this.api.saveLanguageTranslations(item.id, changes));
+      // The server returns the persisted values; keep those as the next edit baseline.
+      this.savedTranslationValues = { ...response.data.values };
+      this.translationValues.set({ ...response.data.values });
+      this.translationChanges.set({});
+      this.translationsDirty.set(false);
       this.toast.success(`${item.name} translations saved.`);
+      this.translationsSaving.set(false);
       this.closeTranslations();
+      const [configurationRefreshed, runtimeRefreshed] = await Promise.all([
+        this.loadLanguages(),
+        this.language.load(),
+      ]);
+      if (!configurationRefreshed || !runtimeRefreshed)
+        this.toast.error(
+          'Translations were saved, but the language status could not be refreshed.',
+        );
     } catch {
       this.toast.error('Translations could not be saved.');
     } finally {

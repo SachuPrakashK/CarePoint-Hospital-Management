@@ -68,7 +68,10 @@ try {
   await page.getByRole('heading', { name: /^SUP-/ }).waitFor();
   await page.getByRole('heading', { name: 'Status history' }).waitFor();
   await page.locator('.crud-modal__footer .secondary').click();
-  const ticketRow = page.locator('tbody tr').filter({ hasText: 'E2E browser support request' }).first();
+  const ticketRow = page
+    .locator('tbody tr')
+    .filter({ hasText: 'E2E browser support request' })
+    .first();
   await ticketRow.getByRole('combobox', { name: /Status for SUP-/ }).selectOption('IN_PROGRESS');
   await page.getByText(/SUP-.* updated\./).waitFor();
   const articleSearch = page.getByRole('searchbox', { name: 'Search help articles and FAQs' });
@@ -81,12 +84,17 @@ try {
     width: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth,
     offenders: [...document.querySelectorAll('body *')]
-      .filter((element) => element.getBoundingClientRect().right > document.documentElement.clientWidth + 1)
+      .filter(
+        (element) =>
+          element.getBoundingClientRect().right > document.documentElement.clientWidth + 1,
+      )
       .slice(0, 8)
       .map((element) => `${element.tagName.toLowerCase()}.${element.className}`),
   }));
   if (mobileOverflow.overflow)
-    throw new Error(`Help & Support has horizontal overflow on mobile: ${JSON.stringify(mobileOverflow)}`);
+    throw new Error(
+      `Help & Support has horizontal overflow on mobile: ${JSON.stringify(mobileOverflow)}`,
+    );
 
   await page.goto('http://localhost:4200/settings', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /Languages/ }).click();

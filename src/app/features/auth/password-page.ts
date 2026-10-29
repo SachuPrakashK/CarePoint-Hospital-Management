@@ -5,9 +5,10 @@ import { firstValueFrom } from 'rxjs';
 import { AuthApiService } from '../../core/auth/auth-api.service';
 import type { SafeApiError } from '../../core/interceptors/api-error.interceptor';
 import { AppIcon } from '../../shared/components/icon/app-icon';
+import { AuthLanguageSelector } from './auth-language-selector';
 @Component({
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AppIcon],
+  imports: [ReactiveFormsModule, RouterLink, AppIcon, AuthLanguageSelector],
   templateUrl: './password-page.html',
   styleUrls: ['./login-page.scss', './password-page.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -49,7 +49,11 @@ async function createEditDeactivate(
   await modal.getByRole('button', { name: 'Close' }).click();
   await modal.waitFor({ state: 'hidden' });
   await page.reload({ waitUntil: 'networkidle' });
-  const searched = page.waitForResponse((r) => r.url().includes(`/api/v1/masters/${path}`) && new URL(r.url()).searchParams.get('search')===name);
+  const searched = page.waitForResponse(
+    (r) =>
+      r.url().includes(`/api/v1/masters/${path}`) &&
+      new URL(r.url()).searchParams.get('search') === name,
+  );
   await page.getByPlaceholder('Search').fill(name);
   await searched;
   const row = page.getByRole('row').filter({ hasText: name });
@@ -72,7 +76,11 @@ async function createEditDeactivate(
   await lookup.selectOption(selected);
   await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
   await page.goto(`http://127.0.0.1:4200/${path}`, { waitUntil: 'networkidle' });
-  const searchedUpdated = page.waitForResponse((r) => r.url().includes(`/api/v1/masters/${path}`) && new URL(r.url()).searchParams.get('search')===`${name} Updated`);
+  const searchedUpdated = page.waitForResponse(
+    (r) =>
+      r.url().includes(`/api/v1/masters/${path}`) &&
+      new URL(r.url()).searchParams.get('search') === `${name} Updated`,
+  );
   await page.getByPlaceholder('Search').fill(`${name} Updated`);
   await searchedUpdated;
   const updated = page.getByRole('row').filter({ hasText: `${name} Updated` });
@@ -80,7 +88,11 @@ async function createEditDeactivate(
   await page.getByRole('menuitem', { name: 'Deactivate' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Deactivate' }).click();
   await page.reload({ waitUntil: 'networkidle' });
-  const inactiveSearch = page.waitForResponse((r) => r.url().includes(`/api/v1/masters/${path}`) && new URL(r.url()).searchParams.get('search')===`${name} Updated`);
+  const inactiveSearch = page.waitForResponse(
+    (r) =>
+      r.url().includes(`/api/v1/masters/${path}`) &&
+      new URL(r.url()).searchParams.get('search') === `${name} Updated`,
+  );
   await page.getByPlaceholder('Search').fill(`${name} Updated`);
   await inactiveSearch;
   if (

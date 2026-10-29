@@ -1,9 +1,75 @@
-import 'dotenv/config';import assert from 'node:assert/strict';
-const api=`http://localhost:${process.env.PORT||3000}/api/v1`;const call=async(path,options={})=>{const response=await fetch(`${api}${path}`,{...options,headers:{'content-type':'application/json',...options.headers}});const body=await response.json().catch(()=>null);return{response,body};};
-const login=async(email,password)=>(await call('/auth/login',{method:'POST',body:JSON.stringify({email,password})})).body.data;
-const admin=await login(process.env.SEED_HOSPITAL_ADMIN_EMAIL,process.env.SEED_HOSPITAL_ADMIN_PASSWORD);const auth={authorization:`Bearer ${admin.access_token}`};const options=(await call('/appointments/options',{headers:auth})).body.data;assert.ok(options.patients.length&&options.departments.length&&options.doctors.length);
-const appointmentAt=new Date(Date.now()+36*60*60*1000);appointmentAt.setMinutes(Math.floor(Math.random()*50),0,0);const created=await call('/appointments',{method:'POST',headers:auth,body:JSON.stringify({patientId:options.patients[0].id,departmentId:options.departments[0].id,doctorId:options.doctors[0].id,appointmentAt:appointmentAt.toISOString(),type:'Consultation',consultationType:'In person',reason:'E2E dashboard synchronization',fee:650})});assert.equal(created.response.status,201);
-const [recent,statuses,departments]=await Promise.all(['/dashboard/recent-appointments','/dashboard/appointment-status','/dashboard/appointments-by-department'].map(path=>call(path,{headers:auth})));assert.ok(recent.body.data.some(item=>item.id===created.body.data.id));assert.ok(statuses.body.data.some(item=>item.status==='SCHEDULED'&&item.count>0));assert.ok(departments.body.data.some(item=>item.count>0));
-const list=await call('/notifications',{headers:auth});const item=list.body.data.find(value=>value.relatedEntityId===created.body.data.id);assert.ok(item&&!item.isRead);const before=(await call('/notifications/unread-count',{headers:auth})).body.data.count;await call(`/notifications/${item.id}/read`,{method:'PATCH',headers:auth,body:'{}'});const after=(await call('/notifications/unread-count',{headers:auth})).body.data.count;assert.equal(after,before-1);
-const doctor=await login('doctor@carepoint.test','DoctorPass123!');const forbidden=await call(`/notifications/${item.id}/read`,{method:'PATCH',headers:{authorization:`Bearer ${doctor.access_token}`},body:'{}'});assert.equal(forbidden.response.status,404);await call('/notifications/read-all',{method:'PATCH',headers:auth,body:'{}'});assert.equal((await call('/notifications/unread-count',{headers:auth})).body.data.count,0);
-console.log(JSON.stringify({appointmentPersisted:created.body.data.id,dashboardRecent:'updated',dashboardCharts:'updated',notificationCreated:item.id,markRead:'passed',markAllRead:'passed',crossUserAccess:forbidden.response.status}));
+import 'dotenv/config';
+import assert from 'node:assert/strict';
+const api = `http://localhost:${process.env.PORT || 3000}/api/v1`;
+const call = async (path, options = {}) => {
+  const response = await fetch(`${api}${path}`, {
+    ...options,
+    headers: { 'content-type': 'application/json', ...options.headers },
+  });
+  const body = await response.json().catch(() => null);
+  return { response, body };
+};
+const login = async (email, password) =>
+  (await call('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })).body
+    .data;
+const admin = await login(
+  process.env.SEED_HOSPITAL_ADMIN_EMAIL,
+  process.env.SEED_HOSPITAL_ADMIN_PASSWORD,
+);
+const auth = { authorization: `Bearer ${admin.access_token}` };
+const options = (await call('/appointments/options', { headers: auth })).body.data;
+assert.ok(options.patients.length && options.departments.length && options.doctors.length);
+const appointmentAt = new Date(Date.now() + 36 * 60 * 60 * 1000);
+appointmentAt.setMinutes(Math.floor(Math.random() * 50), 0, 0);
+const created = await call('/appointments', {
+  method: 'POST',
+  headers: auth,
+  body: JSON.stringify({
+    patientId: options.patients[0].id,
+    departmentId: options.departments[0].id,
+    doctorId: options.doctors[0].id,
+    appointmentAt: appointmentAt.toISOString(),
+    type: 'Consultation',
+    consultationType: 'In person',
+    reason: 'E2E dashboard synchronization',
+    fee: 650,
+  }),
+});
+assert.equal(created.response.status, 201);
+const [recent, statuses, departments] = await Promise.all(
+  [
+    '/dashboard/recent-appointments',
+    '/dashboard/appointment-status',
+    '/dashboard/appointments-by-department',
+  ].map((path) => call(path, { headers: auth })),
+);
+assert.ok(recent.body.data.some((item) => item.id === created.body.data.id));
+assert.ok(statuses.body.data.some((item) => item.status === 'SCHEDULED' && item.count > 0));
+assert.ok(departments.body.data.some((item) => item.count > 0));
+const list = await call('/notifications', { headers: auth });
+const item = list.body.data.find((value) => value.relatedEntityId === created.body.data.id);
+assert.ok(item && !item.isRead);
+const before = (await call('/notifications/unread-count', { headers: auth })).body.data.count;
+await call(`/notifications/${item.id}/read`, { method: 'PATCH', headers: auth, body: '{}' });
+const after = (await call('/notifications/unread-count', { headers: auth })).body.data.count;
+assert.equal(after, before - 1);
+const doctor = await login('doctor@carepoint.test', 'DoctorPass123!');
+const forbidden = await call(`/notifications/${item.id}/read`, {
+  method: 'PATCH',
+  headers: { authorization: `Bearer ${doctor.access_token}` },
+  body: '{}',
+});
+assert.equal(forbidden.response.status, 404);
+await call('/notifications/read-all', { method: 'PATCH', headers: auth, body: '{}' });
+assert.equal((await call('/notifications/unread-count', { headers: auth })).body.data.count, 0);
+console.log(
+  JSON.stringify({
+    appointmentPersisted: created.body.data.id,
+    dashboardRecent: 'updated',
+    dashboardCharts: 'updated',
+    notificationCreated: item.id,
+    markRead: 'passed',
+    markAllRead: 'passed',
+    crossUserAccess: forbidden.response.status,
+  }),
+);

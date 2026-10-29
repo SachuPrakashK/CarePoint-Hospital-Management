@@ -1,32 +1,3 @@
-export const TRANSLATIONS: Record<string, Record<string, string>> = {
-  en: {
-    'nav.dashboard': 'Dashboard',
-    'nav.patients': 'Patients',
-    'nav.appointments': 'Appointments',
-    'nav.opd': 'OPD & Queue',
-    'nav.clinical': 'Clinical EMR',
-    'nav.laboratory': 'Laboratory',
-    'nav.radiology': 'Radiology',
-    'nav.admissions': 'Admissions & Beds',
-    'nav.nursing': 'Nursing',
-    'nav.procedures': 'Procedures & OT',
-    'nav.pharmacy': 'Pharmacy',
-    'nav.billing': 'Billing',
-    'nav.insurance': 'Insurance',
-    'nav.inventory': 'Inventory & Ops',
-    'nav.reports': 'Reports',
-    'nav.audit': 'Audit logs',
-    'nav.documents': 'Documents',
-    'nav.doctors': 'Doctors',
-    'nav.employees': 'Employees',
-    'nav.departments': 'Departments',
-    'nav.users': 'Users',
-    'nav.roles': 'Roles',
-    'nav.support': 'Help & Support',
-    'nav.settings': 'Settings',
-    'header.notifications': 'Notifications',
-    'header.profile': 'My Profile',
-    'header.logout': 'Logout',
-    'language.label': 'Language',
-  },
-};
+import { UI_CATALOG } from './ui-catalog';
+
+export const TRANSLATIONS: Record<string, Record<string, string>> = { en: UI_CATALOG };

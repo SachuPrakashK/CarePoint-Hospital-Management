@@ -57,9 +57,7 @@ export const updateBed = asyncHandler(async (q, r) =>
 export const assignedPatients = asyncHandler(async (q, r) =>
   r.json({ data: await s.assignedPatients(q.auth!.userId, q.auth!.roles) }),
 );
-export const nursingStaff = asyncHandler(async (_q, r) =>
-  r.json({ data: await s.nursingStaff() }),
-);
+export const nursingStaff = asyncHandler(async (_q, r) => r.json({ data: await s.nursingStaff() }));
 export const nursingNotes = asyncHandler(async (q, r) =>
   r.json({
     data: await s.nursingNotes(
@@ -100,9 +98,15 @@ export const acknowledgeHandover = asyncHandler(async (q, r) =>
   r.json({ data: await s.acknowledgeHandover(id(q), q.auth!.userId, q.auth!.roles) }),
 );
 export const procedures = asyncHandler(async (q, r) => r.json(await s.procedures(q.query)));
-export const procedureDetails = asyncHandler(async (q, r) => r.json({ data: await s.procedureDetails(id(q)) }));
-export const procedureLookups = asyncHandler(async (_q, r) => r.json({ data: await s.procedureLookups() }));
-export const procedureStats = asyncHandler(async (_q, r) => r.json({ data: await s.procedureStats() }));
+export const procedureDetails = asyncHandler(async (q, r) =>
+  r.json({ data: await s.procedureDetails(id(q)) }),
+);
+export const procedureLookups = asyncHandler(async (_q, r) =>
+  r.json({ data: await s.procedureLookups() }),
+);
+export const procedureStats = asyncHandler(async (_q, r) =>
+  r.json({ data: await s.procedureStats() }),
+);
 export const scheduleProcedure = asyncHandler(async (q, r) =>
   r.status(201).json({ data: await s.scheduleProcedure(q.body, q.auth!.userId) }),
 );

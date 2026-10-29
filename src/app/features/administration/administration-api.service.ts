@@ -115,11 +115,28 @@ export class AdministrationApiService {
   }
   languageTranslations(id: string) {
     return this.http.get<{
-      data: { code: string; keys: string[]; values: Record<string, string> };
+      data: {
+        code: string;
+        keys: string[];
+        source: Record<string, string>;
+        values: Record<string, string>;
+        totalKeys: number;
+        completedKeys: number;
+        missingKeys: number;
+        translationCoverage: number;
+      };
     }>(`/api/v1/languages/${encodeURIComponent(id)}/translations`);
   }
   saveLanguageTranslations(id: string, values: Record<string, string>) {
-    return this.http.put(`/api/v1/languages/${encodeURIComponent(id)}/translations`, { values });
+    return this.http.put<{
+      data: {
+        values: Record<string, string>;
+        updatedKeys: string[];
+        completedKeys: number;
+        missingKeys: number;
+        translationCoverage: number;
+      };
+    }>(`/api/v1/languages/${encodeURIComponent(id)}/translations`, { values });
   }
   supportContacts() {
     return this.http.get<{ data: any }>('/api/v1/support/contacts');

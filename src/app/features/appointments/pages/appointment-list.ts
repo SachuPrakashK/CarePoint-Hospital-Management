@@ -5,8 +5,14 @@ import {
   ApiAppointment,
   AppointmentApiService,
   AppointmentOptions,
+  AppointmentSummary,
 } from '../appointment-api.service';
 import { AppointmentInvalidationService } from '../appointment-invalidation.service';
+import {
+  canAccessAppointmentInvoice,
+  canShowAppointmentReschedule,
+  isAppointmentRescheduleDisabled,
+} from '../appointment-action-policy';
 import { NotificationStore } from '../../../core/notifications/notification.store';
 import { AppDateTimeService } from '../../../core/services/app-date-time.service';
 import { ConfirmationService } from '../../../core/services/confirmation.service';
@@ -25,6 +31,7 @@ import { TableSortHeader } from '../../../shared/components/table-sort-header/ta
 import { ColumnConfig } from '../../../shared/components/column-config/column-config';
 import { TableColumnDefinition, TableSort } from '../../../shared/models/table.models';
 import { TablePreferencesService } from '../../../core/services/table-preferences.service';
+import { SummaryCard } from '../../../shared/components/summary-card/summary-card';
 
 const addDays = (key: string, days: number) => {
   const date = new Date(`${key}T00:00:00Z`);
@@ -35,6 +42,7 @@ const sundayOf = (key: string) => {
   const date = new Date(`${key}T00:00:00Z`);
   return addDays(key, -date.getUTCDay());
 };
+const appointmentTableId = 'appointments-v2';
 
 @Component({
   imports: [
@@ -50,6 +58,7 @@ const sundayOf = (key: string) => {
     SharedExport,
     TableSortHeader,
     ColumnConfig,
+    SummaryCard,
   ],
   templateUrl: './appointment-list.html',
   styleUrl: './appointment-list.scss',
@@ -68,23 +77,41 @@ export class AppointmentList {
   readonly appointments = signal<ApiAppointment[]>([]);
   readonly calendarAppointments = signal<ApiAppointment[]>([]);
   readonly options = signal<AppointmentOptions>({ patients: [], departments: [], doctors: [] });
+  readonly summary = signal<AppointmentSummary | null>(null);
+  readonly summaryLoading = signal(true);
+  readonly summaryError = signal('');
   readonly loading = signal(true);
   readonly calendarLoading = signal(false);
   readonly error = signal('');
   readonly statusTarget = signal<ApiAppointment | null>(null);
   readonly newStatus = signal('');
   readonly statusUpdating = signal(false);
+  readonly statusAttempted = signal(false);
   readonly exporting = signal(false);
   readonly search = signal('');
   readonly departmentId = signal('');
   readonly doctorId = signal('');
   readonly status = signal('');
+  readonly gender = signal('');
+  readonly paymentStatus = signal('');
   readonly draftDepartmentId = signal('');
   readonly draftDoctorId = signal('');
   readonly draftStatus = signal('');
+  readonly draftGender = signal('');
+  readonly draftPaymentStatus = signal('');
   readonly view = signal<'list' | 'calendar'>('list');
   readonly createOpen = signal(false);
   readonly editing = signal<ApiAppointment | null>(null);
+  readonly rescheduling = signal<ApiAppointment | null>(null);
+  readonly rescheduleDoctorId = signal('');
+  readonly rescheduleDepartmentId = signal('');
+  readonly rescheduleDate = signal('');
+  readonly rescheduleTime = signal('');
+  readonly rescheduleReason = signal('');
+  readonly rescheduleSlots = signal<{ time: string; available: boolean }[]>([]);
+  readonly rescheduleLoading = signal(false);
+  readonly rescheduleSaving = signal(false);
+  readonly rescheduleAttempted = signal(false);
   readonly page = signal(1);
   readonly pageSize = signal(10);
   readonly total = signal(0);
@@ -114,6 +141,8 @@ export class AppointmentList {
       sortable: true,
       sortKey: 'patient',
     },
+    { id: 'gender', header: 'Gender', visibleByDefault: true, sortable: true, sortKey: 'gender' },
+    { id: 'age', header: 'Age', visibleByDefault: true, sortable: true, sortKey: 'age' },
     {
       id: 'care',
       header: 'Department / Doctor',
@@ -123,12 +152,20 @@ export class AppointmentList {
     },
     { id: 'type', header: 'Type', visibleByDefault: true, sortable: true, sortKey: 'type' },
     { id: 'status', header: 'Status', visibleByDefault: true, sortable: true, sortKey: 'status' },
+    { id: 'payment', header: 'Payment status', visibleByDefault: true },
     { id: 'actions', header: 'Actions', visibleByDefault: true, required: true },
   ];
-  readonly visibleColumns = signal(this.tablePreferences.load('appointments', this.columns));
+  readonly visibleColumns = signal(this.tablePreferences.load(appointmentTableId, this.columns));
   readonly weekStart = signal(sundayOf(this.dates.today()));
   readonly activeFilterCount = computed(
-    () => [this.departmentId(), this.doctorId(), this.status()].filter(Boolean).length,
+    () =>
+      [
+        this.departmentId(),
+        this.doctorId(),
+        this.status(),
+        this.gender(),
+        this.paymentStatus(),
+      ].filter(Boolean).length,
   );
   readonly hasCriteria = computed(
     () => Boolean(this.search().trim()) || this.activeFilterCount() > 0,
@@ -167,9 +204,9 @@ export class AppointmentList {
   });
 
   constructor() {
-    void Promise.all([this.load(), this.loadOptions()]);
+    void Promise.all([this.load(), this.loadOptions(), this.loadSummary()]);
     void this.tablePreferences
-      .loadRemote('appointments', this.columns)
+      .loadRemote(appointmentTableId, this.columns)
       .then((ids) => this.visibleColumns.set(ids));
     this.invalidation.changed.subscribe((domains) => {
       if (domains.has('appointment')) void this.refreshVisibleData();
@@ -188,6 +225,8 @@ export class AppointmentList {
           departmentId: this.departmentId(),
           doctorId: this.doctorId(),
           status: this.status(),
+          gender: this.gender(),
+          paymentStatus: this.paymentStatus(),
           sortBy: this.sort()?.field,
           sortOrder: this.sort()?.direction,
         }),
@@ -206,6 +245,17 @@ export class AppointmentList {
       this.options.set((await firstValueFrom(this.api.options())).data);
     } catch {
       this.error.set('Appointment filters could not be loaded.');
+    }
+  }
+  async loadSummary() {
+    this.summaryLoading.set(true);
+    this.summaryError.set('');
+    try {
+      this.summary.set((await firstValueFrom(this.api.summary())).data);
+    } catch {
+      this.summaryError.set('Appointment summary could not be loaded.');
+    } finally {
+      this.summaryLoading.set(false);
     }
   }
   async loadCalendar() {
@@ -230,7 +280,7 @@ export class AppointmentList {
     }
   }
   async refreshVisibleData() {
-    await this.load();
+    await Promise.all([this.load(), this.loadSummary()]);
     if (this.view() === 'calendar') await this.loadCalendar();
   }
   date(item: ApiAppointment) {
@@ -265,6 +315,8 @@ export class AppointmentList {
     this.departmentId.set(this.draftDepartmentId());
     this.doctorId.set(this.draftDoctorId());
     this.status.set(this.draftStatus());
+    this.gender.set(this.draftGender());
+    this.paymentStatus.set(this.draftPaymentStatus());
     this.page.set(1);
     await this.load();
   }
@@ -272,9 +324,13 @@ export class AppointmentList {
     this.draftDepartmentId.set('');
     this.draftDoctorId.set('');
     this.draftStatus.set('');
+    this.draftGender.set('');
+    this.draftPaymentStatus.set('');
     this.departmentId.set('');
     this.doctorId.set('');
     this.status.set('');
+    this.gender.set('');
+    this.paymentStatus.set('');
     this.page.set(1);
     await this.load();
   }
@@ -311,11 +367,11 @@ export class AppointmentList {
     )
       this.sort.set(null);
     this.visibleColumns.set(ids);
-    await this.tablePreferences.save('appointments', ids);
+    await this.tablePreferences.save(appointmentTableId, ids);
   }
   async resetColumns() {
-    await this.tablePreferences.reset('appointments');
-    this.visibleColumns.set(this.tablePreferences.load('appointments', this.columns));
+    await this.tablePreferences.reset(appointmentTableId);
+    this.visibleColumns.set(this.tablePreferences.load(appointmentTableId, this.columns));
   }
   async shiftWeek(days: number) {
     this.weekStart.set(addDays(this.weekStart(), days));
@@ -366,11 +422,22 @@ export class AppointmentList {
     };
     return transitions[item.status] ?? [];
   }
+  canAccessInvoiceActions(item: ApiAppointment) {
+    return canAccessAppointmentInvoice(item);
+  }
+  canShowReschedule(item: ApiAppointment) {
+    return canShowAppointmentReschedule(item);
+  }
+  isRescheduleDisabled(item: ApiAppointment) {
+    return isAppointmentRescheduleDisabled(item);
+  }
   openStatus(item: ApiAppointment) {
     this.statusTarget.set(item);
     this.newStatus.set('');
+    this.statusAttempted.set(false);
   }
   async updateStatus() {
+    this.statusAttempted.set(true);
     const item = this.statusTarget(),
       status = this.newStatus();
     if (!item || !status || this.statusUpdating()) return;
@@ -388,19 +455,134 @@ export class AppointmentList {
       this.statusUpdating.set(false);
     }
   }
+  async openReschedule(item: ApiAppointment) {
+    const [date, time] = this.dates.formDateTime(new Date(item.appointmentAt)).split('T');
+    this.rescheduling.set(item);
+    this.rescheduleDoctorId.set(item.doctorId);
+    this.rescheduleDepartmentId.set(item.departmentId);
+    this.rescheduleDate.set(date);
+    this.rescheduleTime.set(time.slice(0, 5));
+    this.rescheduleReason.set('');
+    this.rescheduleAttempted.set(false);
+    await this.loadRescheduleSlots();
+  }
+  async loadRescheduleSlots() {
+    const item = this.rescheduling();
+    const doctorId = this.rescheduleDoctorId();
+    const date = this.rescheduleDate();
+    if (!item || !doctorId || !date) return;
+    this.rescheduleLoading.set(true);
+    try {
+      const response = await firstValueFrom(this.api.availability(doctorId, date, item.id));
+      this.rescheduleSlots.set(response.data.slots);
+      if (
+        !response.data.slots.some((slot) => slot.available && slot.time === this.rescheduleTime())
+      )
+        this.rescheduleTime.set('');
+    } catch {
+      this.rescheduleSlots.set([]);
+      this.toast.error('Available slots could not be loaded.');
+    } finally {
+      this.rescheduleLoading.set(false);
+    }
+  }
+  rescheduleDoctorChanged(doctorId: string) {
+    this.rescheduleDoctorId.set(doctorId);
+    const doctor = this.options().doctors.find((item) => item.id === doctorId);
+    if (doctor?.departmentId) this.rescheduleDepartmentId.set(doctor.departmentId);
+    void this.loadRescheduleSlots();
+  }
+  async saveReschedule() {
+    this.rescheduleAttempted.set(true);
+    const item = this.rescheduling();
+    if (
+      !item ||
+      !this.rescheduleDoctorId() ||
+      !this.rescheduleDate() ||
+      !this.rescheduleTime() ||
+      this.rescheduleReason().trim().length < 3 ||
+      this.rescheduleSaving()
+    )
+      return;
+    this.rescheduleSaving.set(true);
+    try {
+      await firstValueFrom(
+        this.api.reschedule(item.id, {
+          departmentId: this.rescheduleDepartmentId(),
+          doctorId: this.rescheduleDoctorId(),
+          appointmentAt: this.dates.formValueToApi(this.rescheduleDate(), this.rescheduleTime()),
+          reason: this.rescheduleReason().trim(),
+        }),
+      );
+      this.rescheduling.set(null);
+      this.toast.success('Appointment rescheduled successfully.');
+      this.invalidation.notify();
+      await this.refreshVisibleData();
+    } catch {
+      this.toast.error('Appointment could not be rescheduled. Refresh the available slots.');
+      await this.loadRescheduleSlots();
+    } finally {
+      this.rescheduleSaving.set(false);
+    }
+  }
+  closeReschedule() {
+    if (!this.rescheduleSaving()) this.rescheduling.set(null);
+  }
+  closeStatus() {
+    if (!this.statusUpdating()) this.statusTarget.set(null);
+  }
+  printInvoice(item: ApiAppointment) {
+    if (!item.invoiceId) {
+      this.toast.error('No invoice is associated with this appointment.');
+      return;
+    }
+    window.open(`/billing/invoice/${item.invoiceId}?print=1`, '_blank', 'noopener');
+  }
+  async downloadInvoice(item: ApiAppointment) {
+    if (!item.invoiceId) {
+      this.toast.error('No invoice is associated with this appointment.');
+      return;
+    }
+    try {
+      const response = await firstValueFrom(this.api.invoicePdf(item.id));
+      const blob = response.body;
+      if (!blob) throw new Error('Empty invoice');
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${item.invoiceNumber ?? item.number}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.toast.error('Invoice PDF could not be downloaded.');
+    }
+  }
   async export() {
     if (this.exporting() || this.total() === 0) return;
     this.exporting.set(true);
     try {
       const rows = [
-        ['Appointment', 'Patient', 'Department', 'Doctor', 'Date', 'Status'],
+        [
+          'Appointment',
+          'Patient',
+          'Gender',
+          'Age',
+          'Department',
+          'Doctor',
+          'Date',
+          'Status',
+          'Payment status',
+        ],
         ...this.appointments().map((item) => [
           item.number,
           item.patientName,
+          item.patientGender ?? '—',
+          item.patientAge ?? '—',
           item.department,
           item.doctor,
           this.dates.formatDateTime(item.appointmentAt),
           item.status,
+          item.paymentStatus,
         ]),
       ];
       const blob = new Blob(

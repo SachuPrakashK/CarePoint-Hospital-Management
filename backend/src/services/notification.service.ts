@@ -42,9 +42,20 @@ export const notificationService = {
       relatedEntityId?: string;
     },
   ) {
-    const settings=await prisma.notificationSettings.upsert({where:{id:'default'},update:{},create:{id:'default'}});
-    const enabled:Record<string,boolean>={APPOINTMENT_CREATED:settings.appointmentCreated,APPOINTMENT_CANCELLED:settings.appointmentCancelled,LAB_RESULT_READY:settings.laboratoryResultVerified,RADIOLOGY_RESULT_READY:settings.radiologyResultVerified,LOW_INVENTORY:settings.lowInventory,PAYMENT_RECEIVED:settings.paymentReceived};
-    if(data.type in enabled && !enabled[data.type]) return;
+    const settings = await prisma.notificationSettings.upsert({
+      where: { id: 'default' },
+      update: {},
+      create: { id: 'default' },
+    });
+    const enabled: Record<string, boolean> = {
+      APPOINTMENT_CREATED: settings.appointmentCreated,
+      APPOINTMENT_CANCELLED: settings.appointmentCancelled,
+      LAB_RESULT_READY: settings.laboratoryResultVerified,
+      RADIOLOGY_RESULT_READY: settings.radiologyResultVerified,
+      LOW_INVENTORY: settings.lowInventory,
+      PAYMENT_RECEIVED: settings.paymentReceived,
+    };
+    if (data.type in enabled && !enabled[data.type]) return;
     const users = await prisma.user.findMany({
       where: {
         status: 'ACTIVE',

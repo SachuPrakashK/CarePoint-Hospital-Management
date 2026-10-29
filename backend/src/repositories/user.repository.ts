@@ -15,7 +15,12 @@ const select = {
 } as const;
 
 export const userRepository = {
-  list: (where: Prisma.UserWhereInput, skip: number, take: number,orderBy:Prisma.UserOrderByWithRelationInput[]) =>
+  list: (
+    where: Prisma.UserWhereInput,
+    skip: number,
+    take: number,
+    orderBy: Prisma.UserOrderByWithRelationInput[],
+  ) =>
     prisma.user.findMany({
       where: { ...where, deletedAt: null },
       skip,

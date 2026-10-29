@@ -13,6 +13,10 @@ const configuredLanguageIdentifier = z.string().min(2).max(64);
 const manage = [requirePermissions('settings.update'), requireRoles('HOSPITAL_ADMIN')];
 
 export const languageRoutes = Router();
+languageRoutes.get(
+  '/public',
+  asyncHandler(async (_q, r) => r.json({ data: await service.listEnabled() })),
+);
 languageRoutes.use(authenticate);
 languageRoutes.get(
   '/',
@@ -62,7 +66,11 @@ languageRoutes.put(
   ...manage,
   validate(
     request(
-      z.object({ values: z.record(z.string().max(120), z.string().max(500)) }),
+      z.object({
+        values: z
+          .record(z.string().max(120), z.string().max(500))
+          .refine((values) => Object.keys(values).length <= 5000, 'Too many translation values.'),
+      }),
       z.object({ code: configuredLanguageIdentifier }),
     ),
   ),

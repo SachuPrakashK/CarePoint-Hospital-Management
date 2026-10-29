@@ -222,21 +222,44 @@ const procedure = z.object({
     .default('Scheduled'),
   preOpChecklist: z.array(z.string()).default([]),
 });
-const procedureList = z.object({ query: z.object({
-  page: z.coerce.number().int().positive().default(1),
-  page_size: z.coerce.number().int().min(1).max(100).default(10),
-  search: z.string().trim().max(100).optional(),
-  from_date: z.iso.date().optional(),
-  to_date: z.iso.date().optional(),
-  theatre_id: z.uuid().optional(),
-  status: z.enum(['Planned', 'Scheduled', 'In Progress', 'Completed', 'Cancelled']).optional(),
-  sort_by: z.enum(['scheduledAt','patient','name','doctor','theatre','durationMinutes','status']).default('scheduledAt'),
-  sort_order: z.enum(['asc','desc']).default('desc'),
-}).refine((value) => !value.from_date || !value.to_date || value.from_date <= value.to_date, { message: 'From date must be on or before to date.', path: ['to_date'] }) });
-inpatientRoutes.get('/procedures', requirePermissions('procedures.view'), validate(procedureList), c.procedures);
+const procedureList = z.object({
+  query: z
+    .object({
+      page: z.coerce.number().int().positive().default(1),
+      page_size: z.coerce.number().int().min(1).max(100).default(10),
+      search: z.string().trim().max(100).optional(),
+      from_date: z.iso.date().optional(),
+      to_date: z.iso.date().optional(),
+      theatre_id: z.uuid().optional(),
+      status: z.enum(['Planned', 'Scheduled', 'In Progress', 'Completed', 'Cancelled']).optional(),
+      sort_by: z
+        .enum(['scheduledAt', 'patient', 'name', 'doctor', 'theatre', 'durationMinutes', 'status'])
+        .default('scheduledAt'),
+      sort_order: z.enum(['asc', 'desc']).default('desc'),
+    })
+    .refine((value) => !value.from_date || !value.to_date || value.from_date <= value.to_date, {
+      message: 'From date must be on or before to date.',
+      path: ['to_date'],
+    }),
+});
+inpatientRoutes.get(
+  '/procedures',
+  requirePermissions('procedures.view'),
+  validate(procedureList),
+  c.procedures,
+);
 inpatientRoutes.get('/procedures/stats', requirePermissions('procedures.view'), c.procedureStats);
-inpatientRoutes.get('/procedure-lookups', requirePermissions('procedures.view'), c.procedureLookups);
-inpatientRoutes.get('/procedures/:id', requirePermissions('procedures.view'), validate(v.admissionIdSchema), c.procedureDetails);
+inpatientRoutes.get(
+  '/procedure-lookups',
+  requirePermissions('procedures.view'),
+  c.procedureLookups,
+);
+inpatientRoutes.get(
+  '/procedures/:id',
+  requirePermissions('procedures.view'),
+  validate(v.admissionIdSchema),
+  c.procedureDetails,
+);
 inpatientRoutes.post(
   '/procedures',
   requirePermissions('procedures.create'),

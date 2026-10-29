@@ -13,7 +13,18 @@ type ListQuery = {
   specialization_id?: string;
   designation?: string;
   status?: UserStatus;
-  sort_by:'employeeCode'|'firstName'|'department'|'specialization'|'designation'|'phone'|'email'|'yearsOfExperience'|'joiningDate'|'status';sort_order:'asc'|'desc';
+  sort_by:
+    | 'employeeCode'
+    | 'firstName'
+    | 'department'
+    | 'specialization'
+    | 'designation'
+    | 'phone'
+    | 'email'
+    | 'yearsOfExperience'
+    | 'joiningDate'
+    | 'status';
+  sort_order: 'asc' | 'desc';
 };
 type StaffInput = {
   firstName: string;
@@ -82,7 +93,19 @@ const ensureRelations = async (input: StaffInput, kind: StaffKind) => {
 };
 export const staffDirectoryService = {
   async list(kind: StaffKind, q: ListQuery) {
-    const direction=q.sort_order;const sorts:Record<ListQuery['sort_by'],Prisma.UserOrderByWithRelationInput>={employeeCode:{employeeCode:direction},firstName:{firstName:direction},department:{department:{name:direction}},specialization:{specialization:{name:direction}},designation:{designation:direction},phone:{phone:direction},email:{email:direction},yearsOfExperience:{yearsOfExperience:direction},joiningDate:{joiningDate:direction},status:{status:direction}};
+    const direction = q.sort_order;
+    const sorts: Record<ListQuery['sort_by'], Prisma.UserOrderByWithRelationInput> = {
+      employeeCode: { employeeCode: direction },
+      firstName: { firstName: direction },
+      department: { department: { name: direction } },
+      specialization: { specialization: { name: direction } },
+      designation: { designation: direction },
+      phone: { phone: direction },
+      email: { email: direction },
+      yearsOfExperience: { yearsOfExperience: direction },
+      joiningDate: { joiningDate: direction },
+      status: { status: direction },
+    };
     const where: Prisma.UserWhereInput = {
       deletedAt: null,
       ...roleWhere(kind),
@@ -107,7 +130,7 @@ export const staffDirectoryService = {
       prisma.user.findMany({
         where,
         include,
-        orderBy: [sorts[q.sort_by],{id:'asc'}],
+        orderBy: [sorts[q.sort_by], { id: 'asc' }],
         skip: (q.page - 1) * q.page_size,
         take: q.page_size,
       }),

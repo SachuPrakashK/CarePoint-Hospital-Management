@@ -4,8 +4,15 @@ export const inpatientRepository = {
     const page = Number(query.page),
       pageSize = Number(query.page_size);
     const search = query.search?.trim();
-    const direction=query.sort_order==='asc'?'asc':'desc';
-    const sorts:any={admittedAt:{admittedAt:direction},number:{number:direction},patient:{patient:{firstName:direction}},department:{department:{name:direction}},doctor:{attendingDoctor:{firstName:direction}},status:{status:direction}};
+    const direction = query.sort_order === 'asc' ? 'asc' : 'desc';
+    const sorts: any = {
+      admittedAt: { admittedAt: direction },
+      number: { number: direction },
+      patient: { patient: { firstName: direction } },
+      department: { department: { name: direction } },
+      doctor: { attendingDoctor: { firstName: direction } },
+      status: { status: direction },
+    };
     const where: any = {
       ...(query.department_id ? { departmentId: query.department_id } : {}),
       ...(query.status ? { status: query.status } : {}),
@@ -76,10 +83,13 @@ export const inpatientRepository = {
           patient: true,
           department: true,
           attendingDoctor: true,
-          allocations: { include: { bed: { include: { room: { include: { wardModel: true } } } } }, orderBy: { startedAt: 'asc' } },
+          allocations: {
+            include: { bed: { include: { room: { include: { wardModel: true } } } } },
+            orderBy: { startedAt: 'asc' },
+          },
           discharge: true,
         },
-        orderBy: [sorts[query.sort_by]??{admittedAt:'desc'},{id:'asc'}],
+        orderBy: [sorts[query.sort_by] ?? { admittedAt: 'desc' }, { id: 'asc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -97,7 +107,10 @@ export const inpatientRepository = {
         patient: true,
         department: true,
         attendingDoctor: true,
-        allocations: { include: { bed: { include: { room: { include: { wardModel: true } } } } }, orderBy: { startedAt: 'asc' } },
+        allocations: {
+          include: { bed: { include: { room: { include: { wardModel: true } } } } },
+          orderBy: { startedAt: 'asc' },
+        },
         discharge: true,
       },
     }),
@@ -107,7 +120,11 @@ export const inpatientRepository = {
     prisma.bed.findMany({
       include: {
         room: { include: { wardModel: true } },
-        allocations: { where: { endedAt: null }, include: { admission: { select: { patientId: true } } }, take: 1 },
+        allocations: {
+          where: { endedAt: null },
+          include: { admission: { select: { patientId: true } } },
+          take: 1,
+        },
       },
     }),
   availableBeds: () =>

@@ -11,7 +11,12 @@ dashboardRoutes.get(
     res.json({ data: await dashboardService.summary() });
   }),
 );
-dashboardRoutes.get('/patient-trends', asyncHandler(async (req, res) => res.json({ data: await dashboardService.patientTrends(Number(req.query.days) || 30) })));
+dashboardRoutes.get(
+  '/patient-trends',
+  asyncHandler(async (req, res) =>
+    res.json({ data: await dashboardService.patientTrends(Number(req.query.days) || 30) }),
+  ),
+);
 dashboardRoutes.get(
   '/appointments-by-department',
   asyncHandler(async (_req, res) => {

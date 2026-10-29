@@ -11,8 +11,11 @@
   <article class="document">
     <header>
       <div>
-        <h1>MediCare+</h1>
+        <h1>{{ invoice.hospital?.hospitalName || 'MediCare+' }}</h1>
         <p>Patient Invoice</p>
+        @if (invoice.hospital?.address) {
+          <small>{{ invoice.hospital.address }}</small>
+        }
       </div>
       <div>
         <b>{{ invoice.number }}</b>
@@ -24,6 +27,15 @@
       <small>BILL TO</small>
       <h2>{{ patientName(invoice.patient) }}</h2>
       <p>Patient ID: {{ invoice.patient?.mrn || 'Not assigned' }}</p>
+      @if (invoice.appointment?.number) {
+        <p>Appointment: {{ invoice.appointment.number }}</p>
+      }
+      @if (invoice.appointment?.doctor) {
+        <p>
+          Physician: {{ invoice.appointment.doctor.firstName }}
+          {{ invoice.appointment.doctor.lastName }}
+        </p>
+      }
     </div>
     <table>
       <thead>
@@ -53,7 +65,10 @@
       ><span
         >Net paid <b>{{ money(totals().paid) }}</b></span
       ><span class="balance"
-        >Balance due <b>{{ money(totals().balance) }}</b></span
+        >Outstanding <b>{{ money(totals().balance) }}</b></span
+      >
+      <span
+        >Payment status <b>{{ invoice.paymentStatus }}</b></span
       >
     </div>
     <footer>

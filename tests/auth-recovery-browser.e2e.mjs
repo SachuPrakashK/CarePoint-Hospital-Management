@@ -26,7 +26,9 @@ try {
   assert.equal(await forgot.getByRole('link', { name: 'Back to Sign In' }).count(), 1);
   assert.equal(await forgot.getByRole('button', { name: /Back to Sign In/i }).count(), 0);
   assert.equal(
-    await forgot.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth),
+    await forgot.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    ),
     false,
   );
   await forgot.close();
@@ -42,10 +44,19 @@ try {
   const dialog = profile.getByRole('dialog', { name: 'Change Password' });
   await dialog.waitFor();
   assert.equal(await dialog.locator('.crud-modal__header-icon').count(), 1);
-  assert.match(await dialog.locator('.crud-modal__header').innerText(), /keep your account secure/i);
+  assert.match(
+    await dialog.locator('.crud-modal__header').innerText(),
+    /keep your account secure/i,
+  );
   await dialog.getByRole('button', { name: 'Show current password' }).click();
-  assert.equal(await dialog.getByPlaceholder('Enter current password').getAttribute('type'), 'text');
-  assert.equal(await dialog.getByPlaceholder('Enter new password').getAttribute('type'), 'password');
+  assert.equal(
+    await dialog.getByPlaceholder('Enter current password').getAttribute('type'),
+    'text',
+  );
+  assert.equal(
+    await dialog.getByPlaceholder('Enter new password').getAttribute('type'),
+    'password',
+  );
   await dialog.getByPlaceholder('Enter current password').fill('CurrentPassword123!');
   await dialog.getByPlaceholder('Enter new password').fill('NewPassword456!');
   await dialog.getByText('Strong', { exact: true }).waitFor();

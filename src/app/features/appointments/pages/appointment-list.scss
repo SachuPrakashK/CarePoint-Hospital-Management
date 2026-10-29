@@ -3,6 +3,68 @@ label.field select,
 .toolbar select .department {
   min-width: 100px;
 }
+.appointment-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.summary-error {
+  margin-bottom: 18px;
+}
+.balance-due {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.reschedule-form input[readonly] {
+  background: var(--mc-surface-soft);
+}
+.appointment-dialog-form {
+  width: 100%;
+}
+.reschedule-form,
+.status-form {
+  align-content: start;
+}
+.reschedule-form textarea {
+  min-height: 104px;
+}
+.current-status-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 15px;
+  border: 1px solid color-mix(in srgb, var(--mc-secondary) 28%, var(--color-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--mc-secondary) 5%, var(--mc-surface));
+}
+.current-status-card > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.current-status-card > div:nth-child(2) {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.current-status-card span {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.current-status-card b {
+  overflow-wrap: anywhere;
+}
+.status-form {
+  grid-template-columns: 1fr;
+}
+.status-form .field {
+  width: 100%;
+}
+.appointment-dialog-form .crud-modal__footer button {
+  min-width: 112px;
+}
 .calendar {
   overflow-x: auto;
   padding: 0 16px 16px;
@@ -79,4 +141,25 @@ label.field select,
   text-align: center;
   font-size: 12px;
   margin-top: 36px;
+}
+@media (max-width: 1000px) {
+  .appointment-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .appointment-summary {
+    grid-template-columns: 1fr;
+  }
+  .current-status-card {
+    grid-template-columns: 1fr;
+  }
+  .current-status-card > div:nth-child(2) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .appointment-dialog-form .crud-modal__footer button {
+    min-width: 0;
+    flex: 1 1 0;
+  }
 }

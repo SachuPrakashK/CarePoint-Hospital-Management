@@ -3,6 +3,7 @@ import request from 'supertest';
 
 let createApp: typeof import('../src/app.js').createApp;
 let prisma: typeof import('../src/config/prisma.js').prisma;
+let appointmentService: typeof import('../src/services/appointment.service.js').appointmentService;
 
 beforeAll(async () => {
   process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
@@ -10,6 +11,7 @@ beforeAll(async () => {
   process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret-that-is-at-least-32-chars';
   ({ createApp } = await import('../src/app.js'));
   ({ prisma } = await import('../src/config/prisma.js'));
+  ({ appointmentService } = await import('../src/services/appointment.service.js'));
 }, 15_000);
 
 describe('API application', () => {
@@ -45,5 +47,66 @@ describe('API application', () => {
     const response = await request(createApp()).get('/missing');
     expect(response.status).toBe(404);
     expect(response.body.code).toBe('NOT_FOUND');
+  });
+  it('publishes enabled language metadata and translations without authentication', async () => {
+    vi.spyOn(prisma.language, 'findMany').mockResolvedValueOnce([
+      {
+        id: 'language-ar',
+        code: 'ar',
+        name: 'Arabic',
+        nativeName: 'العربية',
+        enabled: true,
+        isDefault: false,
+        translationCoverage: 100,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        translations: [{ key: 'ui.test', value: 'اختبار' }],
+      },
+    ] as never);
+
+    const response = await request(createApp()).get('/api/v1/languages/public');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toMatchObject({ code: 'ar', enabled: true });
+    expect(response.body.data[0].translations).toEqual([{ key: 'ui.test', value: 'اختبار' }]);
+  });
+  it('rejects patient reassignment through a completed appointment', async () => {
+    vi.spyOn(prisma.appointment, 'findUnique').mockResolvedValueOnce({
+      id: 'appointment-1',
+      status: 'COMPLETED',
+      patientId: 'patient-1',
+    } as never);
+    const update = vi.spyOn(prisma.appointment, 'update');
+
+    await expect(
+      appointmentService.update('appointment-1', { patientId: 'patient-2' }),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'COMPLETED_APPOINTMENT_PATIENT_READ_ONLY',
+    });
+    expect(update).not.toHaveBeenCalled();
+  });
+  it('rejects rescheduling a completed appointment before making database changes', async () => {
+    vi.spyOn(prisma.appointment, 'findUnique').mockResolvedValueOnce({
+      id: 'appointment-1',
+      status: 'COMPLETED',
+      patientId: 'patient-1',
+    } as never);
+    const transaction = vi.spyOn(prisma, '$transaction');
+
+    await expect(
+      appointmentService.reschedule(
+        'appointment-1',
+        {
+          departmentId: 'department-1',
+          doctorId: 'doctor-1',
+          appointmentAt: new Date(Date.now() + 86_400_000).toISOString(),
+          reason: 'Requested by patient',
+        },
+        'user-1',
+      ),
+    ).rejects.toMatchObject({ statusCode: 409, code: 'NOT_RESCHEDULABLE' });
+    expect(transaction).not.toHaveBeenCalled();
   });
 });

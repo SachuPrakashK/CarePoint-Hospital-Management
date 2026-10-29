@@ -22,10 +22,30 @@ patientRoutes.post(
   validate(createPatientSchema),
   controller.create,
 );
-patientRoutes.get('/:id/appointments', requirePermissions('patients.view'), validate(patientIdSchema), controller.appointments);
-patientRoutes.get('/:id/visits', requirePermissions('patients.view'), validate(patientIdSchema), controller.visits);
-patientRoutes.get('/:id/prescriptions', requirePermissions('patients.view'), validate(patientIdSchema), controller.prescriptions);
-patientRoutes.get('/:id/medical-records', requirePermissions('patients.view'), validate(patientIdSchema), controller.medicalRecords);
+patientRoutes.get(
+  '/:id/appointments',
+  requirePermissions('patients.view'),
+  validate(patientIdSchema),
+  controller.appointments,
+);
+patientRoutes.get(
+  '/:id/visits',
+  requirePermissions('patients.view'),
+  validate(patientIdSchema),
+  controller.visits,
+);
+patientRoutes.get(
+  '/:id/prescriptions',
+  requirePermissions('patients.view'),
+  validate(patientIdSchema),
+  controller.prescriptions,
+);
+patientRoutes.get(
+  '/:id/medical-records',
+  requirePermissions('patients.view'),
+  validate(patientIdSchema),
+  controller.medicalRecords,
+);
 patientRoutes.get(
   '/:id',
   requirePermissions('patients.view'),

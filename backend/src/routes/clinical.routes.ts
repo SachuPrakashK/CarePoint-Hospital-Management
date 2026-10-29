@@ -5,7 +5,7 @@ import { validate } from '../middleware/validate.js';
 import * as v from '../validators/clinical.validator.js';
 export const clinicalRoutes = Router();
 clinicalRoutes.use(authenticate);
-clinicalRoutes.get('/consultations',requirePermissions('clinical.view'),c.consultations);
+clinicalRoutes.get('/consultations', requirePermissions('clinical.view'), c.consultations);
 clinicalRoutes.get(
   '/patients/:id/clinical-summary',
   requirePermissions('patients.view'),

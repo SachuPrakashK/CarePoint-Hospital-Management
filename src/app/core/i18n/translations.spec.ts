@@ -2,7 +2,7 @@ import { TRANSLATIONS } from './translations';
 describe('translation resources', () => {
   it('ships English as the only built-in fallback pack', () => {
     const keys = Object.keys(TRANSLATIONS['en'] ?? {}).sort();
-    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.length).toBeGreaterThan(1000);
     expect(Object.keys(TRANSLATIONS)).toEqual(['en']);
     for (const code of ['hi', 'ml', 'ta']) expect(TRANSLATIONS[code]).toBeUndefined();
   });
@@ -12,5 +12,9 @@ describe('translation resources', () => {
         expect(value.trim()).not.toBe('');
         expect(value).not.toBe(key);
       }
+  });
+  it('contains a unique English source label for every generated key', () => {
+    const values = Object.values(TRANSLATIONS['en']);
+    expect(new Set(values).size).toBe(values.length);
   });
 });

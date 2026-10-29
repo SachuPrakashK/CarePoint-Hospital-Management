@@ -6,10 +6,15 @@ export interface ApiAppointment {
   number: string;
   patientId: string;
   patientName: string;
+  patientMrn: string;
+  patientGender: string | null;
+  patientPhone: string | null;
+  patientAge: string | null;
   departmentId: string;
   department: string;
   doctorId: string;
   doctor: string;
+  doctorSpecialty: string | null;
   appointmentAt: string;
   status: string;
   type: string;
@@ -18,11 +23,48 @@ export interface ApiAppointment {
   fee: number;
   createdAt: string;
   updatedAt: string;
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  paymentStatus: 'Paid' | 'Pending' | 'Partially Paid' | 'Refunded' | 'Not Billed';
+  outstandingBalance: number;
+}
+export interface AppointmentPatientOption {
+  id: string;
+  firstName: string;
+  middleName?: string | null;
+  lastName: string;
+  mrn: string;
+  gender: string;
+  phone: string;
+  dob: string;
 }
 export interface AppointmentOptions {
-  patients: { id: string; firstName: string; lastName: string; mrn: string }[];
+  patients: AppointmentPatientOption[];
   departments: { id: string; name: string }[];
-  doctors: { id: string; firstName: string; lastName: string; departmentId: string | null }[];
+  doctors: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    departmentId: string | null;
+    consultationFee: number | null;
+    specialization: { name: string } | null;
+  }[];
+}
+export interface AppointmentSummary {
+  today: number;
+  confirmed: number;
+  pendingPayment: number;
+  completed: number;
+  scope: string;
+}
+export interface AppointmentInvoice {
+  id: string;
+  number: string;
+  appointmentNumber: string;
+  paymentStatus: string;
+  total: number;
+  paidAmount: number;
+  balance: number;
 }
 export interface AppointmentQuery {
   page?: number;
@@ -31,6 +73,8 @@ export interface AppointmentQuery {
   departmentId?: string;
   doctorId?: string;
   status?: string;
+  gender?: string;
+  paymentStatus?: string;
   startDate?: string;
   endDate?: string;
   sortBy?: string;
@@ -52,6 +96,8 @@ export class AppointmentApiService {
       department_id: query.departmentId,
       doctor_id: query.doctorId,
       status: query.status,
+      gender: query.gender,
+      payment_status: query.paymentStatus,
       start_date: query.startDate,
       end_date: query.endDate,
       sort_by: query.sortBy,
@@ -67,6 +113,22 @@ export class AppointmentApiService {
   options() {
     return this.http.get<{ data: AppointmentOptions }>('/api/v1/appointments/options');
   }
+  summary() {
+    return this.http.get<{ data: AppointmentSummary }>('/api/v1/appointments/summary');
+  }
+  searchPatients(search: string) {
+    return this.http.get<{ data: AppointmentPatientOption[] }>(
+      '/api/v1/appointments/patients/search',
+      { params: { search } },
+    );
+  }
+  availability(doctorId: string, date: string, appointmentId?: string) {
+    let params = new HttpParams().set('doctor_id', doctorId).set('date', date);
+    if (appointmentId) params = params.set('appointment_id', appointmentId);
+    return this.http.get<{
+      data: { date: string; doctorId: string; slots: { time: string; available: boolean }[] };
+    }>('/api/v1/appointments/availability', { params });
+  }
   create(value: any) {
     return this.http.post<{ data: ApiAppointment }>('/api/v1/appointments', value);
   }
@@ -76,6 +138,26 @@ export class AppointmentApiService {
   status(id: string, status: string) {
     return this.http.patch<{ data: ApiAppointment }>(`/api/v1/appointments/${id}/status`, {
       status,
+    });
+  }
+  reschedule(
+    id: string,
+    value: { departmentId: string; doctorId: string; appointmentAt: string; reason: string },
+  ) {
+    return this.http.patch<{ data: ApiAppointment }>(
+      `/api/v1/appointments/${id}/reschedule`,
+      value,
+    );
+  }
+  invoice(id: string) {
+    return this.http.get<{ data: AppointmentInvoice & Record<string, unknown> }>(
+      `/api/v1/appointments/${id}/invoice`,
+    );
+  }
+  invoicePdf(id: string) {
+    return this.http.get(`/api/v1/appointments/${id}/invoice.pdf`, {
+      observe: 'response',
+      responseType: 'blob',
     });
   }
 }

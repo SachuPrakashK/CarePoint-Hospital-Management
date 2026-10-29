@@ -5,13 +5,40 @@ import {
   findCatalogLanguage,
   LANGUAGE_CATALOG,
 } from '../data/language-catalog.js';
-import { TRANSLATION_KEYS, TRANSLATION_KEY_SET } from '../data/translation-keys.js';
+import {
+  TRANSLATION_CATALOG,
+  TRANSLATION_KEYS,
+  TRANSLATION_KEY_SET,
+} from '../data/translation-keys.js';
 
-const includeStatus = <T extends { translationCoverage: number }>(language: T) => ({
-  ...language,
-  translationAvailable: language.translationCoverage >= 100,
-  translationStatus: language.translationCoverage >= 100 ? 'AVAILABLE' : 'REQUIRED',
-});
+const includeStatus = <
+  T extends {
+    code: string;
+    translationCoverage: number;
+    _count?: { translations: number };
+    translations?: unknown[];
+  },
+>(
+  language: T,
+) => {
+  const completed =
+    language.code === 'en'
+      ? TRANSLATION_KEYS.length
+      : (language._count?.translations ??
+        language.translations?.length ??
+        Math.round((language.translationCoverage / 100) * TRANSLATION_KEYS.length));
+  const translationCoverage = Math.round((completed / TRANSLATION_KEYS.length) * 100);
+  const { _count, ...value } = language;
+  return {
+    ...value,
+    translationCoverage,
+    translationCompleted: completed,
+    translationRequired: TRANSLATION_KEYS.length,
+    translationMissing: Math.max(0, TRANSLATION_KEYS.length - completed),
+    translationAvailable: translationCoverage >= 100,
+    translationStatus: translationCoverage >= 100 ? 'AVAILABLE' : 'REQUIRED',
+  };
+};
 
 const assertAllowed = (code: string) => {
   if (EXCLUDED_LANGUAGE_CODES.has(code.trim().toLowerCase()))
@@ -41,6 +68,7 @@ export const languageService = {
     return (
       await prisma.language.findMany({
         where: { code: { notIn: [...EXCLUDED_LANGUAGE_CODES] } },
+        include: { _count: { select: { translations: true } } },
         orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
       })
     ).map(includeStatus);
@@ -179,7 +207,14 @@ export const languageService = {
     return {
       code: language.code,
       keys: TRANSLATION_KEYS,
+      source: TRANSLATION_CATALOG,
       values: Object.fromEntries(language.translations.map((item) => [item.key, item.value])),
+      totalKeys: TRANSLATION_KEYS.length,
+      completedKeys: language.translations.length,
+      missingKeys: TRANSLATION_KEYS.length - language.translations.length,
+      translationCoverage: Math.round(
+        (language.translations.length / TRANSLATION_KEYS.length) * 100,
+      ),
     };
   },
   async saveTranslations(identifier: string, values: Record<string, string>) {
@@ -190,25 +225,49 @@ export const languageService = {
         'English translations are maintained by the application.',
         'CONFLICT',
       );
-    const entries = Object.entries(values)
-      .filter(([key]) => TRANSLATION_KEY_SET.has(key))
-      .map(([key, value]) => [key, value.trim()] as const);
-    await prisma.$transaction(async (tx) => {
-      for (const [key, value] of entries) {
-        if (value)
-          await tx.languageTranslation.upsert({
-            where: { languageId_key: { languageId: language.id, key } },
-            update: { value },
-            create: { languageId: language.id, key, value },
-          });
-        else await tx.languageTranslation.deleteMany({ where: { languageId: language.id, key } });
+    const entries = Object.entries(values).map(([key, value]) => [key, value.trim()] as const);
+    const invalidKeys = entries
+      .filter(([key]) => !TRANSLATION_KEY_SET.has(key))
+      .map(([key]) => key);
+    if (invalidKeys.length)
+      throw new AppError(
+        422,
+        `Unknown translation key${invalidKeys.length === 1 ? '' : 's'}: ${invalidKeys.slice(0, 5).join(', ')}`,
+        'INVALID_TRANSLATION_KEY',
+      );
+    const translatedEntries = entries.filter(([, value]) => value);
+    const clearedKeys = entries.filter(([, value]) => !value).map(([key]) => key);
+    const completed = await prisma.$transaction(async (tx) => {
+      // The request is a partial update. Omitted keys are deliberately untouched.
+      // The composite unique key makes each upsert idempotent and prevents duplicates.
+      for (let offset = 0; offset < translatedEntries.length; offset += 100) {
+        const batch = translatedEntries.slice(offset, offset + 100);
+        await Promise.all(
+          batch.map(([key, value]) =>
+            tx.languageTranslation.upsert({
+              where: { languageId_key: { languageId: language.id, key } },
+              create: { languageId: language.id, key, value },
+              update: { value },
+            }),
+          ),
+        );
       }
+      if (clearedKeys.length)
+        await tx.languageTranslation.deleteMany({
+          where: { languageId: language.id, key: { in: clearedKeys } },
+        });
       const translated = await tx.languageTranslation.count({ where: { languageId: language.id } });
       await tx.language.update({
         where: { id: language.id },
         data: { translationCoverage: Math.round((translated / TRANSLATION_KEYS.length) * 100) },
       });
+      return translated;
     });
-    return this.translations(language.id);
+    const result = await this.translations(language.id);
+    return {
+      ...result,
+      updatedKeys: entries.map(([key]) => key),
+      completedKeys: completed,
+    };
   },
 };

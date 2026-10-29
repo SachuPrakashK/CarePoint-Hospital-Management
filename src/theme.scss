@@ -54,15 +54,15 @@ textarea:focus-visible {
   border-color: var(--color-border) !important;
 }
 
-.stats .stat:nth-child(4n+1) {
+.stats .stat:nth-child(4n + 1) {
   background: #eef6fb;
 }
 
-.stats .stat:nth-child(4n+2) {
+.stats .stat:nth-child(4n + 2) {
   background: #f1f5fb;
 }
 
-.stats .stat:nth-child(4n+3) {
+.stats .stat:nth-child(4n + 3) {
   background: #eef7f8;
 }
 

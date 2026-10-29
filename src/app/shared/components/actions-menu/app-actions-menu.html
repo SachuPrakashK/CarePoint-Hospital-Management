@@ -43,6 +43,27 @@
         <app-icon name="documents" [size]="16" />Print Invoice
       </button>
     }
+    @if (canDownload()) {
+      <button type="button" role="menuitem" (click)="choose($event, 'download')">
+        <app-icon name="download" [size]="16" />Download Invoice
+      </button>
+    }
+    @if (canReschedule()) {
+      <button
+        type="button"
+        role="menuitem"
+        [disabled]="rescheduleDisabled()"
+        [attr.title]="rescheduleDisabled() ? rescheduleDisabledReason() : null"
+        [attr.aria-label]="
+          rescheduleDisabled()
+            ? 'Reschedule unavailable: ' + rescheduleDisabledReason()
+            : 'Reschedule'
+        "
+        (click)="choose($event, 'reschedule')"
+      >
+        <app-icon name="calendar" [size]="16" />Reschedule
+      </button>
+    }
     @if (canPayment()) {
       <button type="button" role="menuitem" (click)="choose($event, 'payment')">
         <app-icon name="billing" [size]="16" />Record Payment

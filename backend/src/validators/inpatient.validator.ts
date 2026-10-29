@@ -9,8 +9,10 @@ export const admissionListSchema = z.object({
     status: z
       .enum(['ADMITTED', 'TRANSFERRED', 'DISCHARGE_PLANNED', 'DISCHARGED', 'CANCELLED'])
       .optional(),
-    sort_by:z.enum(['admittedAt','number','patient','department','doctor','status']).default('admittedAt'),
-    sort_order:z.enum(['asc','desc']).default('desc'),
+    sort_by: z
+      .enum(['admittedAt', 'number', 'patient', 'department', 'doctor', 'status'])
+      .default('admittedAt'),
+    sort_order: z.enum(['asc', 'desc']).default('desc'),
   }),
 });
 export const admissionIdSchema = z.object({ params: z.object({ id: uuid }) });
@@ -57,24 +59,26 @@ export const nursingAdmissionQuerySchema = z.object({
 });
 
 export const handoverCreateSchema = z.object({
-  body: z.object({
-    admissionId: uuid,
-    fromShift: z.enum(['MORNING', 'EVENING', 'NIGHT']),
-    toShift: z.enum(['MORNING', 'EVENING', 'NIGHT']),
-    handedOverToId: uuid.optional().nullable(),
-    clinicalSummary: z.string().trim().min(1).max(4000),
-    currentCondition: z.string().trim().min(1).max(2000),
-    importantObservations: z.string().trim().max(4000).default(''),
-    pendingTasks: z.string().trim().max(4000).default(''),
-    medicationNotes: z.string().trim().max(4000).default(''),
-    investigationsPending: z.string().trim().max(4000).default(''),
-    specialInstructions: z.string().trim().max(4000).default(''),
-    riskAlerts: z.string().trim().max(4000).default(''),
-    additionalNotes: z.string().trim().max(4000).default(''),
-  }).refine((value) => value.fromShift !== value.toShift, {
-    message: 'From shift and to shift must be different.',
-    path: ['toShift'],
-  }),
+  body: z
+    .object({
+      admissionId: uuid,
+      fromShift: z.enum(['MORNING', 'EVENING', 'NIGHT']),
+      toShift: z.enum(['MORNING', 'EVENING', 'NIGHT']),
+      handedOverToId: uuid.optional().nullable(),
+      clinicalSummary: z.string().trim().min(1).max(4000),
+      currentCondition: z.string().trim().min(1).max(2000),
+      importantObservations: z.string().trim().max(4000).default(''),
+      pendingTasks: z.string().trim().max(4000).default(''),
+      medicationNotes: z.string().trim().max(4000).default(''),
+      investigationsPending: z.string().trim().max(4000).default(''),
+      specialInstructions: z.string().trim().max(4000).default(''),
+      riskAlerts: z.string().trim().max(4000).default(''),
+      additionalNotes: z.string().trim().max(4000).default(''),
+    })
+    .refine((value) => value.fromShift !== value.toShift, {
+      message: 'From shift and to shift must be different.',
+      path: ['toShift'],
+    }),
 });
 
 export const handoverAcknowledgeSchema = z.object({

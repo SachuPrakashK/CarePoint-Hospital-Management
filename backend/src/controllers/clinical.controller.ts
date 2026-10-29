@@ -1,7 +1,9 @@
 import { asyncHandler } from '../utils/async-handler.js';
 import { clinicalService as s } from '../services/clinical.service.js';
 const id = (req: any) => String(req.params.id);
-export const consultations = asyncHandler(async (_req,res)=>res.json({data:await s.consultations()}));
+export const consultations = asyncHandler(async (_req, res) =>
+  res.json({ data: await s.consultations() }),
+);
 export const summary = asyncHandler(async (req, res) =>
   res.json({ data: await s.summary(id(req)) }),
 );

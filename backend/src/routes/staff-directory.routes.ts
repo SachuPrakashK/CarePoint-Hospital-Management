@@ -16,7 +16,21 @@ const list = z.object({
     specialization_id: z.uuid().optional(),
     designation: z.string().trim().optional(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'LOCKED']).optional(),
-    sort_by:z.enum(['employeeCode','firstName','department','specialization','designation','phone','email','yearsOfExperience','joiningDate','status']).default('firstName'),sort_order:z.enum(['asc','desc']).default('asc'),
+    sort_by: z
+      .enum([
+        'employeeCode',
+        'firstName',
+        'department',
+        'specialization',
+        'designation',
+        'phone',
+        'email',
+        'yearsOfExperience',
+        'joiningDate',
+        'status',
+      ])
+      .default('firstName'),
+    sort_order: z.enum(['asc', 'desc']).default('asc'),
   }),
 });
 const params = z.object({ id: z.uuid() });
@@ -64,7 +78,11 @@ for (const kind of ['doctors', 'employees'] as StaffKind[]) {
     `/${kind}/:id`,
     requirePermissions(permission('view')),
     validate(
-      z.object({ params, query: z.object({}).passthrough(), body: z.object({}).passthrough().optional() }),
+      z.object({
+        params,
+        query: z.object({}).passthrough(),
+        body: z.object({}).passthrough().optional(),
+      }),
     ),
     asyncHandler(async (q, r) => r.json({ data: await service.get(kind, String(q.params.id)) })),
   );
@@ -90,7 +108,11 @@ for (const kind of ['doctors', 'employees'] as StaffKind[]) {
     `/${kind}/:id`,
     requirePermissions(permission('delete')),
     validate(
-      z.object({ params, body: z.object({}).passthrough().optional(), query: z.object({}).passthrough() }),
+      z.object({
+        params,
+        body: z.object({}).passthrough().optional(),
+        query: z.object({}).passthrough(),
+      }),
     ),
     asyncHandler(async (q, r) => {
       await service.remove(kind, String(q.params.id), q.auth!.userId);

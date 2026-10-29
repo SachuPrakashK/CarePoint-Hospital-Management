@@ -3,10 +3,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../../core/auth/auth.store';
 import { AppIcon } from '../../shared/components/icon/app-icon';
+import { AuthLanguageSelector } from './auth-language-selector';
 
 @Component({
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AppIcon],
+  imports: [ReactiveFormsModule, RouterLink, AppIcon, AuthLanguageSelector],
   templateUrl: './login-page.html',
   styleUrl: './login-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

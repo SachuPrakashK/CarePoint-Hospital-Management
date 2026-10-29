@@ -51,7 +51,10 @@ export const clinicalRepository = {
         consultations: { orderBy: { createdAt: 'desc' }, include: { vitals: true } },
       },
     }),
-  timeline: async (patientId: string, query: { type?: string; from?: string; to?: string } = {}) => {
+  timeline: async (
+    patientId: string,
+    query: { type?: string; from?: string; to?: string } = {},
+  ) => {
     const dates = calendarRangeBounds(query.from, query.to);
     const include = (type: string) => !query.type || query.type === type;
     const [consultations, diagnoses, admissions, labOrders] = await Promise.all([
@@ -72,10 +75,43 @@ export const clinicalRepository = {
         : [],
     ]);
     return [
-      ...consultations.map((item) => ({ id: item.id, type: 'Consultation', occurredAt: item.createdAt, title: 'Consultation', description: item.chiefComplaint, referenceId: item.id })),
-      ...diagnoses.map((item) => ({ id: item.id, type: 'Diagnosis', occurredAt: item.diagnosedAt, title: 'Diagnosis', description: item.description, referenceId: item.id })),
-      ...admissions.map((item) => ({ id: item.id, type: 'Admission', occurredAt: item.admittedAt, title: 'Admission', description: item.reason, referenceId: item.id })),
-      ...labOrders.map((item) => ({ id: item.id, type: 'Lab Result', occurredAt: item.updatedAt, title: `Laboratory result ${item.number}`, description: item.results.map((result) => `${result.test}: ${result.value}${result.unit ? ` ${result.unit}` : ''}`).join(', ') || 'Result verified', referenceId: item.id })),
+      ...consultations.map((item) => ({
+        id: item.id,
+        type: 'Consultation',
+        occurredAt: item.createdAt,
+        title: 'Consultation',
+        description: item.chiefComplaint,
+        referenceId: item.id,
+      })),
+      ...diagnoses.map((item) => ({
+        id: item.id,
+        type: 'Diagnosis',
+        occurredAt: item.diagnosedAt,
+        title: 'Diagnosis',
+        description: item.description,
+        referenceId: item.id,
+      })),
+      ...admissions.map((item) => ({
+        id: item.id,
+        type: 'Admission',
+        occurredAt: item.admittedAt,
+        title: 'Admission',
+        description: item.reason,
+        referenceId: item.id,
+      })),
+      ...labOrders.map((item) => ({
+        id: item.id,
+        type: 'Lab Result',
+        occurredAt: item.updatedAt,
+        title: `Laboratory result ${item.number}`,
+        description:
+          item.results
+            .map(
+              (result) => `${result.test}: ${result.value}${result.unit ? ` ${result.unit}` : ''}`,
+            )
+            .join(', ') || 'Result verified',
+        referenceId: item.id,
+      })),
     ].sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
   },
 };

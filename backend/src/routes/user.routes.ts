@@ -18,6 +18,16 @@ userRoutes.post('/', requirePermissions('users.create'), validate(userCreateSche
 userRoutes.get('/:id', requirePermissions('users.view'), validate(userIdSchema), c.details);
 userRoutes.put('/:id', requirePermissions('users.update'), validate(userUpdateSchema), c.update);
 userRoutes.delete('/:id', requirePermissions('users.delete'), validate(userIdSchema), c.archive);
-userRoutes.patch('/:id/status', requirePermissions('users.update'), validate(userStatusSchema), c.status);
+userRoutes.patch(
+  '/:id/status',
+  requirePermissions('users.update'),
+  validate(userStatusSchema),
+  c.status,
+);
 userRoutes.patch('/:id/role', requirePermissions('users.update'), validate(userRoleSchema), c.role);
-userRoutes.patch('/:id/reset-password', requirePermissions('users.reset_password'), validate(userResetPasswordSchema), c.resetPassword);
+userRoutes.patch(
+  '/:id/reset-password',
+  requirePermissions('users.reset_password'),
+  validate(userResetPasswordSchema),
+  c.resetPassword,
+);

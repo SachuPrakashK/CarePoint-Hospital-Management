@@ -43,14 +43,14 @@ The selected `AppLanguage` object, including its unique ID and code, is retained
 
 ## Tests executed
 
-| Check | Result |
-|---|---|
-| Angular regression suite | Pass — 54 files, 172 tests |
-| Backend test suite | Pass — 7 files, 41 tests |
-| Backend TypeScript build | Pass |
-| Shared multi-select selection/disabled/clear behavior | Pass |
-| Prior PostgreSQL retired-language verification | Pass — 0 retired languages and 0 retired preferences |
-| Manual browser responsive walkthrough | Not Run |
+| Check                                                 | Result                                               |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| Angular regression suite                              | Pass — 54 files, 172 tests                           |
+| Backend test suite                                    | Pass — 7 files, 41 tests                             |
+| Backend TypeScript build                              | Pass                                                 |
+| Shared multi-select selection/disabled/clear behavior | Pass                                                 |
+| Prior PostgreSQL retired-language verification        | Pass — 0 retired languages and 0 retired preferences |
+| Manual browser responsive walkthrough                 | Not Run                                              |
 
 ## Remaining issues
 

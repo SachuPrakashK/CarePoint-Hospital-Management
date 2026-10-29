@@ -69,17 +69,17 @@ The catalog uses the comprehensive ISO 639-1 code set plus common IANA BCP 47 sc
 
 ## Tests Actually Executed
 
-| Check | Result | Notes |
-| --- | --- | --- |
-| Backend TypeScript build (`npm.cmd run build`) | Pass | Completed with no compiler errors. |
-| Prisma schema validation (`npx.cmd prisma validate`) | Pass | Prisma 6.12.0 PostgreSQL schema is valid. |
-| Language catalog tests | Pass | 6/6 tests passed: catalog size/order, Hindi, Malayalam, Tamil, Simplified Chinese, invalid identifier. |
-| VS Code diagnostics on modified frontend/backend files | Pass | No diagnostics reported. |
-| Angular selected support/i18n specs | Blocked | Angular test bundle compiled, but the runner emitted no final test summary in this host. Direct Vitest is incompatible with the Angular global-test setup. |
-| Angular production build | Blocked | The build reached compilation but the host process failed to provide a completion summary; a direct TypeScript retry hit Windows `VirtualAlloc` exhaustion. No source diagnostic was reported. |
-| Database migration execution | Not Run | No deployment/database mutation was performed from this change task. |
-| API E2E against PostgreSQL | Not Run | Requires a running seeded API/database environment and credentials. |
-| Browser responsive/accessibility verification | Not Run | Requires the application and API to be running against the migrated database. |
+| Check                                                  | Result  | Notes                                                                                                                                                                                          |
+| ------------------------------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend TypeScript build (`npm.cmd run build`)         | Pass    | Completed with no compiler errors.                                                                                                                                                             |
+| Prisma schema validation (`npx.cmd prisma validate`)   | Pass    | Prisma 6.12.0 PostgreSQL schema is valid.                                                                                                                                                      |
+| Language catalog tests                                 | Pass    | 6/6 tests passed: catalog size/order, Hindi, Malayalam, Tamil, Simplified Chinese, invalid identifier.                                                                                         |
+| VS Code diagnostics on modified frontend/backend files | Pass    | No diagnostics reported.                                                                                                                                                                       |
+| Angular selected support/i18n specs                    | Blocked | Angular test bundle compiled, but the runner emitted no final test summary in this host. Direct Vitest is incompatible with the Angular global-test setup.                                     |
+| Angular production build                               | Blocked | The build reached compilation but the host process failed to provide a completion summary; a direct TypeScript retry hit Windows `VirtualAlloc` exhaustion. No source diagnostic was reported. |
+| Database migration execution                           | Not Run | No deployment/database mutation was performed from this change task.                                                                                                                           |
+| API E2E against PostgreSQL                             | Not Run | Requires a running seeded API/database environment and credentials.                                                                                                                            |
+| Browser responsive/accessibility verification          | Not Run | Requires the application and API to be running against the migrated database.                                                                                                                  |
 
 ## Remaining Limitations
 

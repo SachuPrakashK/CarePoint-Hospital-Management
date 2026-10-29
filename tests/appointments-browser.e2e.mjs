@@ -3,11 +3,19 @@ import fs from 'node:fs';
 import { chromium } from 'playwright-core';
 
 const env = Object.fromEntries(
-  fs.readFileSync(new URL('../backend/.env', import.meta.url), 'utf8')
-    .split(/\r?\n/).filter((line) => line && !line.startsWith('#') && line.includes('='))
-    .map((line) => { const index = line.indexOf('='); return [line.slice(0, index), line.slice(index + 1).replace(/^"|"$/g, '')]; }),
+  fs
+    .readFileSync(new URL('../backend/.env', import.meta.url), 'utf8')
+    .split(/\r?\n/)
+    .filter((line) => line && !line.startsWith('#') && line.includes('='))
+    .map((line) => {
+      const index = line.indexOf('=');
+      return [line.slice(0, index), line.slice(index + 1).replace(/^"|"$/g, '')];
+    }),
 );
-const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+});
 try {
   const page = await browser.newPage();
   await page.goto('http://localhost:4200/auth/login');
@@ -54,7 +62,10 @@ try {
   await page.waitForTimeout(300);
   assert.notEqual(await page.locator('.week-current b').textContent(), currentLabel);
   await page.locator('.week-current').click();
-  await page.waitForFunction((label) => document.querySelector('.week-current b')?.textContent === label, currentLabel);
+  await page.waitForFunction(
+    (label) => document.querySelector('.week-current b')?.textContent === label,
+    currentLabel,
+  );
   assert.equal(await page.locator('.week-current b').textContent(), currentLabel);
 
   await page.getByRole('button', { name: 'New appointment' }).click();
@@ -66,11 +77,16 @@ try {
   const modal = page.getByRole('dialog').filter({ hasText: 'Create appointment' });
   await modal.locator('select[formcontrolname="patientId"]').selectOption({ index: 1 });
   const departmentSelect = modal.locator('select[formcontrolname="departmentId"]');
-  const departmentValues = await departmentSelect.locator('option').evaluateAll((options) => options.slice(1).map((option) => option.value));
+  const departmentValues = await departmentSelect
+    .locator('option')
+    .evaluateAll((options) => options.slice(1).map((option) => option.value));
   let matchedDepartment = '';
   for (const value of departmentValues) {
     await departmentSelect.selectOption(value);
-    if (await modal.locator('select[formcontrolname="doctorId"] option').count() > 1) { matchedDepartment = value; break; }
+    if ((await modal.locator('select[formcontrolname="doctorId"] option').count()) > 1) {
+      matchedDepartment = value;
+      break;
+    }
   }
   assert.ok(matchedDepartment);
   await modal.locator('select[formcontrolname="doctorId"]').selectOption({ index: 1 });

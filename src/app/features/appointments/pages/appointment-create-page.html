@@ -1,8 +1,10 @@
 <app-modal
-  title="Create appointment"
-  description="Complete the required information below."
-  size="lg"
+  title="Add New Appointment"
+  description="Choose a patient, physician and available appointment time."
+  icon="calendar"
+  size="xl"
   [dirty]="form.form.dirty"
+  [busy]="form.saving()"
   (closed)="close()"
-  ><app-appointment-form #form (saved)="created()"
+  ><app-appointment-form #form (saved)="created()" (cancelled)="close()"
 /></app-modal>
