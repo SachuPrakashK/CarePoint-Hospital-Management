@@ -6,7 +6,7 @@
         ><select formControlName="patientId">
           <option value="" disabled>Select patient</option>
           @for (p of patients.patients(); track p.id) {
-            <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} Â· {{ p.mrn }}</option>
+            <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} · {{ p.mrn }}</option>
           }
         </select></label
       ><label class="field"
@@ -15,7 +15,7 @@
           <option value="" disabled>Select investigation</option>
           @for (investigation of investigations(); track investigation.id) {
             <option [value]="investigation.name">
-              {{ investigation.name }} Â· {{ investigation.modality }}
+              {{ investigation.name }} · {{ investigation.modality }}
             </option>
           }
         </select></label

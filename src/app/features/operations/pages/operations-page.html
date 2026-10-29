@@ -350,7 +350,7 @@
                     <td>{{ item.receivedQuantity }}</td>
                   }
                   @if (columnVisible('value')) {
-                    <td>â‚¹{{ item.quantity * item.unitPrice }}</td>
+                    <td>₹{{ item.quantity * item.unitPrice }}</td>
                   }
                   @if (columnVisible('status')) {
                     <td><app-status-badge [value]="item.status" /></td>
@@ -502,7 +502,7 @@
           <option value="">Assign later</option>
           @for (a of store.ambulances(); track a.id) {
             @if (a.status === 'Available') {
-              <option [value]="a.id">{{ a.number }} Â· {{ a.vehicleType }}</option>
+              <option [value]="a.id">{{ a.number }} · {{ a.vehicleType }}</option>
             }
           }
         </select></label

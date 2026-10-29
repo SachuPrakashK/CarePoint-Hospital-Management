@@ -7,6 +7,7 @@
     "build": "ng build",
     "i18n:generate": "node scripts/generate-i18n-catalog.mjs",
     "i18n:check": "node scripts/generate-i18n-catalog.mjs --check",
+    "encoding:check": "node scripts/check-text-encoding.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

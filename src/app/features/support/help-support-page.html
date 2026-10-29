@@ -20,7 +20,7 @@
     <span class="support-card__icon"><app-icon name="mail" [size]="24" /></span>
     <span
       ><b>Contact Support</b
-      ><small>View your organizationâ€™s configured support contacts.</small></span
+      ><small>View your organization’s configured support contacts.</small></span
     >
   </button>
   <button type="button" class="support-card" (click)="scrollTo('support-tickets')">
@@ -72,7 +72,7 @@
   }
   @if (articlesLoading()) {
     <div class="loading-state loading-state--section" role="status" aria-live="polite">
-      Loading help articlesâ€¦
+      Loading help articles…
     </div>
   } @else if (articlesError()) {
     <div class="support-error" role="alert">
@@ -115,7 +115,7 @@
     </div>
   </div>
   @if (contactsLoading()) {
-    <div class="loading-state loading-state--compact" role="status">Loading contact detailsâ€¦</div>
+    <div class="loading-state loading-state--compact" role="status">Loading contact details…</div>
   } @else if (contactsError()) {
     <div class="support-error" role="alert">
       <span>{{ contactsError() }}</span
@@ -221,7 +221,7 @@
     </div>
   </div>
   @if (ticketsLoading()) {
-    <div class="loading-state loading-state--table" role="status">Loading support requestsâ€¦</div>
+    <div class="loading-state loading-state--table" role="status">Loading support requests…</div>
   } @else if (ticketsError()) {
     <div class="support-error" role="alert">
       <span>{{ ticketsError() }}</span
@@ -469,7 +469,7 @@
         <button type="button" class="secondary" [disabled]="submitting()" (click)="closeCreate()">
           Cancel</button
         ><button type="submit" class="primary" [disabled]="submitting()">
-          {{ submitting() ? 'Submittingâ€¦' : 'Create Ticket' }}
+          {{ submitting() ? 'Submitting…' : 'Create Ticket' }}
         </button>
       </footer>
     </form>
@@ -523,7 +523,7 @@
               <div>
                 <b>{{ event.status.replace('_', ' ') }}</b
                 ><small
-                  >{{ dates.formatDate(event.createdAt) }} Â· {{ event.actor.firstName }}
+                  >{{ dates.formatDate(event.createdAt) }} · {{ event.actor.firstName }}
                   {{ event.actor.lastName }}</small
                 >
               </div>

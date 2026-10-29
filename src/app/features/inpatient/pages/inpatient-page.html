@@ -114,7 +114,7 @@
     </div>
     @if (store.loading()) {
       <div class="loading-state loading-state--table" role="status" aria-live="polite">
-        Loading admissionsâ€¦
+        Loading admissions…
       </div>
     } @else if (store.error()) {
       <div class="error-state" role="alert">
@@ -263,9 +263,9 @@
         <div class="bed-grid">
           @for (bed of beds(ward); track bed.id) {
             <article class="bed" [class]="bed.status.toLowerCase()">
-              <div class="bed-icon">â–°</div>
+              <div class="bed-icon">▰</div>
               <b>{{ bed.name }}</b
-              ><small>{{ bed.roomType }} Â· Room {{ bed.room }}</small
+              ><small>{{ bed.roomType }} · Room {{ bed.room }}</small
               ><app-status-badge [value]="bed.status" />
               @if (bed.patientId) {
                 <small>{{ patientName(bed.patientId) }}</small>
@@ -355,7 +355,7 @@
       </div>
       <div class="crud-modal__footer">
         <button type="submit" class="primary" [disabled]="wardForm.invalid || wardSubmitting()">
-          {{ wardSubmitting() ? 'Creatingâ€¦' : 'Create ward' }}
+          {{ wardSubmitting() ? 'Creating…' : 'Create ward' }}
         </button>
       </div>
     </form>

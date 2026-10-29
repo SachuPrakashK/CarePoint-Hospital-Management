@@ -62,23 +62,23 @@ try {
   const batch = Object.fromEntries(
     empty.body.data.keys.slice(0, 600).map((key, index) => [key, `E2E translation ${index}`]),
   );
-  batch[sharedKey] = 'Enregistrer';
+  batch[sharedKey] = 'حفظ — Enregistrer… ₹';
   const saved = await call(`/languages/${language.id}/translations`, {
     method: 'PUT',
     headers,
     body: JSON.stringify({ values: batch }),
   });
   assert.equal(saved.response.status, 200);
-  assert.equal(saved.body.data.values[sharedKey], 'Enregistrer');
+  assert.equal(saved.body.data.values[sharedKey], 'حفظ — Enregistrer… ₹');
   assert.equal(saved.body.data.completedKeys, 600);
 
   const reopened = await call(`/languages/${language.id}/translations`, { headers });
   assert.equal(reopened.response.status, 200);
-  assert.equal(reopened.body.data.values[sharedKey], 'Enregistrer');
+  assert.equal(reopened.body.data.values[sharedKey], 'حفظ — Enregistrer… ₹');
   const persisted = await prisma.languageTranslation.findUnique({
     where: { languageId_key: { languageId: language.id, key: sharedKey } },
   });
-  assert.equal(persisted?.value, 'Enregistrer');
+  assert.equal(persisted?.value, 'حفظ — Enregistrer… ₹');
 
   const preservedKey = Object.keys(batch).find((key) => key !== sharedKey);
   assert.ok(preservedKey);

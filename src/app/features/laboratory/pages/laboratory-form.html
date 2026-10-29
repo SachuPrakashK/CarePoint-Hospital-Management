@@ -26,7 +26,7 @@
           ><select formControlName="testDefinitionId">
             <option value="" disabled>Select laboratory test</option>
             @for (test of tests(); track test.id) {
-              <option [value]="test.id">{{ test.name }} Â· {{ test.category }}</option>
+              <option [value]="test.id">{{ test.name }} · {{ test.category }}</option>
             }
           </select>
           @if (form.controls.testDefinitionId.touched && form.controls.testDefinitionId.invalid) {
