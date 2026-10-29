@@ -42,4 +42,5 @@
 <symbol id="department" viewBox="0 0 24 24"><path d="M4 21V5h16v16M8 9h2m4 0h2m-8 4h2m4 0h2m-6 8v-4h4v4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
 <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3 8 8 10 5-2 8-5 8-10V6l-8-3Z" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
 <symbol id="alert-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1" fill="currentColor"/></symbol>
+<symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c3 3 4 6 4 9s-1 6-4 9c-3-3-4-6-4-9s1-6 4-9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 </defs></svg>

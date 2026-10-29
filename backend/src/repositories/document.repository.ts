@@ -9,6 +9,13 @@ export const documentRepository = {
     }),
   archive: (id: string) =>
     prisma.document.update({ where: { id }, data: { deletedAt: new Date() } }),
-  list: (where: any, skip: number, take: number,orderBy:any) => prisma.document.findMany({ where: { ...where, deletedAt: null }, include: { uploadedBy: { select: { firstName: true, lastName: true } } }, orderBy, skip, take }),
+  list: (where: any, skip: number, take: number, orderBy: any) =>
+    prisma.document.findMany({
+      where: { ...where, deletedAt: null },
+      include: { uploadedBy: { select: { firstName: true, lastName: true } } },
+      orderBy,
+      skip,
+      take,
+    }),
   count: (where: any) => prisma.document.count({ where: { ...where, deletedAt: null } }),
 };

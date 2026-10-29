@@ -56,15 +56,15 @@ Read-only PostgreSQL verification after deployment:
 
 ## Verification status
 
-| Check | Result |
-|---|---|
-| Controlled PostgreSQL migrations | Pass |
-| Retired language/preference database verification | Pass |
-| Backend TypeScript production build | Pass |
-| Angular production build | Pass |
-| Backend tests after expectation updates | Pass — 7 files, 41 tests |
-| Angular regression suite | Pass — 53 files, 171 tests |
-| Manual desktop/tablet/mobile browser walkthrough | Not Run |
+| Check                                             | Result                     |
+| ------------------------------------------------- | -------------------------- |
+| Controlled PostgreSQL migrations                  | Pass                       |
+| Retired language/preference database verification | Pass                       |
+| Backend TypeScript production build               | Pass                       |
+| Angular production build                          | Pass                       |
+| Backend tests after expectation updates           | Pass — 7 files, 41 tests   |
+| Angular regression suite                          | Pass — 53 files, 171 tests |
+| Manual desktop/tablet/mobile browser walkthrough  | Not Run                    |
 
 ## Remaining issues
 

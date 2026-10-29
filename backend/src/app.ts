@@ -81,11 +81,13 @@ export const createApp = () => {
   app.use('/api/v1/patients', patientRoutes);
   app.use('/api/v1/profile', profileRoutes);
   app.use('/api/v1/users', userRoutes);
+  // Language metadata must be reachable before the broad authenticated /api/v1 routers so the
+  // sign-in screen can load enabled translations without exposing management endpoints.
+  app.use('/api/v1/languages', languageRoutes);
   app.use('/api/v1', administrationRoutes);
   app.use('/api/v1', staffDirectoryRoutes);
   app.use('/api/v1/notifications', notificationRoutes);
   app.use('/api/v1/preferences', preferenceRoutes);
-  app.use('/api/v1/languages', languageRoutes);
   app.use('/api/v1/support', supportRoutes);
   app.use('/api/v1/reports', reportsRoutes);
   app.use('/api/v1/appointments', appointmentRoutes);

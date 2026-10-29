@@ -434,11 +434,37 @@ export const phase23Service = {
         }),
       };
     },
-    get: (id: string) =>
-      db.invoice.findUnique({
+    get: async (id: string) => {
+      const invoice = await db.invoice.findUnique({
         where: { id },
         include: { patient: true, items: true, payments: { include: { refunds: true } } },
-      }),
+      });
+      if (!invoice) return null;
+      const appointmentSource = invoice.items.find((item: any) => item.sourceId);
+      const [hospital, appointment] = await Promise.all([
+        prisma.hospitalSettings.findUnique({ where: { id: 'default' } }),
+        appointmentSource
+          ? prisma.appointment.findUnique({
+              where: { id: appointmentSource.sourceId },
+              select: {
+                number: true,
+                doctor: { select: { firstName: true, lastName: true } },
+              },
+            })
+          : null,
+      ]);
+      const financials = invoiceFinancials(invoice);
+      return {
+        ...invoice,
+        hospital,
+        appointment,
+        total: Number(financials.total),
+        paidAmount: Number(financials.netPaid),
+        refundedAmount: Number(financials.approvedRefunds),
+        balance: Number(financials.balance),
+        paymentStatus: financials.status,
+      };
+    },
     create: (v: any, actorId: string, idempotencyKey: string) =>
       prisma.$transaction(async (tx: any) => {
         const previous = await tx.invoice.findUnique({

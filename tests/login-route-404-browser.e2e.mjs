@@ -30,7 +30,11 @@ try {
     throw new Error('Guest login fallback is missing');
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('heading', { name: 'Page Not Found' }).waitFor();
-  if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth))
+  if (
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    )
+  )
     throw new Error('404 page has horizontal overflow on mobile');
 
   await page.goto(`${baseUrl}/auth/sign-in`, { waitUntil: 'networkidle' });

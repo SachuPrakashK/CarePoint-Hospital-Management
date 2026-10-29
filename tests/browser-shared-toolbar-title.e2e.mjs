@@ -2,10 +2,20 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { chromium } from 'playwright-core';
 
-const env = Object.fromEntries(fs.readFileSync('backend/.env', 'utf8').split(/\r?\n/)
-  .filter((line) => line && !line.startsWith('#') && line.includes('='))
-  .map((line) => { const index = line.indexOf('='); return [line.slice(0, index), line.slice(index + 1).replace(/^['"]|['"]$/g, '')]; }));
-const browser = await chromium.launch({ headless: true, executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe' });
+const env = Object.fromEntries(
+  fs
+    .readFileSync('backend/.env', 'utf8')
+    .split(/\r?\n/)
+    .filter((line) => line && !line.startsWith('#') && line.includes('='))
+    .map((line) => {
+      const index = line.indexOf('=');
+      return [line.slice(0, index), line.slice(index + 1).replace(/^['"]|['"]$/g, '')];
+    }),
+);
+const browser = await chromium.launch({
+  headless: true,
+  executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+});
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 try {
   await page.goto('http://127.0.0.1:4200/auth/login');
@@ -32,11 +42,23 @@ try {
   assert.equal(scrollbar.scrollbarWidth, 'thin');
   assert.match(scrollbar.scrollbarColor, /rgba?\(255, 255, 255/);
   assert.equal(scrollbar.scrollable, true);
-  const logoTop = await sidebar.locator('.logo').evaluate((element) => element.getBoundingClientRect().top);
-  const footerBottom = await sidebar.locator('.sidebar-footer').evaluate((element) => element.getBoundingClientRect().bottom);
+  const logoTop = await sidebar
+    .locator('.logo')
+    .evaluate((element) => element.getBoundingClientRect().top);
+  const footerBottom = await sidebar
+    .locator('.sidebar-footer')
+    .evaluate((element) => element.getBoundingClientRect().bottom);
   await sidebarNav.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
-  assert.equal(await sidebar.locator('.logo').evaluate((element) => element.getBoundingClientRect().top), logoTop);
-  assert.equal(await sidebar.locator('.sidebar-footer').evaluate((element) => element.getBoundingClientRect().bottom), footerBottom);
+  assert.equal(
+    await sidebar.locator('.logo').evaluate((element) => element.getBoundingClientRect().top),
+    logoTop,
+  );
+  assert.equal(
+    await sidebar
+      .locator('.sidebar-footer')
+      .evaluate((element) => element.getBoundingClientRect().bottom),
+    footerBottom,
+  );
 
   await page.goto('http://127.0.0.1:4200/employees');
   await page.getByRole('heading', { name: 'Employees' }).waitFor();
@@ -50,7 +72,10 @@ try {
   await filterDialog.waitFor({ state: 'detached' });
 
   const exportButton = page.getByRole('button', { name: /^Export$/ });
-  assert.equal(await exportButton.evaluate((element) => getComputedStyle(element).alignItems), 'center');
+  assert.equal(
+    await exportButton.evaluate((element) => getComputedStyle(element).alignItems),
+    'center',
+  );
 
   const search = page.getByRole('searchbox', { name: 'Search' });
   await search.fill('no-match-e2e-unique-query');
@@ -61,7 +86,15 @@ try {
   await page.goto('http://127.0.0.1:4200/pharmacy');
   await page.waitForFunction(() => document.title.startsWith('Pharmacy | '));
   assert.match(await page.title(), /^Pharmacy \| /);
-  console.log(JSON.stringify({ sidebarScrollbar: 'passed', sharedFilter: 'passed', sharedExport: 'passed', searchClear: 'passed', routeTitles: 'passed' }));
+  console.log(
+    JSON.stringify({
+      sidebarScrollbar: 'passed',
+      sharedFilter: 'passed',
+      sharedExport: 'passed',
+      searchClear: 'passed',
+      routeTitles: 'passed',
+    }),
+  );
 } finally {
   await browser.close();
 }

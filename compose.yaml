@@ -7,9 +7,9 @@ services:
       POSTGRES_USER: hospital_app
       POSTGRES_PASSWORD: hospital_dev_password
     ports:
-      - "5433:5432"
+      - '5433:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hospital_app -d hospital_management"]
+      test: ['CMD-SHELL', 'pg_isready -U hospital_app -d hospital_management']
       interval: 5s
       timeout: 5s
       retries: 12

@@ -323,7 +323,8 @@ export const inpatientService = {
         },
         select: { id: true },
       });
-      if (!recipient) throw new AppError(422, 'The receiving nurse is invalid.', 'VALIDATION_ERROR');
+      if (!recipient)
+        throw new AppError(422, 'The receiving nurse is invalid.', 'VALIDATION_ERROR');
     }
     return prisma.$transaction(async (tx) => {
       const handover = await tx.shiftHandover.create({
@@ -347,7 +348,11 @@ export const inpatientService = {
       const handover = await tx.shiftHandover.findUnique({ where: { id } });
       if (!handover) throw new AppError(404, 'Shift handover was not found.', 'NOT_FOUND');
       if (!isAdministrator(roles) && handover.handedOverToId !== actorId)
-        throw new AppError(403, 'Only the receiving nurse can acknowledge this handover.', 'FORBIDDEN');
+        throw new AppError(
+          403,
+          'Only the receiving nurse can acknowledge this handover.',
+          'FORBIDDEN',
+        );
       const changed = await tx.shiftHandover.updateMany({
         where: { id, status: 'PENDING' },
         data: { status: 'ACKNOWLEDGED', acknowledgedById: actorId, acknowledgedAt: new Date() },
@@ -400,27 +405,74 @@ export const inpatientService = {
     const where: Prisma.ProcedureWhereInput = {
       ...(query.theatre_id ? { theatreId: query.theatre_id } : {}),
       ...(query.status ? { status: query.status } : {}),
-      ...(from || to ? { scheduledAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
+      ...(from || to
+        ? { scheduledAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } }
+        : {}),
       ...(search
         ? {
             OR: [
               { id: { contains: search, mode: 'insensitive' } },
               { name: { contains: search, mode: 'insensitive' } },
-              { patient: { is: { OR: [{ mrn: { contains: search, mode: 'insensitive' } }, { firstName: { contains: search, mode: 'insensitive' } }, { lastName: { contains: search, mode: 'insensitive' } }] } } },
-              { doctor: { is: { OR: [{ firstName: { contains: search, mode: 'insensitive' } }, { lastName: { contains: search, mode: 'insensitive' } }] } } },
-              { theatre: { is: { OR: [{ code: { contains: search, mode: 'insensitive' } }, { name: { contains: search, mode: 'insensitive' } }] } } },
+              {
+                patient: {
+                  is: {
+                    OR: [
+                      { mrn: { contains: search, mode: 'insensitive' } },
+                      { firstName: { contains: search, mode: 'insensitive' } },
+                      { lastName: { contains: search, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+              {
+                doctor: {
+                  is: {
+                    OR: [
+                      { firstName: { contains: search, mode: 'insensitive' } },
+                      { lastName: { contains: search, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
+              {
+                theatre: {
+                  is: {
+                    OR: [
+                      { code: { contains: search, mode: 'insensitive' } },
+                      { name: { contains: search, mode: 'insensitive' } },
+                    ],
+                  },
+                },
+              },
             ],
           }
         : {}),
     };
-    const direction:Prisma.SortOrder=query.sort_order==='asc'?'asc':'desc';
-    const sortMap:Record<string,Prisma.ProcedureOrderByWithRelationInput>={scheduledAt:{scheduledAt:direction},patient:{patient:{firstName:direction}},name:{name:direction},doctor:{doctor:{firstName:direction}},theatre:{theatre:{name:direction}},durationMinutes:{durationMinutes:direction},status:{status:direction}};
-    const orderBy=sortMap[query.sort_by] ?? {scheduledAt:'desc' as const};
+    const direction: Prisma.SortOrder = query.sort_order === 'asc' ? 'asc' : 'desc';
+    const sortMap: Record<string, Prisma.ProcedureOrderByWithRelationInput> = {
+      scheduledAt: { scheduledAt: direction },
+      patient: { patient: { firstName: direction } },
+      name: { name: direction },
+      doctor: { doctor: { firstName: direction } },
+      theatre: { theatre: { name: direction } },
+      durationMinutes: { durationMinutes: direction },
+      status: { status: direction },
+    };
+    const orderBy = sortMap[query.sort_by] ?? { scheduledAt: 'desc' as const };
     const [data, total] = await prisma.$transaction([
-      prisma.procedure.findMany({ where, include: { patient: true, doctor: true, theatre: true }, orderBy: [orderBy,{id:'asc'}], skip: (page - 1) * pageSize, take: pageSize }),
+      prisma.procedure.findMany({
+        where,
+        include: { patient: true, doctor: true, theatre: true },
+        orderBy: [orderBy, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
       prisma.procedure.count({ where }),
     ]);
-    return { data, pagination: { page, page_size: pageSize, total, total_pages: Math.ceil(total / pageSize) } };
+    return {
+      data,
+      pagination: { page, page_size: pageSize, total, total_pages: Math.ceil(total / pageSize) },
+    };
   },
   async procedureDetails(id: string) {
     const item = await prisma.procedure.findUnique({
@@ -429,14 +481,34 @@ export const inpatientService = {
     });
     if (!item) throw new AppError(404, 'Procedure was not found.', 'NOT_FOUND');
     const admission = item.admissionId
-      ? await prisma.admission.findUnique({ where: { id: item.admissionId }, include: { department: true, allocations: { include: { bed: { include: { room: { include: { wardModel: true } } } } }, orderBy: { startedAt: 'desc' }, take: 1 } } })
+      ? await prisma.admission.findUnique({
+          where: { id: item.admissionId },
+          include: {
+            department: true,
+            allocations: {
+              include: { bed: { include: { room: { include: { wardModel: true } } } } },
+              orderBy: { startedAt: 'desc' },
+              take: 1,
+            },
+          },
+        })
       : null;
     return { ...item, admission };
   },
   procedureLookups: async () => ({
-    theatres: await prisma.operationTheatre.findMany({ where: { status: 'Active' }, orderBy: { name: 'asc' } }),
-    doctors: await prisma.user.findMany({ where: { status: 'ACTIVE', deletedAt: null, roles: { some: { role: { code: 'DOCTOR' } } } }, select: { id: true, firstName: true, lastName: true }, orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }] }),
-    admissions: await prisma.admission.findMany({ where: { status: { in: [...activeAdmissionStatuses] } }, select: { id: true, number: true, patientId: true } }),
+    theatres: await prisma.operationTheatre.findMany({
+      where: { status: 'Active' },
+      orderBy: { name: 'asc' },
+    }),
+    doctors: await prisma.user.findMany({
+      where: { status: 'ACTIVE', deletedAt: null, roles: { some: { role: { code: 'DOCTOR' } } } },
+      select: { id: true, firstName: true, lastName: true },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+    }),
+    admissions: await prisma.admission.findMany({
+      where: { status: { in: [...activeAdmissionStatuses] } },
+      select: { id: true, number: true, patientId: true },
+    }),
     statuses: ['Planned', 'Scheduled', 'In Progress', 'Completed', 'Cancelled'],
   }),
   async procedureStats() {
@@ -446,7 +518,14 @@ export const inpatientService = {
       prisma.operationTheatre.count({ where: { status: 'Active' } }),
     ]);
     const counts = Object.fromEntries(grouped.map((item) => [item.status, item._count._all]));
-    return { total, scheduled: counts['Scheduled'] ?? 0, inProgress: counts['In Progress'] ?? 0, completed: counts['Completed'] ?? 0, cancelled: counts['Cancelled'] ?? 0, availableTheatres };
+    return {
+      total,
+      scheduled: counts['Scheduled'] ?? 0,
+      inProgress: counts['In Progress'] ?? 0,
+      completed: counts['Completed'] ?? 0,
+      cancelled: counts['Cancelled'] ?? 0,
+      availableTheatres,
+    };
   },
   async scheduleProcedure(input: any, actorId: string) {
     if (input.theatreId) {
@@ -462,31 +541,93 @@ export const inpatientService = {
       if (overlap) throw conflict('Theatre schedule conflicts with an existing procedure.');
     }
     if (input.admissionId) {
-      const admission = await prisma.admission.findFirst({ where: { id: input.admissionId, patientId: input.patientId } });
-      if (!admission) throw new AppError(422, 'Admission does not belong to the selected patient.', 'VALIDATION_ERROR');
+      const admission = await prisma.admission.findFirst({
+        where: { id: input.admissionId, patientId: input.patientId },
+      });
+      if (!admission)
+        throw new AppError(
+          422,
+          'Admission does not belong to the selected patient.',
+          'VALIDATION_ERROR',
+        );
     }
     return prisma.$transaction(async (tx) => {
-      const item = await tx.procedure.create({ data: { ...input, scheduledAt: new Date(input.scheduledAt), preOpChecklist: input.preOpChecklist ?? [], team: input.team ?? [], notes: input.notes ?? '' }, include: { patient: true, doctor: true, theatre: true } });
-      await tx.auditLog.create({ data: { userId: actorId, action: 'CREATE', module: 'procedures', entityType: 'Procedure', entityId: item.id, metadata: { status: item.status, theatreId: item.theatreId } } });
+      const item = await tx.procedure.create({
+        data: {
+          ...input,
+          scheduledAt: new Date(input.scheduledAt),
+          preOpChecklist: input.preOpChecklist ?? [],
+          team: input.team ?? [],
+          notes: input.notes ?? '',
+        },
+        include: { patient: true, doctor: true, theatre: true },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: actorId,
+          action: 'CREATE',
+          module: 'procedures',
+          entityType: 'Procedure',
+          entityId: item.id,
+          metadata: { status: item.status, theatreId: item.theatreId },
+        },
+      });
       return item;
     }, txOptions);
   },
   async updateProcedure(id: string, input: any, actorId: string) {
     const current = await this.procedureDetails(id);
-    const transitions: Record<string, string[]> = { Planned: ['Scheduled', 'Cancelled'], Scheduled: ['In Progress', 'Cancelled'], 'In Progress': ['Completed', 'Cancelled'], Completed: [], Cancelled: [] };
-    if (input.status && input.status !== current.status && !transitions[current.status]?.includes(input.status))
+    const transitions: Record<string, string[]> = {
+      Planned: ['Scheduled', 'Cancelled'],
+      Scheduled: ['In Progress', 'Cancelled'],
+      'In Progress': ['Completed', 'Cancelled'],
+      Completed: [],
+      Cancelled: [],
+    };
+    if (
+      input.status &&
+      input.status !== current.status &&
+      !transitions[current.status]?.includes(input.status)
+    )
       throw conflict(`Procedure cannot transition from ${current.status} to ${input.status}.`);
     const scheduledAt = new Date(input.scheduledAt ?? current.scheduledAt);
     const durationMinutes = input.durationMinutes ?? current.durationMinutes;
     const theatreId = input.theatreId === undefined ? current.theatreId : input.theatreId;
     if (theatreId && !['Completed', 'Cancelled'].includes(input.status ?? current.status)) {
       const end = new Date(scheduledAt.getTime() + durationMinutes * 60000);
-      const overlap = await prisma.procedure.findFirst({ where: { id: { not: id }, theatreId, status: { notIn: ['Completed', 'Cancelled'] }, scheduledAt: { lt: end, gte: new Date(scheduledAt.getTime() - durationMinutes * 60000) } } });
+      const overlap = await prisma.procedure.findFirst({
+        where: {
+          id: { not: id },
+          theatreId,
+          status: { notIn: ['Completed', 'Cancelled'] },
+          scheduledAt: { lt: end, gte: new Date(scheduledAt.getTime() - durationMinutes * 60000) },
+        },
+      });
       if (overlap) throw conflict('Theatre schedule conflicts with an existing procedure.');
     }
     return prisma.$transaction(async (tx) => {
-      const item = await tx.procedure.update({ where: { id }, data: { ...input, ...(input.scheduledAt ? { scheduledAt } : {}) }, include: { patient: true, doctor: true, theatre: true } });
-      await tx.auditLog.create({ data: { userId: actorId, action: input.status && input.status !== current.status ? `STATUS_${String(input.status).toUpperCase().replaceAll(' ', '_')}` : 'UPDATE', module: 'procedures', entityType: 'Procedure', entityId: id, metadata: { previousStatus: current.status, status: item.status, theatreId: item.theatreId } } });
+      const item = await tx.procedure.update({
+        where: { id },
+        data: { ...input, ...(input.scheduledAt ? { scheduledAt } : {}) },
+        include: { patient: true, doctor: true, theatre: true },
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: actorId,
+          action:
+            input.status && input.status !== current.status
+              ? `STATUS_${String(input.status).toUpperCase().replaceAll(' ', '_')}`
+              : 'UPDATE',
+          module: 'procedures',
+          entityType: 'Procedure',
+          entityId: id,
+          metadata: {
+            previousStatus: current.status,
+            status: item.status,
+            theatreId: item.theatreId,
+          },
+        },
+      });
       return item;
     }, txOptions);
   },

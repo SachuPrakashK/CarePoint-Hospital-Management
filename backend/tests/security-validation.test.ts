@@ -54,9 +54,8 @@ describe('security and validation', () => {
   });
 
   it('excludes retired language codes from the managed language catalog', async () => {
-    const { findCatalogLanguage, LANGUAGE_CATALOG } = await import(
-      '../src/data/language-catalog.js'
-    );
+    const { findCatalogLanguage, LANGUAGE_CATALOG } =
+      await import('../src/data/language-catalog.js');
     expect(LANGUAGE_CATALOG.some((item) => ['hi', 'ml', 'ta'].includes(item.code))).toBe(false);
     expect(findCatalogLanguage('hi')).toBeUndefined();
     expect(findCatalogLanguage('ml')).toBeUndefined();

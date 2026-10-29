@@ -2,12 +2,10 @@ import type { RequestHandler } from 'express';
 import { asyncHandler } from '../utils/async-handler.js';
 import { profileImageService } from '../services/profile-image.service.js';
 export const uploadImage: RequestHandler = asyncHandler(async (req, res) =>
-  res
-    .status(201)
-    .json({
-      data: await profileImageService.upload(req.auth!.userId, req.file),
-      message: 'Profile image updated successfully.',
-    }),
+  res.status(201).json({
+    data: await profileImageService.upload(req.auth!.userId, req.file),
+    message: 'Profile image updated successfully.',
+  }),
 );
 export const deleteImage: RequestHandler = asyncHandler(async (req, res) => {
   await profileImageService.remove(req.auth!.userId);

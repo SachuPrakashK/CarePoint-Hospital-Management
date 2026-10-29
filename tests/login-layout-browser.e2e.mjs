@@ -13,6 +13,46 @@ try {
     { width: 390, height: 844, mobile: true },
   ]) {
     const page = await browser.newPage({ viewport });
+    await page.route('**/api/v1/languages/public', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [
+            {
+              id: 'en',
+              code: 'en',
+              name: 'English',
+              nativeName: 'English',
+              enabled: true,
+              isDefault: true,
+              translationCoverage: 100,
+              translations: [],
+            },
+            {
+              id: 'ar',
+              code: 'ar',
+              name: 'Arabic',
+              nativeName: 'العربية',
+              enabled: true,
+              isDefault: false,
+              translationCoverage: 100,
+              translations: [],
+            },
+            {
+              id: 'pt-br',
+              code: 'pt-BR',
+              name: 'Portuguese (Brazil)',
+              nativeName: 'Português',
+              enabled: true,
+              isDefault: false,
+              translationCoverage: 100,
+              translations: [],
+            },
+          ],
+        }),
+      }),
+    );
     await page.goto('http://127.0.0.1:4200/auth/login', { waitUntil: 'domcontentloaded' });
     await page.locator('.login-submit').waitFor();
     const layout = await page.evaluate(() => ({
@@ -69,6 +109,18 @@ try {
     assert.equal(layout.title, 'Login | MediCare+');
     assert.equal(layout.heading, 'Welcome Back');
     assert.equal(layout.benefitCount, 3);
+    const languageTrigger = page.getByRole('button', { name: 'Language' });
+    assert.equal((await languageTrigger.textContent()).replace(/\s+/g, ' ').trim(), 'English (EN)');
+    assert.equal(
+      await page.locator('.auth-language').getByText('Language', { exact: true }).count(),
+      0,
+    );
+    await languageTrigger.click();
+    const languageOptions = await page.getByRole('option').allTextContents();
+    assert.deepEqual(
+      languageOptions.map((value) => value.replace(/\s+/g, ' ').trim()),
+      ['English (EN)', 'العربية (AR)', 'Português (PT-BR)'],
+    );
     if (!viewport.mobile) {
       assert.match(layout.panelBackground, /linear-gradient/);
     }

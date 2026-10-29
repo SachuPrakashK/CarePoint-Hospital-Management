@@ -130,20 +130,81 @@
         @if (state.translationsLoading()) {
           <div class="loading-state" role="status">Loading translations...</div>
         } @else {
-          @for (key of state.translationKeys(); track key) {
-            <label class="field translation-field"
-              ><span>{{ key }}</span
-              ><input
-                [value]="state.translationValues()[key] || ''"
-                [placeholder]="'English fallback: ' + state.language.translate(key)"
-                (input)="state.setTranslation(key, $any($event.target).value)"
-            /></label>
+          <div class="translation-toolbar">
+            <app-search-field
+              label="Search translations"
+              placeholder="Search keys or English labels..."
+              [value]="state.translationSearch()"
+              (valueChange)="state.filterTranslations($event)"
+            />
+            <div class="translation-filter" role="group" aria-label="Translation status">
+              <button
+                type="button"
+                [class.active]="state.translationMode() === 'missing'"
+                (click)="state.showTranslations('missing')"
+              >
+                Missing ({{ state.translationKeys().length - state.completedTranslationCount() }})
+              </button>
+              <button
+                type="button"
+                [class.active]="state.translationMode() === 'all'"
+                (click)="state.showTranslations('all')"
+              >
+                All ({{ state.translationKeys().length }})
+              </button>
+            </div>
+          </div>
+          <div class="translation-fields">
+            @for (key of state.visibleTranslationKeys(); track key) {
+              <label class="field translation-field">
+                <span data-no-translate>{{ state.translationSource()[key] || key }}</span>
+                <small data-no-translate>{{ key }}</small>
+                <input
+                  [value]="state.translationValues()[key] || ''"
+                  [placeholder]="'English fallback: ' + state.language.translate(key)"
+                  [disabled]="state.translationsSaving()"
+                  maxlength="500"
+                  (input)="state.setTranslation(key, $any($event.target).value)"
+                />
+              </label>
+            } @empty {
+              <p class="empty-inline">No translations match this view.</p>
+            }
+          </div>
+          @if (state.translationPageCount() > 1) {
+            <div class="translation-pagination">
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="state.translationPage() === 0"
+                (click)="state.translationPage.update((page) => page - 1)"
+              >
+                Previous
+              </button>
+              <span
+                >Page {{ state.translationPage() + 1 }} of {{ state.translationPageCount() }}</span
+              >
+              <button
+                type="button"
+                class="secondary"
+                [disabled]="state.translationPage() + 1 >= state.translationPageCount()"
+                (click)="state.translationPage.update((page) => page + 1)"
+              >
+                Next
+              </button>
+            </div>
           }
         }
       </div>
       <footer class="crud-modal__footer">
         <button type="button" class="secondary" (click)="state.closeTranslations()">Cancel</button
-        ><button type="submit" class="primary" [disabled]="state.translationsSaving()">
+        ><button
+          type="submit"
+          class="primary"
+          [disabled]="
+            state.translationsLoading() || state.translationsSaving() || !state.translationsDirty()
+          "
+        >
           {{ state.translationsSaving() ? 'Saving...' : 'Save translations' }}
         </button>
       </footer>

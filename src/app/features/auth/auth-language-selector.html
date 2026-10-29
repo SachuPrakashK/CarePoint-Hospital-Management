@@ -1,0 +1,42 @@
+<div class="auth-language" (click)="$event.stopPropagation()">
+  <button
+    type="button"
+    class="auth-language__trigger"
+    aria-label="Language"
+    aria-haspopup="listbox"
+    [attr.aria-expanded]="open()"
+    [disabled]="language.loading() || language.enabled().length < 2"
+    (click)="toggle($event)"
+  >
+    <app-icon name="globe" [size]="18" />
+    @if (selected(); as item) {
+      <span class="auth-language__value">{{ item.nativeName }} ({{ displayCode(item.code) }})</span>
+    } @else {
+      <span class="auth-language__value">English (EN)</span>
+    }
+    <app-icon
+      class="auth-language__chevron"
+      name="chevron-down"
+      [size]="14"
+      [class.auth-language__chevron--open]="open()"
+    />
+  </button>
+  @if (open()) {
+    <div class="auth-language__menu" role="listbox" aria-label="Available languages">
+      @for (item of language.enabled(); track item.code) {
+        <button
+          type="button"
+          role="option"
+          [attr.aria-selected]="language.current() === item.code"
+          [class.active]="language.current() === item.code"
+          (click)="select(item.code)"
+        >
+          <span>{{ item.nativeName }} ({{ displayCode(item.code) }})</span>
+          @if (language.current() === item.code) {
+            <app-icon name="check-circle" [size]="16" />
+          }
+        </button>
+      }
+    </div>
+  }
+</div>

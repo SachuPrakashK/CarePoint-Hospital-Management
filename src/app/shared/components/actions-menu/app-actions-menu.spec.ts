@@ -40,6 +40,26 @@ describe('AppActionsMenu edit action', () => {
     expect(button.title).toBe('Protected system roles cannot be edited');
   });
 
+  it('keeps Reschedule visible but prevents activation when disabled', () => {
+    let emitted = false;
+    fixture.componentInstance.reschedule.subscribe(() => (emitted = true));
+    fixture.componentRef.setInput('canReschedule', true);
+    fixture.componentRef.setInput('rescheduleDisabled', true);
+    fixture.componentRef.setInput(
+      'rescheduleDisabledReason',
+      'Completed appointments cannot be rescheduled.',
+    );
+    fixture.detectChanges();
+    const button: HTMLButtonElement = fixture.debugElement
+      .queryAll(By.css('[role="menuitem"]'))
+      .find((item) => item.nativeElement.textContent.includes('Reschedule'))!.nativeElement;
+
+    expect(button.disabled).toBe(true);
+    expect(button.title).toBe('Completed appointments cannot be rescheduled.');
+    button.click();
+    expect(emitted).toBe(false);
+  });
+
   it('renders the opened menu with a usable height after its view is created', async () => {
     await Promise.resolve();
     fixture.detectChanges();

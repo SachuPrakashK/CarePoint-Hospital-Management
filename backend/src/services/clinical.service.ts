@@ -8,7 +8,11 @@ const required = async <T>(value: Promise<T | null>, label: string) => {
   return item;
 };
 export const clinicalService = {
-  consultations: () => prisma.consultation.findMany({ include: { vitals: true, diagnoses: true, prescriptions: { include: { items: true } } }, orderBy: { createdAt: 'desc' } }),
+  consultations: () =>
+    prisma.consultation.findMany({
+      include: { vitals: true, diagnoses: true, prescriptions: { include: { items: true } } },
+      orderBy: { createdAt: 'desc' },
+    }),
   summary: (id: string) => required(repo.summary(id), 'Patient'),
   timeline: (id: string, query: { type?: string; from?: string; to?: string } = {}) =>
     repo.timeline(id, query),
@@ -29,11 +33,49 @@ export const clinicalService = {
           treatmentPlan: input.treatmentPlan ?? '',
         },
       });
-      if (input.vitals?.length) await tx.vital.createMany({ data: input.vitals.map((v:any)=>({...v,patientId:appointment.patientId,consultationId:item.id,recordedById:actorId})) });
-      const diagnoses=[input.primaryDiagnosis,...(input.secondaryDiagnoses??[])].filter(Boolean);
-      if(diagnoses.length)await tx.diagnosis.createMany({data:diagnoses.map((description:string,index:number)=>({patientId:appointment.patientId,consultationId:item.id,description,type:index?'Secondary':'Primary',status:'Active'}))});
-      if(input.prescription?.length)await tx.prescription.create({data:{number:`RX-${randomUUID().slice(0,8).toUpperCase()}`,patientId:appointment.patientId,consultationId:item.id,doctorId:appointment.doctorId,status:'Active',notes:'',items:{createMany:{data:input.prescription}}}});
-      if(input.followUpDate)await tx.followUp.create({data:{patientId:appointment.patientId,consultationId:item.id,scheduledAt:new Date(input.followUpDate),instructions:input.followUpInstructions}});
+      if (input.vitals?.length)
+        await tx.vital.createMany({
+          data: input.vitals.map((v: any) => ({
+            ...v,
+            patientId: appointment.patientId,
+            consultationId: item.id,
+            recordedById: actorId,
+          })),
+        });
+      const diagnoses = [input.primaryDiagnosis, ...(input.secondaryDiagnoses ?? [])].filter(
+        Boolean,
+      );
+      if (diagnoses.length)
+        await tx.diagnosis.createMany({
+          data: diagnoses.map((description: string, index: number) => ({
+            patientId: appointment.patientId,
+            consultationId: item.id,
+            description,
+            type: index ? 'Secondary' : 'Primary',
+            status: 'Active',
+          })),
+        });
+      if (input.prescription?.length)
+        await tx.prescription.create({
+          data: {
+            number: `RX-${randomUUID().slice(0, 8).toUpperCase()}`,
+            patientId: appointment.patientId,
+            consultationId: item.id,
+            doctorId: appointment.doctorId,
+            status: 'Active',
+            notes: '',
+            items: { createMany: { data: input.prescription } },
+          },
+        });
+      if (input.followUpDate)
+        await tx.followUp.create({
+          data: {
+            patientId: appointment.patientId,
+            consultationId: item.id,
+            scheduledAt: new Date(input.followUpDate),
+            instructions: input.followUpInstructions,
+          },
+        });
       await tx.appointment.update({ where: { id: appointment.id }, data: { status: 'COMPLETED' } });
       await tx.auditLog.create({
         data: {
@@ -44,7 +86,10 @@ export const clinicalService = {
           entityId: item.id,
         },
       });
-      return tx.consultation.findUnique({where:{id:item.id},include:{vitals:true,diagnoses:true,prescriptions:{include:{items:true}}}});
+      return tx.consultation.findUnique({
+        where: { id: item.id },
+        include: { vitals: true, diagnoses: true, prescriptions: { include: { items: true } } },
+      });
     });
   },
   updateConsultation: (id: string, input: any) => repo.updateConsultation(id, input),

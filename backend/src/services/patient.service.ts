@@ -33,27 +33,41 @@ export const patientService = {
     sort_order: 'asc' | 'desc';
   }) {
     const today = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit',
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
     }).format(new Date());
     const todayParts = today.split('-');
     const year = Number(todayParts[0]);
     const month = Number(todayParts[1]);
     const day = Number(todayParts[2]);
-    const dobFrom = query.max_age == null
-      ? undefined
-      : new Date(Date.UTC(year - query.max_age - 1, month - 1, day + 1));
-    const dobTo = query.min_age == null
-      ? undefined
-      : new Date(Date.UTC(year - query.min_age, month - 1, day));
-    const createdFrom = query.created_from ? calendarDateBounds(query.created_from).start : undefined;
+    const dobFrom =
+      query.max_age == null
+        ? undefined
+        : new Date(Date.UTC(year - query.max_age - 1, month - 1, day + 1));
+    const dobTo =
+      query.min_age == null ? undefined : new Date(Date.UTC(year - query.min_age, month - 1, day));
+    const createdFrom = query.created_from
+      ? calendarDateBounds(query.created_from).start
+      : undefined;
     const createdTo = query.created_to ? calendarDateBounds(query.created_to).end : undefined;
     const baseWhere: Prisma.PatientWhereInput = { deletedAt: null };
     const where: Prisma.PatientWhereInput = {
       deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
       ...(query.gender ? { gender: query.gender } : {}),
-      ...(dobFrom || dobTo ? { dob: { ...(dobFrom ? { gte: dobFrom } : {}), ...(dobTo ? { lte: dobTo } : {}) } } : {}),
-      ...(createdFrom || createdTo ? { createdAt: { ...(createdFrom ? { gte: createdFrom } : {}), ...(createdTo ? { lt: createdTo } : {}) } } : {}),
+      ...(dobFrom || dobTo
+        ? { dob: { ...(dobFrom ? { gte: dobFrom } : {}), ...(dobTo ? { lte: dobTo } : {}) } }
+        : {}),
+      ...(createdFrom || createdTo
+        ? {
+            createdAt: {
+              ...(createdFrom ? { gte: createdFrom } : {}),
+              ...(createdTo ? { lt: createdTo } : {}),
+            },
+          }
+        : {}),
       ...(query.search
         ? {
             OR: [
@@ -67,7 +81,8 @@ export const patientService = {
     };
     const [data, total, allTotal] = await Promise.all([
       patientRepository.list(where, (query.page - 1) * query.page_size, query.page_size, [
-        { [query.sort_by]: query.sort_order }, { id: 'asc' },
+        { [query.sort_by]: query.sort_order },
+        { id: 'asc' },
       ]),
       patientRepository.count(where),
       patientRepository.count(baseWhere),
@@ -128,7 +143,10 @@ export const patientService = {
       prisma.diagnosis.findMany({ where: { patientId: id }, orderBy: { diagnosedAt: 'desc' } }),
       prisma.vital.findMany({ where: { patientId: id }, orderBy: { recordedAt: 'desc' } }),
       prisma.medicalHistory.findMany({ where: { patientId: id }, orderBy: { recordedAt: 'desc' } }),
-      prisma.patientAllergy.findMany({ where: { patientId: id, active: true }, orderBy: { recordedAt: 'desc' } }),
+      prisma.patientAllergy.findMany({
+        where: { patientId: id, active: true },
+        orderBy: { recordedAt: 'desc' },
+      }),
     ]);
     return { diagnoses, vitals, histories, allergies };
   },

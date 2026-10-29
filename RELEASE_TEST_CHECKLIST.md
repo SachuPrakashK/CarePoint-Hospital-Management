@@ -151,7 +151,6 @@ Use nonproduction identities and synthetic patient data. Record Pass, Fail, Bloc
 
 For each failed or blocked item record:
 
-| Item | Result | Evidence | Defect/risk ID | Owner | Decision |
-|---|---|---|---|---|---|
-| _TBD_ | _TBD_ | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-
+| Item  | Result | Evidence | Defect/risk ID | Owner | Decision |
+| ----- | ------ | -------- | -------------- | ----- | -------- |
+| _TBD_ | _TBD_  | _TBD_    | _TBD_          | _TBD_ | _TBD_    |

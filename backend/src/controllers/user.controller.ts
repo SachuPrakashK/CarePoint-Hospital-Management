@@ -33,5 +33,8 @@ export const archive = asyncHandler(async (req, res) =>
   res.json({ data: await service.archive(String(req.params.id)), message: 'User deleted.' }),
 );
 export const resetPassword = asyncHandler(async (req, res) =>
-  res.json({ data: await service.resetPassword(String(req.params.id), req.body.password, req.auth!.userId), message: 'Password reset successfully.' }),
+  res.json({
+    data: await service.resetPassword(String(req.params.id), req.body.password, req.auth!.userId),
+    message: 'Password reset successfully.',
+  }),
 );

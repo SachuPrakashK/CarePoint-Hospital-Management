@@ -5,22 +5,22 @@ Completion date: 2026-10-22
 
 ## Issues identified and outcomes
 
-| Area | Root cause | Outcome |
-|---|---|---|
-| Payment dates | UI/API used nonexistent `paidAt` instead of persisted `createdAt` | Fixed |
-| Payment context | Query omitted invoice patient and recorder display data | Fixed |
-| Refund context | Query omitted invoice patient, requester, and approver display data | Fixed |
-| Financial KPIs | Revenue was gross payment value and all refunds were counted as requests | Fixed; only approved refunds reduce revenue and only Requested refunds count as requests |
-| Invoice details | Page depended on the first 100 cached invoices | Fixed; details load by ID from the authorized API |
-| Unsupported invoice fields | UI assumed discount, tax, insurance, and encounter fields absent from Prisma | Removed; the UI now shows only persisted values |
-| Invoice actions | Edit controls ignored paid/cancelled restrictions | Fixed in UI and backend |
-| Table workflow | No row navigation, filters, or export | Fixed with accessible row navigation, supported server filters, column preferences, and CSV page export |
-| Invoice modal | Dense layout, limited validation feedback, and no explicit cancel action | Rebuilt with shared fixed modal regions and responsive item cards |
-| Duplicate invoices | Create had only transient submit-button protection | Fixed with a persisted unique invoice idempotency key |
-| Invoice attribution | Invoice creator was not persisted | Fixed for new invoices with `createdById`; legacy records remain labelled as legacy |
-| Invoice audit | Create, edit, and cancel lacked complete audit coverage | Fixed with transactional audit events |
-| Concurrent refunds | Two requests could validate the same refundable amount | Fixed with a payment-scoped PostgreSQL advisory transaction lock |
-| Payment state display | The model cannot represent pending/failed processor attempts | Persisted payments now show Settled, Partially Refunded, or Refunded; unsupported processor states are not invented |
+| Area                       | Root cause                                                                   | Outcome                                                                                                             |
+| -------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Payment dates              | UI/API used nonexistent `paidAt` instead of persisted `createdAt`            | Fixed                                                                                                               |
+| Payment context            | Query omitted invoice patient and recorder display data                      | Fixed                                                                                                               |
+| Refund context             | Query omitted invoice patient, requester, and approver display data          | Fixed                                                                                                               |
+| Financial KPIs             | Revenue was gross payment value and all refunds were counted as requests     | Fixed; only approved refunds reduce revenue and only Requested refunds count as requests                            |
+| Invoice details            | Page depended on the first 100 cached invoices                               | Fixed; details load by ID from the authorized API                                                                   |
+| Unsupported invoice fields | UI assumed discount, tax, insurance, and encounter fields absent from Prisma | Removed; the UI now shows only persisted values                                                                     |
+| Invoice actions            | Edit controls ignored paid/cancelled restrictions                            | Fixed in UI and backend                                                                                             |
+| Table workflow             | No row navigation, filters, or export                                        | Fixed with accessible row navigation, supported server filters, column preferences, and CSV page export             |
+| Invoice modal              | Dense layout, limited validation feedback, and no explicit cancel action     | Rebuilt with shared fixed modal regions and responsive item cards                                                   |
+| Duplicate invoices         | Create had only transient submit-button protection                           | Fixed with a persisted unique invoice idempotency key                                                               |
+| Invoice attribution        | Invoice creator was not persisted                                            | Fixed for new invoices with `createdById`; legacy records remain labelled as legacy                                 |
+| Invoice audit              | Create, edit, and cancel lacked complete audit coverage                      | Fixed with transactional audit events                                                                               |
+| Concurrent refunds         | Two requests could validate the same refundable amount                       | Fixed with a payment-scoped PostgreSQL advisory transaction lock                                                    |
+| Payment state display      | The model cannot represent pending/failed processor attempts                 | Persisted payments now show Settled, Partially Refunded, or Refunded; unsupported processor states are not invented |
 
 ## Accounting rules preserved
 
@@ -79,23 +79,23 @@ Completion date: 2026-10-22
 
 ## Tests actually executed
 
-| Test | Result | Evidence |
-|---|---|---|
-| Prisma schema validation | Pass | `npx prisma validate` |
-| Local migration deployment/status | Pass | 22 migrations applied; schema reported up to date |
-| Backend TypeScript build | Pass | `npm run build` |
-| Backend Vitest | Pass | 6 files, 32 tests |
-| Angular production build | Pass | Build completed; three pre-existing unrelated SCSS budget warnings |
-| Angular Vitest | Pass | 48 files, 141 tests |
-| Billing list API smoke | Pass | Invoice, payment, and refund list endpoints returned successfully with `createdAt` sorting |
-| Synthetic invoice create | Pass | Created through authenticated REST API and retrieved through details endpoint |
-| Invoice idempotent replay | Pass | Same key and payload returned the same persisted invoice ID |
-| Invoice cancellation | Pass | Synthetic invoice cancelled successfully and retained as history |
-| Invoice audit persistence | Pass | Synthetic create and cancel produced `INVOICE_CREATE` and `INVOICE_CANCEL` audit records |
-| Diagnostic session cleanup | Pass | Test authentication session logged out |
-| Real payment/refund mutation | Not Run | No real financial transaction was performed |
-| Production/staging E2E | Blocked | Requires isolated staging data and deployment approval |
-| Visual browser matrix | Not Run | Automated browser tooling is not configured in this repository |
+| Test                              | Result  | Evidence                                                                                   |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------------ |
+| Prisma schema validation          | Pass    | `npx prisma validate`                                                                      |
+| Local migration deployment/status | Pass    | 22 migrations applied; schema reported up to date                                          |
+| Backend TypeScript build          | Pass    | `npm run build`                                                                            |
+| Backend Vitest                    | Pass    | 6 files, 32 tests                                                                          |
+| Angular production build          | Pass    | Build completed; three pre-existing unrelated SCSS budget warnings                         |
+| Angular Vitest                    | Pass    | 48 files, 141 tests                                                                        |
+| Billing list API smoke            | Pass    | Invoice, payment, and refund list endpoints returned successfully with `createdAt` sorting |
+| Synthetic invoice create          | Pass    | Created through authenticated REST API and retrieved through details endpoint              |
+| Invoice idempotent replay         | Pass    | Same key and payload returned the same persisted invoice ID                                |
+| Invoice cancellation              | Pass    | Synthetic invoice cancelled successfully and retained as history                           |
+| Invoice audit persistence         | Pass    | Synthetic create and cancel produced `INVOICE_CREATE` and `INVOICE_CANCEL` audit records   |
+| Diagnostic session cleanup        | Pass    | Test authentication session logged out                                                     |
+| Real payment/refund mutation      | Not Run | No real financial transaction was performed                                                |
+| Production/staging E2E            | Blocked | Requires isolated staging data and deployment approval                                     |
+| Visual browser matrix             | Not Run | Automated browser tooling is not configured in this repository                             |
 
 ## Remaining risks and explicit limitations
 

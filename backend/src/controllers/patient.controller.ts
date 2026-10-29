@@ -20,12 +20,10 @@ export const medicalRecords: RequestHandler = asyncHandler(async (req, res) =>
   res.json({ data: await patientService.medicalRecords(String(req.params.id)) }),
 );
 export const create: RequestHandler = asyncHandler(async (req, res) =>
-  res
-    .status(201)
-    .json({
-      data: await patientService.create(req.body),
-      message: 'Patient created successfully.',
-    }),
+  res.status(201).json({
+    data: await patientService.create(req.body),
+    message: 'Patient created successfully.',
+  }),
 );
 export const update: RequestHandler = asyncHandler(async (req, res) =>
   res.json({

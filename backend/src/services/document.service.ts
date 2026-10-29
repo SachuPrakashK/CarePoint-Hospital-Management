@@ -10,7 +10,16 @@ const allowed = new Map([
   ['image/png', '.png'],
   ['text/plain', '.txt'],
 ]);
-const validSignature=(type:string,b:Buffer)=>type==='application/pdf'?b.subarray(0,5).toString()==='%PDF-':type==='image/jpeg'?b[0]===255&&b[1]===216:type==='image/png'?b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):type==='text/plain'?!b.subarray(0,1024).includes(0):false;
+const validSignature = (type: string, b: Buffer) =>
+  type === 'application/pdf'
+    ? b.subarray(0, 5).toString() === '%PDF-'
+    : type === 'image/jpeg'
+      ? b[0] === 255 && b[1] === 216
+      : type === 'image/png'
+        ? b.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+        : type === 'text/plain'
+          ? !b.subarray(0, 1024).includes(0)
+          : false;
 const publicView = (x: any) => ({
   id: x.id,
   patientId: x.patientId,
@@ -27,11 +36,15 @@ export const documentService = {
   async upload(file: Express.Multer.File, input: any, actorId: string) {
     const expected = allowed.get(file.mimetype);
     if (
-      !expected || !validSignature(file.mimetype,file.buffer) ||
+      !expected ||
+      !validSignature(file.mimetype, file.buffer) ||
       !['.jpg', '.jpeg', expected].includes(extname(file.originalname).toLowerCase())
     )
       throw new AppError(422, 'File type and extension are not allowed.', 'INVALID_FILE');
-    if (input.ownerType === 'Patient' && !await prisma.patient.findFirst({ where: { id: input.ownerId, deletedAt: null } }))
+    if (
+      input.ownerType === 'Patient' &&
+      !(await prisma.patient.findFirst({ where: { id: input.ownerId, deletedAt: null } }))
+    )
       throw new AppError(422, 'Select a valid patient.', 'INVALID_OWNER');
     const key = `${new Date().toISOString().slice(0, 7)}/${randomUUID()}${expected}`;
     await fileStorage.put(key, file.buffer);
@@ -67,7 +80,49 @@ export const documentService = {
     if (!row) throw new AppError(404, 'Document was not found.', 'NOT_FOUND');
     return publicView(row);
   },
-  async list(q:any){const where:any={...(q.search?{originalName:{contains:q.search,mode:'insensitive'}}:{}),...(q.owner_type?{ownerType:q.owner_type}:{}),...(q.mime_type?{mimeType:q.mime_type}:{}),...(q.created_from||q.created_to?{createdAt:{...(q.created_from?{gte:new Date(`${q.created_from}T00:00:00.000Z`)}:{}),...(q.created_to?{lte:new Date(`${q.created_to}T23:59:59.999Z`)}:{})}}:{})};const direction=q.sort_order==='asc'?'asc':'desc';const sorts:any={originalName:{originalName:direction},ownerType:{ownerType:direction},mimeType:{mimeType:direction},size:{size:direction},uploadedBy:{uploadedBy:{firstName:direction}},createdAt:{createdAt:direction}};const [data,total]=await Promise.all([repo.list(where,(q.page-1)*q.page_size,q.page_size,[sorts[q.sort_by]??{createdAt:'desc'},{id:'asc'}]),repo.count(where)]);return{data:data.map((x:any)=>({...publicView(x),uploadedByName:`${x.uploadedBy.firstName} ${x.uploadedBy.lastName}`})),pagination:{page:q.page,page_size:q.page_size,total,total_pages:Math.ceil(total/q.page_size)}};},
+  async list(q: any) {
+    const where: any = {
+      ...(q.search ? { originalName: { contains: q.search, mode: 'insensitive' } } : {}),
+      ...(q.owner_type ? { ownerType: q.owner_type } : {}),
+      ...(q.mime_type ? { mimeType: q.mime_type } : {}),
+      ...(q.created_from || q.created_to
+        ? {
+            createdAt: {
+              ...(q.created_from ? { gte: new Date(`${q.created_from}T00:00:00.000Z`) } : {}),
+              ...(q.created_to ? { lte: new Date(`${q.created_to}T23:59:59.999Z`) } : {}),
+            },
+          }
+        : {}),
+    };
+    const direction = q.sort_order === 'asc' ? 'asc' : 'desc';
+    const sorts: any = {
+      originalName: { originalName: direction },
+      ownerType: { ownerType: direction },
+      mimeType: { mimeType: direction },
+      size: { size: direction },
+      uploadedBy: { uploadedBy: { firstName: direction } },
+      createdAt: { createdAt: direction },
+    };
+    const [data, total] = await Promise.all([
+      repo.list(where, (q.page - 1) * q.page_size, q.page_size, [
+        sorts[q.sort_by] ?? { createdAt: 'desc' },
+        { id: 'asc' },
+      ]),
+      repo.count(where),
+    ]);
+    return {
+      data: data.map((x: any) => ({
+        ...publicView(x),
+        uploadedByName: `${x.uploadedBy.firstName} ${x.uploadedBy.lastName}`,
+      })),
+      pagination: {
+        page: q.page,
+        page_size: q.page_size,
+        total,
+        total_pages: Math.ceil(total / q.page_size),
+      },
+    };
+  },
   async download(id: string, actorId: string) {
     const row = await repo.find(id);
     if (!row) throw new AppError(404, 'Document was not found.', 'NOT_FOUND');

@@ -63,7 +63,7 @@
   box-shadow: var(--shadow-dialog);
 }
 .multi-select__options {
-  max-height: min(42vh, 320px);
+  max-height: min(42vh, 110px);
   margin-top: 8px;
   overflow-y: auto;
   scrollbar-width: thin;

@@ -3,11 +3,22 @@
   min-height: 100dvh;
 }
 .login-shell {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(430px, 0.85fr);
   min-height: 100dvh;
   overflow: hidden;
   background: var(--mc-background);
+}
+[dir='rtl'] .login-input input[type='email'] {
+  direction: ltr;
+  text-align: start;
+}
+[dir='rtl'] .login-submit app-icon {
+  transform: scaleX(-1);
+}
+[dir='rtl'] .login-shell {
+  font-family: Tahoma, Arial, 'Poppins', sans-serif;
 }
 .login-brand {
   position: relative;

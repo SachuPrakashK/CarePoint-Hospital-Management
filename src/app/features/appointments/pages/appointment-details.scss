@@ -1,0 +1,47 @@
+.appointment-details {
+  display: grid;
+  gap: 18px;
+}
+.detail-section {
+  overflow: hidden;
+  padding: 0;
+}
+.detail-section > header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--mc-surface-soft);
+}
+.detail-section h2 {
+  margin: 0;
+  color: var(--mc-primary);
+  font-size: 16px;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+.detail-grid > div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+.detail-grid b {
+  overflow-wrap: anywhere;
+}
+.notes {
+  margin: 0;
+  padding: 20px;
+  white-space: pre-wrap;
+}
+@media (max-width: 800px) {
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

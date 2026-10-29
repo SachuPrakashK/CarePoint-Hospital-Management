@@ -4,19 +4,36 @@ import { calendarDayBounds } from '../utils/date-time.js';
 export const dashboardService = {
   async summary() {
     const { start, end } = calendarDayBounds();
-    const [patients, appointmentsToday, admissions, availableBeds, pendingLabs, pendingRadiology, medicineBatches, inventoryItems, payments, openClaims, availableAmbulances] = await Promise.all([
+    const [
+      patients,
+      appointmentsToday,
+      admissions,
+      availableBeds,
+      pendingLabs,
+      pendingRadiology,
+      medicineBatches,
+      inventoryItems,
+      payments,
+      openClaims,
+      availableAmbulances,
+    ] = await Promise.all([
       prisma.patient.count({ where: { deletedAt: null } }),
       prisma.appointment.count({ where: { appointmentAt: { gte: start, lt: end } } }),
       prisma.admission.count({
         where: { status: { in: ['ADMITTED', 'TRANSFERRED', 'DISCHARGE_PLANNED'] } },
       }),
       prisma.bed.count({ where: { status: 'AVAILABLE' } }),
-      prisma.labOrder.count({ where: { status: { notIn: ['Completed','Cancelled'] } } }),
-      prisma.radiologyOrder.count({ where: { status: { notIn: ['Completed','Cancelled'] } } }),
+      prisma.labOrder.count({ where: { status: { notIn: ['Completed', 'Cancelled'] } } }),
+      prisma.radiologyOrder.count({ where: { status: { notIn: ['Completed', 'Cancelled'] } } }),
       prisma.medicineBatch.findMany({ select: { quantity: true, reorderLevel: true } }),
-      prisma.inventoryItem.findMany({ where: { isActive: true, deletedAt: null }, select: { quantity: true, reorderLevel: true } }),
+      prisma.inventoryItem.findMany({
+        where: { isActive: true, deletedAt: null },
+        select: { quantity: true, reorderLevel: true },
+      }),
       prisma.payment.aggregate({ _sum: { amount: true } }),
-      prisma.insuranceClaim.count({ where: { status: { notIn: ['Settled','Rejected','Cancelled'] } } }),
+      prisma.insuranceClaim.count({
+        where: { status: { notIn: ['Settled', 'Rejected', 'Cancelled'] } },
+      }),
       prisma.ambulance.count({ where: { isActive: true, status: 'Available' } }),
     ]);
     return {
@@ -26,7 +43,9 @@ export const dashboardService = {
       available_beds: availableBeds,
       pending_laboratory: pendingLabs,
       pending_radiology: pendingRadiology,
-      low_stock_items: medicineBatches.filter((x)=>x.quantity<=x.reorderLevel).length + inventoryItems.filter((x)=>x.quantity<=x.reorderLevel).length,
+      low_stock_items:
+        medicineBatches.filter((x) => x.quantity <= x.reorderLevel).length +
+        inventoryItems.filter((x) => x.quantity <= x.reorderLevel).length,
       revenue_received: Number(payments._sum.amount ?? 0),
       open_insurance_claims: openClaims,
       available_ambulances: availableAmbulances,
@@ -37,8 +56,11 @@ export const dashboardService = {
     return groups.map((item) => ({ status: item.status, count: item._count }));
   },
   async patientTrends(days = 30) {
-    const { start: since } = calendarDayBounds(); since.setUTCDate(since.getUTCDate() - Math.min(days, 365) + 1);
-    const rows = await prisma.$queryRaw<Array<{ date: Date; count: bigint }>>`SELECT ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date AS date, COUNT(*)::bigint AS count FROM "Patient" WHERE "createdAt" >= ${since} AND "deletedAt" IS NULL GROUP BY ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date ORDER BY date`;
+    const { start: since } = calendarDayBounds();
+    since.setUTCDate(since.getUTCDate() - Math.min(days, 365) + 1);
+    const rows = await prisma.$queryRaw<
+      Array<{ date: Date; count: bigint }>
+    >`SELECT ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date AS date, COUNT(*)::bigint AS count FROM "Patient" WHERE "createdAt" >= ${since} AND "deletedAt" IS NULL GROUP BY ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date ORDER BY date`;
     return rows.map((row) => ({ date: row.date, count: Number(row.count) }));
   },
   async appointmentsByDepartment() {

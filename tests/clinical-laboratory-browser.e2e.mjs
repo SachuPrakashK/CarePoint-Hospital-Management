@@ -34,7 +34,7 @@ try {
   const create = dialog.getByRole('button', { name: 'Create order' });
   assert.equal(await create.isDisabled(), true);
   const dropdowns = dialog.locator('select');
-  assert.equal(await dropdowns.count() >= 4, true);
+  assert.equal((await dropdowns.count()) >= 4, true);
   for (let index = 0; index < 4; index++) {
     const box = await dropdowns.nth(index).boundingBox();
     assert.ok(box && box.width > 250 && box.y + box.height < 720);
@@ -44,8 +44,14 @@ try {
   await dialog.locator('select[formcontrolname="testDefinitionId"]').selectOption({ index: 1 });
   assert.equal(await create.isEnabled(), true);
   await create.click();
-  try { await page.getByText('Laboratory order created.').waitFor({ timeout: 10000 }); }
-  catch (error) { throw new Error(`Laboratory create failed: ${(await dialog.textContent())?.replace(/\s+/g, ' ').trim()}`, { cause: error }); }
+  try {
+    await page.getByText('Laboratory order created.').waitFor({ timeout: 10000 });
+  } catch (error) {
+    throw new Error(
+      `Laboratory create failed: ${(await dialog.textContent())?.replace(/\s+/g, ' ').trim()}`,
+      { cause: error },
+    );
+  }
   assert.equal(await dialog.isVisible(), true);
   await dialog.getByRole('button', { name: 'Close' }).click();
 
@@ -93,7 +99,7 @@ try {
   const testSearch = page.getByRole('searchbox', { name: /search tests/i });
   await testSearch.fill('CBC');
   await page.waitForTimeout(500);
-  assert.equal(await page.locator('tbody tr').count() > 0, true);
+  assert.equal((await page.locator('tbody tr').count()) > 0, true);
   await laboratoryBack.click();
   await page.waitForURL(/\/laboratory$/);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -101,7 +107,12 @@ try {
   const mobileDialog = page.getByRole('dialog');
   const mobileFirst = await mobileDialog.locator('select').nth(0).boundingBox();
   const mobileSecond = await mobileDialog.locator('select').nth(1).boundingBox();
-  assert.ok(mobileFirst && mobileSecond && Math.abs(mobileFirst.width - mobileSecond.width) < 2 && Math.abs(mobileFirst.x - mobileSecond.x) < 2);
+  assert.ok(
+    mobileFirst &&
+      mobileSecond &&
+      Math.abs(mobileFirst.width - mobileSecond.width) < 2 &&
+      Math.abs(mobileFirst.x - mobileSecond.x) < 2,
+  );
   await mobileDialog.getByRole('button', { name: 'Close' }).click();
   await page.setViewportSize({ width: 1280, height: 720 });
 
@@ -109,13 +120,20 @@ try {
   await page.getByRole('heading', { name: 'OPD & Queue' }).waitFor();
   const queueCards = page.locator('.queue-stats .metric-card');
   assert.equal(await queueCards.count(), 4);
-  const cardBackgrounds = await queueCards.evaluateAll((cards) => cards.map((card) => getComputedStyle(card).backgroundImage));
+  const cardBackgrounds = await queueCards.evaluateAll((cards) =>
+    cards.map((card) => getComputedStyle(card).backgroundImage),
+  );
   assert.equal(new Set(cardBackgrounds).size, 4);
   await page.getByRole('button', { name: /^Filters/ }).click();
   const opdPanel = page.locator('.filter-panel');
   await opdPanel.waitFor();
-  const opdWidths = await opdPanel.locator('select,input').evaluateAll((controls) => controls.map((control) => control.getBoundingClientRect().width));
-  assert.equal(opdWidths.every((width) => Math.abs(width - opdWidths[0]) < 2), true);
+  const opdWidths = await opdPanel
+    .locator('select,input')
+    .evaluateAll((controls) => controls.map((control) => control.getBoundingClientRect().width));
+  assert.equal(
+    opdWidths.every((width) => Math.abs(width - opdWidths[0]) < 2),
+    true,
+  );
   await page.getByRole('heading', { name: 'OPD & Queue' }).click();
   assert.equal(await opdPanel.isVisible(), false);
 
@@ -129,9 +147,15 @@ try {
   await page.reload();
   await page.locator('.page-head h1').waitFor();
   assert.equal(page.url(), emrUrl);
-  await page.getByText(/No medications recorded|Loading medications|Medication information could not be loaded/).waitFor();
+  await page
+    .getByText(
+      /No medications recorded|Loading medications|Medication information could not be loaded/,
+    )
+    .waitFor();
   await page.getByRole('button', { name: 'Timeline' }).click();
-  const timelineFilters = page.locator('.timeline-heading').getByRole('button', { name: /^Filters/ });
+  const timelineFilters = page
+    .locator('.timeline-heading')
+    .getByRole('button', { name: /^Filters/ });
   await timelineFilters.click();
   const timelinePanel = page.locator('.timeline-filter-panel');
   await timelinePanel.waitFor();
@@ -142,9 +166,25 @@ try {
   await timelinePanel.locator('.app-calendar .days button').first().click();
   assert.equal(await timelinePanel.isVisible(), true);
   await timelinePanel.getByRole('button', { name: 'Apply filters' }).click();
-  await page.getByText(/No clinical records found|Clinical events shown/).first().waitFor();
+  await page
+    .getByText(/No clinical records found|Clinical events shown/)
+    .first()
+    .waitFor();
 
-  console.log(JSON.stringify({ laboratoryCreate: 'passed', refreshPersistence: 'passed', laboratoryDetails: 'passed', laboratoryFilters: 'passed', createOrderResponsiveLayout: 'passed', testDefinitionBreadcrumbAndFooter: 'passed', opdCardVariantsAndFilters: 'passed', emrDirectRefresh: 'passed', medicationState: 'passed', emrTimelineFilters: 'passed' }));
+  console.log(
+    JSON.stringify({
+      laboratoryCreate: 'passed',
+      refreshPersistence: 'passed',
+      laboratoryDetails: 'passed',
+      laboratoryFilters: 'passed',
+      createOrderResponsiveLayout: 'passed',
+      testDefinitionBreadcrumbAndFooter: 'passed',
+      opdCardVariantsAndFilters: 'passed',
+      emrDirectRefresh: 'passed',
+      medicationState: 'passed',
+      emrTimelineFilters: 'passed',
+    }),
+  );
 } finally {
   await browser.close();
 }

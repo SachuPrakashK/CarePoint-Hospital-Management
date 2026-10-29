@@ -15,9 +15,11 @@ export class AppModal {
   readonly icon = input('documents');
   readonly size = input<'sm' | 'compact' | 'md' | 'lg' | 'xl'>('md');
   readonly dirty = input(false);
+  readonly busy = input(false);
   readonly closed = output<void>();
 
   async requestClose() {
+    if (this.busy()) return;
     if (
       this.dirty() &&
       !(await this.confirmation.confirm({

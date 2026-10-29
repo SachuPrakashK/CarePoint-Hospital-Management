@@ -7,6 +7,7 @@ import { StatusBadge } from '../../../shared/components/status-badge/status-badg
 @Component({
   imports: [AppDateTimePipe, StatusBadge],
   templateUrl: './appointment-details.html',
+  styleUrl: './appointment-details.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppointmentDetails {

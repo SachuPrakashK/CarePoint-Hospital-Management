@@ -13,17 +13,11 @@ export class InvoicePage {
   readonly error = signal('');
   readonly totals = computed(() => {
     const invoice = this.invoice();
-    const total = (invoice?.items ?? []).reduce(
-      (sum: number, item: any) => sum + Number(item.quantity) * Number(item.unitPrice),
-      0,
-    );
-    const paid = (invoice?.payments ?? []).reduce((sum: number, payment: any) => {
-      const refunded = (payment.refunds ?? [])
-        .filter((refund: any) => refund.status === 'Approved')
-        .reduce((value: number, refund: any) => value + Number(refund.amount), 0);
-      return sum + Number(payment.amount) - refunded;
-    }, 0);
-    return { total, paid, balance: Math.max(0, total - paid) };
+    return {
+      total: Number(invoice?.total ?? 0),
+      paid: Number(invoice?.paidAmount ?? 0),
+      balance: Number(invoice?.balance ?? 0),
+    };
   });
 
   constructor() {

@@ -63,5 +63,4 @@ describe('database-backed authentication roles', () => {
       code: 'ACCOUNT_ROLE_MISSING',
     });
   });
-
 });

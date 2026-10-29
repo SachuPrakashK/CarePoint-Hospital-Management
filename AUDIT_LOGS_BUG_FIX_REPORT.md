@@ -48,14 +48,14 @@ No historical audit record was modified.
 
 ## Tests executed
 
-| Verification | Result |
-|---|---|
-| Angular test suite — 53 files, 171 tests | Pass |
-| Backend test suite — 6 files, 32 tests | Pass |
-| Backend TypeScript production build | Pass |
-| Configured PostgreSQL read-only representative-row comparison | Pass |
-| Formatting and changed-file diff validation | Pass |
-| Manual desktop/tablet/mobile browser walkthrough | Not Run |
+| Verification                                                  | Result  |
+| ------------------------------------------------------------- | ------- |
+| Angular test suite — 53 files, 171 tests                      | Pass    |
+| Backend test suite — 6 files, 32 tests                        | Pass    |
+| Backend TypeScript production build                           | Pass    |
+| Configured PostgreSQL read-only representative-row comparison | Pass    |
+| Formatting and changed-file diff validation                   | Pass    |
+| Manual desktop/tablet/mobile browser walkthrough              | Not Run |
 
 ## Security and integrity
 

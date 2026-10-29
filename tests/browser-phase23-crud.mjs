@@ -12,7 +12,16 @@ const env = Object.fromEntries(
     }),
 );
 const suffix = Date.now();
-const loginResponse=await fetch('http://127.0.0.1:3000/api/v1/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email:env.SEED_HOSPITAL_ADMIN_EMAIL,password:env.SEED_HOSPITAL_ADMIN_PASSWORD})});const token=(await loginResponse.json()).data.access_token;const apiHeaders={authorization:`Bearer ${token}`};
+const loginResponse = await fetch('http://127.0.0.1:3000/api/v1/auth/login', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({
+    email: env.SEED_HOSPITAL_ADMIN_EMAIL,
+    password: env.SEED_HOSPITAL_ADMIN_PASSWORD,
+  }),
+});
+const token = (await loginResponse.json()).data.access_token;
+const apiHeaders = { authorization: `Bearer ${token}` };
 const browser = await chromium.launch({
   headless: true,
   executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
@@ -21,7 +30,7 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 page.setDefaultTimeout(8000);
 const failures = [];
 page.on('response', (r) => {
-  if (r.status() >= 400) failures.push(`${r.status()} ${r.url()} ${r.request().postData()??''}`);
+  if (r.status() >= 400) failures.push(`${r.status()} ${r.url()} ${r.request().postData() ?? ''}`);
 });
 const close = async () => page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
 const firstOption = async (label) => {
@@ -44,7 +53,9 @@ try {
   await firstOption('Patient *');
   await page.getByLabel('Investigation *').selectOption('Ultrasound');
   await page.getByLabel('Ordering doctor *').fill('E2E Doctor');
-  const radiologyCreated=page.waitForResponse(r=>r.url().includes('/api/v1/radiology/orders')&&r.request().method()==='POST');
+  const radiologyCreated = page.waitForResponse(
+    (r) => r.url().includes('/api/v1/radiology/orders') && r.request().method() === 'POST',
+  );
   await page.getByRole('dialog').getByRole('button', { name: 'Create' }).click();
   await radiologyCreated;
   await page.getByText('Radiology order created.').waitFor();
@@ -58,7 +69,10 @@ try {
   await page.getByText('Radiology order updated.').waitFor({ state: 'attached' });
   await close();
   await page.reload({ waitUntil: 'networkidle' });
-  await page.getByRole('row').filter({ hasText: `E2E Doctor Updated ${suffix}` }).waitFor();
+  await page
+    .getByRole('row')
+    .filter({ hasText: `E2E Doctor Updated ${suffix}` })
+    .waitFor();
   const description = `E2E Charge ${suffix}`;
   await page.goto('http://127.0.0.1:4200/billing', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: /New invoice/ }).click();
@@ -90,7 +104,37 @@ try {
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Providers' }).click();
   await page.getByText(`${provider} Updated`).waitFor();
-  const [radiology,invoices,providers]=await Promise.all([fetch('http://127.0.0.1:3000/api/v1/radiology/orders?page_size=100',{headers:apiHeaders}).then(r=>r.json()),fetch('http://127.0.0.1:3000/api/v1/billing?page_size=100',{headers:apiHeaders}).then(r=>r.json()),fetch('http://127.0.0.1:3000/api/v1/insurance/providers?page_size=100',{headers:apiHeaders}).then(r=>r.json())]);const rad=radiology.data.find(x=>x.investigation===`${investigation} Updated`);const invoice=invoices.data.find(x=>x.items?.some(i=>i.description===description));const insurer=providers.data.find(x=>x.name===`${provider} Updated`);await Promise.all([rad&&fetch(`http://127.0.0.1:3000/api/v1/radiology/orders/${rad.id}`,{method:'DELETE',headers:apiHeaders}),invoice&&fetch(`http://127.0.0.1:3000/api/v1/billing/${invoice.id}`,{method:'DELETE',headers:apiHeaders}),insurer&&fetch(`http://127.0.0.1:3000/api/v1/insurance/providers/${insurer.id}`,{method:'DELETE',headers:apiHeaders})]);
+  const [radiology, invoices, providers] = await Promise.all([
+    fetch('http://127.0.0.1:3000/api/v1/radiology/orders?page_size=100', {
+      headers: apiHeaders,
+    }).then((r) => r.json()),
+    fetch('http://127.0.0.1:3000/api/v1/billing?page_size=100', { headers: apiHeaders }).then((r) =>
+      r.json(),
+    ),
+    fetch('http://127.0.0.1:3000/api/v1/insurance/providers?page_size=100', {
+      headers: apiHeaders,
+    }).then((r) => r.json()),
+  ]);
+  const rad = radiology.data.find((x) => x.investigation === `${investigation} Updated`);
+  const invoice = invoices.data.find((x) => x.items?.some((i) => i.description === description));
+  const insurer = providers.data.find((x) => x.name === `${provider} Updated`);
+  await Promise.all([
+    rad &&
+      fetch(`http://127.0.0.1:3000/api/v1/radiology/orders/${rad.id}`, {
+        method: 'DELETE',
+        headers: apiHeaders,
+      }),
+    invoice &&
+      fetch(`http://127.0.0.1:3000/api/v1/billing/${invoice.id}`, {
+        method: 'DELETE',
+        headers: apiHeaders,
+      }),
+    insurer &&
+      fetch(`http://127.0.0.1:3000/api/v1/insurance/providers/${insurer.id}`, {
+        method: 'DELETE',
+        headers: apiHeaders,
+      }),
+  ]);
   assert.deepEqual(failures, []);
   console.log(
     JSON.stringify({
@@ -100,6 +144,11 @@ try {
       serverErrors: 0,
     }),
   );
-} catch(error){console.error(JSON.stringify({failures,formErrors:await page.locator('.error').allTextContents()}));throw error;} finally {
+} catch (error) {
+  console.error(
+    JSON.stringify({ failures, formErrors: await page.locator('.error').allTextContents() }),
+  );
+  throw error;
+} finally {
   await browser.close();
 }

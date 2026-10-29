@@ -45,6 +45,10 @@ export class AppActionsMenu implements OnDestroy {
   readonly canStatus = input(false);
   readonly canReset = input(false);
   readonly canPrint = input(false);
+  readonly canDownload = input(false);
+  readonly canReschedule = input(false);
+  readonly rescheduleDisabled = input(false);
+  readonly rescheduleDisabledReason = input('This appointment cannot be rescheduled.');
   readonly canPayment = input(false);
   readonly canDefault = input(false);
   readonly defaultLabel = input('Set as default');
@@ -55,6 +59,8 @@ export class AppActionsMenu implements OnDestroy {
   readonly statusChange = output<void>();
   readonly reset = output<void>();
   readonly print = output<void>();
+  readonly download = output<void>();
+  readonly reschedule = output<void>();
   readonly payment = output<void>();
   readonly setDefault = output<void>();
   readonly position = signal({ top: 8, left: 8, maxHeight: 320 });
@@ -109,10 +115,23 @@ export class AppActionsMenu implements OnDestroy {
   choose(
     event: Event,
     action:
-      'view' | 'edit' | 'delete' | 'statusChange' | 'reset' | 'print' | 'payment' | 'setDefault',
+      | 'view'
+      | 'edit'
+      | 'delete'
+      | 'statusChange'
+      | 'reset'
+      | 'print'
+      | 'download'
+      | 'reschedule'
+      | 'payment'
+      | 'setDefault',
   ) {
     event.stopPropagation();
-    if (action === 'edit' && this.editDisabled()) return;
+    if (
+      (action === 'edit' && this.editDisabled()) ||
+      (action === 'reschedule' && this.rescheduleDisabled())
+    )
+      return;
     this.menus.close();
     this[action].emit();
   }

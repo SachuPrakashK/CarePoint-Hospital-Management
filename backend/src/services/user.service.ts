@@ -43,7 +43,8 @@ export const userService = {
     search?: string;
     status?: UserStatus;
     role?: string;
-    sort_by:'firstName'|'email'|'phone'|'createdAt'|'lastLoginAt'|'status';sort_order:'asc'|'desc';
+    sort_by: 'firstName' | 'email' | 'phone' | 'createdAt' | 'lastLoginAt' | 'status';
+    sort_order: 'asc' | 'desc';
   }) {
     const where: Prisma.UserWhereInput = {
       ...(q.search
@@ -59,7 +60,10 @@ export const userService = {
       ...(q.role ? { roles: { some: { role: { code: q.role } } } } : {}),
     };
     const [data, total] = await Promise.all([
-      repo.list(where, (q.page - 1) * q.page_size, q.page_size,[{[q.sort_by]:q.sort_order},{id:'asc'}]),
+      repo.list(where, (q.page - 1) * q.page_size, q.page_size, [
+        { [q.sort_by]: q.sort_order },
+        { id: 'asc' },
+      ]),
       repo.count(where),
     ]);
     return {

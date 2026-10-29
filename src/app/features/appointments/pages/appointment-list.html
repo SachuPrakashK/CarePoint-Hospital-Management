@@ -8,6 +8,43 @@
     <app-icon name="plus" [size]="17" />New appointment
   </button>
 </div>
+@if (summaryError()) {
+  <div class="error-state summary-error" role="alert">
+    {{ summaryError() }}
+    <button type="button" class="secondary" (click)="loadSummary()">Retry</button>
+  </div>
+} @else {
+  <div class="appointment-summary" [attr.aria-busy]="summaryLoading()">
+    <app-summary-card
+      title="Today's appointments"
+      [value]="summaryLoading() ? '—' : (summary()?.today ?? 0)"
+      icon="calendar"
+      variant="blue"
+      note="Today · hospital timezone"
+    />
+    <app-summary-card
+      title="Confirmed"
+      [value]="summaryLoading() ? '—' : (summary()?.confirmed ?? 0)"
+      icon="check-circle"
+      variant="green"
+      note="All appointments"
+    />
+    <app-summary-card
+      title="Pending payment"
+      [value]="summaryLoading() ? '—' : (summary()?.pendingPayment ?? 0)"
+      icon="billing"
+      variant="amber"
+      note="All billed appointments"
+    />
+    <app-summary-card
+      title="Completed appointments"
+      [value]="summaryLoading() ? '—' : (summary()?.completed ?? 0)"
+      icon="check-circle"
+      variant="teal"
+      note="All appointments"
+    />
+  </div>
+}
 <div class="tabs" role="tablist">
   <button
     type="button"
@@ -90,6 +127,30 @@
               <option value="CANCELLED">Cancelled</option>
             </select></label
           >
+          <label class="field"
+            ><span class="form-label">Gender</span
+            ><select [value]="draftGender()" (change)="draftGender.set($any($event.target).value)">
+              <option value="">All genders</option>
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+              <option>Prefer not to say</option>
+            </select></label
+          >
+          <label class="field"
+            ><span class="form-label">Payment status</span
+            ><select
+              [value]="draftPaymentStatus()"
+              (change)="draftPaymentStatus.set($any($event.target).value)"
+            >
+              <option value="">All payment statuses</option>
+              <option>Paid</option>
+              <option>Pending</option>
+              <option>Partially Paid</option>
+              <option>Refunded</option>
+              <option>Not Billed</option>
+            </select></label
+          >
         </app-shared-filter>
         <app-shared-export
           [disabled]="loading() || !!error() || total() === 0"
@@ -100,7 +161,7 @@
     </div>
     @if (loading()) {
       <div class="loading-state loading-state--table" role="status" aria-live="polite">
-        Loading appointmentsâ€¦
+        Loading appointments...
       </div>
     } @else if (error()) {
       <div class="error-state" role="alert">
@@ -141,6 +202,26 @@
                   />
                 </th>
               }
+              @if (columnVisible('gender')) {
+                <th [attr.aria-sort]="ariaSort('gender')">
+                  <app-table-sort-header
+                    label="Gender"
+                    field="gender"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
+              @if (columnVisible('age')) {
+                <th [attr.aria-sort]="ariaSort('age')">
+                  <app-table-sort-header
+                    label="Age"
+                    field="age"
+                    [sort]="sort()"
+                    (sortChange)="changeSort($event)"
+                  />
+                </th>
+              }
               @if (columnVisible('care')) {
                 <th [attr.aria-sort]="ariaSort('department')">
                   <app-table-sort-header
@@ -171,6 +252,9 @@
                   />
                 </th>
               }
+              @if (columnVisible('payment')) {
+                <th>Payment status</th>
+              }
               @if (columnVisible('actions')) {
                 <th class="actions-column">Actions</th>
               }
@@ -198,6 +282,12 @@
                     <b>{{ item.patientName }}</b>
                   </td>
                 }
+                @if (columnVisible('gender')) {
+                  <td>{{ item.patientGender || '—' }}</td>
+                }
+                @if (columnVisible('age')) {
+                  <td>{{ item.patientAge || '—' }}</td>
+                }
                 @if (columnVisible('care')) {
                   <td>
                     {{ item.department }}<br /><small>{{ item.doctor }}</small>
@@ -209,16 +299,33 @@
                 @if (columnVisible('status')) {
                   <td><app-status-badge [value]="item.status" /></td>
                 }
+                @if (columnVisible('payment')) {
+                  <td>
+                    <app-status-badge [value]="item.paymentStatus" />
+                    @if (item.outstandingBalance > 0) {
+                      <small class="balance-due">Balance due</small>
+                    }
+                  </td>
+                }
                 @if (columnVisible('actions')) {
                   <td class="actions actions-column" (click)="$event.stopPropagation()">
                     <app-actions-menu
                       [id]="item.id"
                       label="Appointment actions"
                       deleteLabel="Cancel"
+                      [canEdit]="item.status !== 'COMPLETED'"
                       [canDelete]="item.status !== 'CANCELLED' && item.status !== 'COMPLETED'"
                       [canStatus]="allowedStatuses(item).length > 0"
+                      [canReschedule]="canShowReschedule(item)"
+                      [rescheduleDisabled]="isRescheduleDisabled(item)"
+                      rescheduleDisabledReason="Completed appointments cannot be rescheduled."
+                      [canPrint]="canAccessInvoiceActions(item)"
+                      [canDownload]="canAccessInvoiceActions(item)"
                       (view)="viewAppointment(item)"
                       (edit)="editing.set(item)"
+                      (reschedule)="openReschedule(item)"
+                      (print)="printInvoice(item)"
+                      (download)="downloadInvoice(item)"
                       (delete)="cancel(item)"
                       (statusChange)="openStatus(item)"
                     />
@@ -308,12 +415,14 @@
 
 @if (createOpen()) {
   <app-modal
-    title="Create appointment"
-    description="Complete the required information below."
-    size="lg"
+    icon="calendar"
+    title="Add New Appointment"
+    description="Choose a patient, physician and available appointment time."
+    size="xl"
     [dirty]="createForm.form.dirty"
+    [busy]="createForm.saving()"
     (closed)="createOpen.set(false)"
-    ><app-appointment-form #createForm (saved)="saved()"
+    ><app-appointment-form #createForm (saved)="saved()" (cancelled)="createOpen.set(false)"
   /></app-modal>
 }
 @if (editing(); as item) {
@@ -322,40 +431,174 @@
     description="Update the appointment information below."
     size="lg"
     [dirty]="editForm.form.dirty"
+    [busy]="editForm.saving()"
     (closed)="editing.set(null)"
-    ><app-appointment-form #editForm [appointment]="item" (saved)="saved()"
+    ><app-appointment-form
+      #editForm
+      [appointment]="item"
+      (saved)="saved()"
+      (cancelled)="editing.set(null)"
   /></app-modal>
+}
+@if (rescheduling(); as item) {
+  <app-modal
+    icon="calendar"
+    title="Reschedule appointment"
+    description="Choose an available future slot. The appointment reference and invoice remain unchanged."
+    size="md"
+    [busy]="rescheduleSaving()"
+    (closed)="closeReschedule()"
+  >
+    <form
+      class="crud-modal__form appointment-dialog-form"
+      (submit)="$event.preventDefault(); saveReschedule()"
+    >
+      <div class="crud-modal__body form-grid reschedule-form">
+        <label class="field"
+          ><span class="form-label">Patient</span><input [value]="item.patientName" readonly
+        /></label>
+        <label class="field"
+          ><span class="form-label">Appointment reference</span
+          ><input [value]="item.number" readonly
+        /></label>
+        <label class="field"
+          ><span class="form-label">Current schedule</span
+          ><input [value]="dates.formatDateTime(item.appointmentAt)" readonly
+        /></label>
+        <label class="field"
+          ><span class="form-label">Doctor <span class="required-indicator">*</span></span
+          ><select
+            [value]="rescheduleDoctorId()"
+            (change)="rescheduleDoctorChanged($any($event.target).value)"
+          >
+            <option value="" disabled>Select doctor</option>
+            @for (doctor of options().doctors; track doctor.id) {
+              <option [value]="doctor.id">
+                {{ doctor.firstName }} {{ doctor.lastName }}
+                @if (doctor.specialization?.name) {
+                  · {{ doctor.specialization?.name }}
+                }
+              </option>
+            }
+          </select>
+          @if (rescheduleAttempted() && !rescheduleDoctorId()) {
+            <small class="field-error">Select a doctor.</small>
+          }
+        </label>
+        <label class="field"
+          ><span class="form-label">New date <span class="required-indicator">*</span></span
+          ><input
+            type="date"
+            [min]="dates.today()"
+            [value]="rescheduleDate()"
+            (change)="rescheduleDate.set($any($event.target).value); loadRescheduleSlots()"
+          />
+          @if (rescheduleAttempted() && !rescheduleDate()) {
+            <small class="field-error">Select a new appointment date.</small>
+          }
+        </label>
+        <label class="field"
+          ><span class="form-label">Available slot <span class="required-indicator">*</span></span
+          ><select
+            [disabled]="rescheduleLoading()"
+            [value]="rescheduleTime()"
+            (change)="rescheduleTime.set($any($event.target).value)"
+          >
+            <option value="" disabled>
+              {{ rescheduleLoading() ? 'Loading slots…' : 'Select available time' }}
+            </option>
+            @for (slot of rescheduleSlots(); track slot.time) {
+              <option [value]="slot.time" [disabled]="!slot.available">
+                {{ slot.time }}{{ slot.available ? '' : ' · Booked' }}
+              </option>
+            }
+          </select>
+          @if (rescheduleAttempted() && !rescheduleTime()) {
+            <small class="field-error">Select an available appointment time.</small>
+          }
+        </label>
+        <label class="field full"
+          ><span class="form-label">Reason <span class="required-indicator">*</span></span
+          ><textarea
+            maxlength="500"
+            placeholder="Reason for rescheduling"
+            [value]="rescheduleReason()"
+            (input)="rescheduleReason.set($any($event.target).value)"
+          ></textarea>
+          @if (rescheduleAttempted() && rescheduleReason().trim().length < 3) {
+            <small class="error">Enter at least 3 characters.</small>
+          }
+        </label>
+      </div>
+      <div class="crud-modal__footer">
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="rescheduleSaving()"
+          (click)="closeReschedule()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="primary"
+          [disabled]="rescheduleSaving() || rescheduleLoading()"
+        >
+          {{ rescheduleSaving() ? 'Rescheduling…' : 'Save new schedule' }}
+        </button>
+      </div>
+    </form>
+  </app-modal>
 }
 @if (statusTarget(); as item) {
   <app-modal
+    icon="check-circle"
     title="Change appointment status"
     description="Select the next valid workflow status."
     size="sm"
-    (closed)="statusTarget.set(null)"
+    [busy]="statusUpdating()"
+    (closed)="closeStatus()"
   >
-    <div class="crud-modal__body form-grid">
-      <div class="field">
-        <span class="form-label">Current status</span><app-status-badge [value]="item.status" />
-      </div>
-      <label class="field"
-        ><span class="form-label">New status <span class="required-indicator">*</span></span>
-        <select [value]="newStatus()" (change)="newStatus.set($any($event.target).value)">
-          <option value="" disabled>Select status</option>
-          @for (status of allowedStatuses(item); track status) {
-            <option [value]="status">{{ status.replaceAll('_', ' ') }}</option>
+    <form
+      class="crud-modal__form appointment-dialog-form"
+      (submit)="$event.preventDefault(); updateStatus()"
+    >
+      <div class="crud-modal__body form-grid status-form">
+        <div class="current-status-card full">
+          <div>
+            <span>Appointment</span><b>{{ item.number }}</b>
+          </div>
+          <div>
+            <span>Patient</span><b>{{ item.patientName }}</b>
+          </div>
+          <div><span>Current status</span><app-status-badge [value]="item.status" /></div>
+        </div>
+        <label class="field"
+          ><span class="form-label">New status <span class="required-indicator">*</span></span>
+          <select [value]="newStatus()" (change)="newStatus.set($any($event.target).value)">
+            <option value="" disabled>Select status</option>
+            @for (status of allowedStatuses(item); track status) {
+              <option [value]="status">{{ status.replaceAll('_', ' ') }}</option>
+            }
+          </select>
+          @if (statusAttempted() && !newStatus()) {
+            <small class="field-error">Select the new appointment status.</small>
           }
-        </select>
-      </label>
-    </div>
-    <div class="crud-modal__footer">
-      <button
-        type="button"
-        class="primary"
-        [disabled]="!newStatus() || statusUpdating()"
-        (click)="updateStatus()"
-      >
-        {{ statusUpdating() ? 'Updatingâ€¦' : 'Update' }}
-      </button>
-    </div>
+        </label>
+      </div>
+      <div class="crud-modal__footer">
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="statusUpdating()"
+          (click)="closeStatus()"
+        >
+          Cancel
+        </button>
+        <button type="submit" class="primary" [disabled]="statusUpdating()">
+          {{ statusUpdating() ? 'Updatingâ€¦' : 'Update' }}
+        </button>
+      </div>
+    </form>
   </app-modal>
 }

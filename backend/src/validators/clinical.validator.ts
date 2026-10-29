@@ -21,8 +21,35 @@ export const consultationCreateSchema = z.object({
     treatmentPlan: z.string().max(5000).optional(),
     primaryDiagnosis: z.string().max(1000).optional(),
     secondaryDiagnoses: z.array(z.string().max(1000)).optional(),
-    vitals: z.array(z.object({temperature:z.number().optional(),pulse:z.number().int().optional(),systolic:z.number().int().optional(),diastolic:z.number().int().optional(),spo2:z.number().int().optional(),height:z.number().optional(),weight:z.number().optional(),bmi:z.number().optional(),painScore:z.number().int().optional()})).optional(),
-    prescription: z.array(z.object({medicine:z.string().min(1),strength:z.string(),dose:z.string(),frequency:z.string(),route:z.string(),duration:z.string(),quantity:z.number().int().positive(),instructions:z.string()})).optional(),
+    vitals: z
+      .array(
+        z.object({
+          temperature: z.number().optional(),
+          pulse: z.number().int().optional(),
+          systolic: z.number().int().optional(),
+          diastolic: z.number().int().optional(),
+          spo2: z.number().int().optional(),
+          height: z.number().optional(),
+          weight: z.number().optional(),
+          bmi: z.number().optional(),
+          painScore: z.number().int().optional(),
+        }),
+      )
+      .optional(),
+    prescription: z
+      .array(
+        z.object({
+          medicine: z.string().min(1),
+          strength: z.string(),
+          dose: z.string(),
+          frequency: z.string(),
+          route: z.string(),
+          duration: z.string(),
+          quantity: z.number().int().positive(),
+          instructions: z.string(),
+        }),
+      )
+      .optional(),
     followUpDate: z.iso.datetime().optional(),
     followUpInstructions: z.string().max(2000).optional(),
   }),

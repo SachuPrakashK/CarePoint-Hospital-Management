@@ -20,7 +20,10 @@ export const userListSchema = z.object({
     search: z.string().trim().optional(),
     status: z.enum(['ACTIVE', 'INACTIVE', 'LOCKED']).optional(),
     role: roleCode.optional(),
-    sort_by:z.enum(['firstName','email','phone','createdAt','lastLoginAt','status']).default('createdAt'),sort_order:z.enum(['asc','desc']).default('desc'),
+    sort_by: z
+      .enum(['firstName', 'email', 'phone', 'createdAt', 'lastLoginAt', 'status'])
+      .default('createdAt'),
+    sort_order: z.enum(['asc', 'desc']).default('desc'),
   }),
 });
 export const userCreateSchema = z.object({
