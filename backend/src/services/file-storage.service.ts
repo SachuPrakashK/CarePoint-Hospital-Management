@@ -23,7 +23,7 @@ const pathFor = (key: string) => {
 const blobPathFor = (key: string) => `${blobPrefix}/${normalizedKey(key)}`;
 export const fileStorage = {
   async put(key: string, data: Buffer) {
-    if (env.STORAGE_DRIVER === 'vercel-blob') {
+    if (env.FILE_STORAGE_DRIVER === 'vercel-blob') {
       const { put } = await blobSdk();
       await put(blobPathFor(key), data, {
         access: 'private',
@@ -37,7 +37,7 @@ export const fileStorage = {
     await writeFile(destination, data, { flag: 'wx' });
   },
   async get(key: string) {
-    if (env.STORAGE_DRIVER === 'vercel-blob') {
+    if (env.FILE_STORAGE_DRIVER === 'vercel-blob') {
       const { get } = await blobSdk();
       const result = await get(blobPathFor(key), { access: 'private' });
       if (!result || result.statusCode !== 200 || !result.stream) {
@@ -50,7 +50,7 @@ export const fileStorage = {
     return readFile(pathFor(key));
   },
   async remove(key: string) {
-    if (env.STORAGE_DRIVER === 'vercel-blob') {
+    if (env.FILE_STORAGE_DRIVER === 'vercel-blob') {
       const { del } = await blobSdk();
       await del(blobPathFor(key));
       return;
