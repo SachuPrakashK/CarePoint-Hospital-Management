@@ -13,7 +13,7 @@
           ><select formControlName="patientId">
             <option value="" disabled>Select patient</option>
             @for (p of clinical.patients(); track p.id) {
-              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} Â· {{ p.mrn }}</option>
+              <option [value]="p.id">{{ p.firstName }} {{ p.lastName }} · {{ p.mrn }}</option>
             }
           </select></label
         ><label class="field"
@@ -48,7 +48,7 @@
           ><select formControlName="bedId">
             <option value="" disabled>Select bed</option>
             @for (b of store.availableBeds(); track b.id) {
-              <option [value]="b.id">{{ b.name }} Â· {{ b.ward }} Â· {{ b.roomType }}</option>
+              <option [value]="b.id">{{ b.name }} · {{ b.ward }} · {{ b.roomType }}</option>
             }
           </select></label
         ><label class="field full"
@@ -73,7 +73,7 @@
     </div>
     <div class="crud-modal__footer">
       <button class="primary" [disabled]="form.invalid || submitting()">
-        {{ submitting() ? 'Admittingâ€¦' : 'Admit patient' }}
+        {{ submitting() ? 'Admitting…' : 'Admit patient' }}
       </button>
     </div>
   </form>

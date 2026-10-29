@@ -110,7 +110,7 @@
   </div>
   @if (store.loading()) {
     <div class="loading-state loading-state--table" role="status" aria-live="polite">
-      Loading proceduresâ€¦
+      Loading procedures…
     </div>
   } @else if (store.error()) {
     <div class="error-state" role="alert">
@@ -288,7 +288,7 @@
               <option value="" disabled>Select patient</option>
               @for (item of clinical.patients(); track item.id) {
                 <option [value]="item.id">
-                  {{ item.firstName }} {{ item.lastName }} Â· {{ item.mrn }}
+                  {{ item.firstName }} {{ item.lastName }} · {{ item.mrn }}
                 </option>
               }
             </select></label
@@ -360,7 +360,7 @@
       </div>
       <footer class="crud-modal__footer">
         <button class="primary" type="submit" [disabled]="form.invalid || submitting()">
-          {{ submitting() ? 'Savingâ€¦' : editing() ? 'Update procedure' : 'Schedule procedure' }}
+          {{ submitting() ? 'Saving…' : editing() ? 'Update procedure' : 'Schedule procedure' }}
         </button>
       </footer>
     </form></app-modal

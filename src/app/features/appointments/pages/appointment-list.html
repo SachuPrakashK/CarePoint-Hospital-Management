@@ -380,7 +380,7 @@
     </div>
     @if (calendarLoading()) {
       <div class="loading-state loading-state--section" role="status" aria-live="polite">
-        Loading calendarâ€¦
+        Loading calendar…
       </div>
     } @else if (error()) {
       <div class="error-state" role="alert">
@@ -596,7 +596,7 @@
           Cancel
         </button>
         <button type="submit" class="primary" [disabled]="statusUpdating()">
-          {{ statusUpdating() ? 'Updatingâ€¦' : 'Update' }}
+          {{ statusUpdating() ? 'Updating…' : 'Update' }}
         </button>
       </div>
     </form>

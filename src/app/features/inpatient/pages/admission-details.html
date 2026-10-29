@@ -1,6 +1,6 @@
 ﻿@if (loading()) {
   <div class="loading-state loading-state--page" role="status" aria-live="polite">
-    Loading admission detailsâ€¦
+    Loading admission details…
   </div>
 } @else if (error()) {
   <div class="error-state" role="alert">
@@ -12,7 +12,7 @@
       <div class="breadcrumbs">Inpatient / {{ admission.number }}</div>
       <h1>{{ display(admission.patientName) }}</h1>
       <p class="muted">
-        {{ display(admission.department) }} Â· {{ display(admission.attendingDoctor) }}
+        {{ display(admission.department) }} · {{ display(admission.attendingDoctor) }}
       </p>
     </div>
     <app-status-badge [value]="admission.status" />
@@ -121,7 +121,7 @@
           ><select [(ngModel)]="targetBed">
             <option value="" disabled>Select bed</option>
             @for (bed of store.availableBeds(); track bed.id) {
-              <option [value]="bed.id">{{ bed.name }} Â· {{ bed.ward }} Â· {{ bed.room }}</option>
+              <option [value]="bed.id">{{ bed.name }} · {{ bed.ward }} · {{ bed.room }}</option>
             }
           </select></label
         ><button
@@ -130,7 +130,7 @@
           [disabled]="!targetBed || actionSubmitting()"
           (click)="transfer()"
         >
-          {{ actionSubmitting() ? 'Processingâ€¦' : 'Transfer patient' }}
+          {{ actionSubmitting() ? 'Processing…' : 'Transfer patient' }}
         </button>
         <hr />
         <h3>Discharge patient</h3>
@@ -164,7 +164,7 @@
   } @else {
     @if (tabState(activeTab()).loading) {
       <div class="loading-state loading-state--section" role="status" aria-live="polite">
-        Loading {{ activeTab() }} recordsâ€¦
+        Loading {{ activeTab() }} records…
       </div>
     } @else if (tabState(activeTab()).error) {
       <div class="error-state" role="alert">
@@ -196,7 +196,7 @@
                   <h3>Diagnoses</h3>
                   @for (diagnosis of record.diagnoses; track diagnosis.id) {
                     <p>
-                      {{ diagnosis.description }} Â· <app-status-badge [value]="diagnosis.status" />
+                      {{ diagnosis.description }} · <app-status-badge [value]="diagnosis.status" />
                     </p>
                   }
                 </div>
@@ -274,10 +274,10 @@
                   >{{
                     display(allocation.bed?.room?.wardModel?.name || allocation.bed?.room?.ward)
                   }}
-                  Â· {{ display(allocation.bed?.room?.name) }} Â·
+                  · {{ display(allocation.bed?.room?.name) }} ·
                   {{ display(allocation.bed?.name) }}</b
                 ><small
-                  >{{ format(allocation.startedAt) }} â†’
+                  >{{ format(allocation.startedAt) }} →
                   {{ allocation.endedAt ? format(allocation.endedAt) : 'Current' }}</small
                 >
               </div>
@@ -335,7 +335,7 @@
           @for (order of laboratory(); track order.id) {
             <article class="card record-card">
               <div class="section-title">
-                <h2>Laboratory Â· {{ display(order.number) }}</h2>
+                <h2>Laboratory · {{ display(order.number) }}</h2>
                 <app-status-badge [value]="order.status" />
               </div>
               <div class="detail-grid">
@@ -360,7 +360,7 @@
           @for (order of radiology(); track order.id) {
             <article class="card record-card">
               <div class="section-title">
-                <h2>Radiology Â· {{ display(order.investigation) }}</h2>
+                <h2>Radiology · {{ display(order.investigation) }}</h2>
                 <app-status-badge [value]="order.status" />
               </div>
               <div class="detail-grid">

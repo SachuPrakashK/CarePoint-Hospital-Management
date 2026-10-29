@@ -37,7 +37,7 @@
                 <option value="" disabled>Select patient</option>
                 @for (patient of filteredPatients(); track patient.id) {
                   <option [value]="patient.id">
-                    {{ patient.firstName }} {{ patient.lastName }} Â· {{ patient.mrn }}
+                    {{ patient.firstName }} {{ patient.lastName }} · {{ patient.mrn }}
                   </option>
                 }
               </select>
@@ -47,7 +47,7 @@
             <span class="field-error">Select a valid patient.</span>
           }
           @if (patients.loading()) {
-            <small id="patient-help" class="field-hint">Loading registered patientsâ€¦</small>
+            <small id="patient-help" class="field-hint">Loading registered patients…</small>
           } @else if (patients.error()) {
             <span id="patient-help" class="field-error">{{ patients.error() }}</span>
           } @else {
@@ -146,7 +146,7 @@
                 <label class="field price-field" role="cell">
                   <span class="mobile-label">Unit Price</span>
                   <span class="currency-input unit_price"
-                    ><span aria-hidden="true">â‚¹</span
+                    ><span aria-hidden="true">₹</span
                     ><input
                       type="number"
                       min="0"
@@ -214,7 +214,7 @@
         [disabled]="form.invalid || submitting"
       >
         @if (submitting) {
-          <span class="button-spinner" aria-hidden="true"></span> Savingâ€¦
+          <span class="button-spinner" aria-hidden="true"></span> Saving…
         } @else {
           <app-icon name="check-circle" [size]="18" />
           {{ entity() ? 'Update Invoice' : 'Create Invoice' }}

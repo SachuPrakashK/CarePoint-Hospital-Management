@@ -14,7 +14,7 @@
             <option value="" disabled>
               {{
                 optionsLoading
-                  ? 'Loading categoriesâ€¦'
+                  ? 'Loading categories…'
                   : categories.length
                     ? 'Select category'
                     : 'No categories available'
@@ -115,7 +115,7 @@
             <option value="" disabled>
               {{
                 optionsLoading
-                  ? 'Loading suppliersâ€¦'
+                  ? 'Loading suppliers…'
                   : suppliers.length
                     ? 'Select supplier'
                     : 'No suppliers available'
@@ -136,7 +136,7 @@
           ><span class="form-label">Item <span class="required-indicator">*</span></span
           ><select formControlName="itemId">
             <option value="" disabled>
-              {{ optionsLoading ? 'Loading itemsâ€¦' : 'Select item' }}
+              {{ optionsLoading ? 'Loading items…' : 'Select item' }}
             </option>
             @if (form.controls.itemType.value === 'Medicine') {
               @for (x of pharmacy.medicines(); track x.id) {
@@ -144,7 +144,7 @@
               }
             } @else {
               @for (x of inventoryItems; track x.id) {
-                <option [value]="x.id">{{ x.name }} Â· {{ x.code }}</option>
+                <option [value]="x.id">{{ x.name }} · {{ x.code }}</option>
               }
             }
           </select></label

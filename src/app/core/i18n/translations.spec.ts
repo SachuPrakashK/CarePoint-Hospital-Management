@@ -17,4 +17,10 @@ describe('translation resources', () => {
     const values = Object.values(TRANSLATIONS['en']);
     expect(new Set(values).size).toBe(values.length);
   });
+  it('preserves representative Unicode labels without mojibake', () => {
+    const values = Object.values(TRANSLATIONS['en']);
+    for (const expected of ['Creating…', 'Updating…', 'Saving…', '₹', '×', '·', '→'])
+      expect(values).toContain(expected);
+    expect(values).toContain('View your organization’s configured support contacts.');
+  });
 });

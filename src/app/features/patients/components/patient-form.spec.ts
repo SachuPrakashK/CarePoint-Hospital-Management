@@ -75,6 +75,20 @@ describe('PatientForm', () => {
       'Create Patient',
     );
   });
+  it('renders UTF-8 create and update progress labels', () => {
+    const fixture = TestBed.createComponent(PatientForm);
+    fixture.componentRef.setInput('mode', 'create');
+    fixture.componentInstance.submitting.set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.patient-form__submit').textContent).toContain(
+      'Creating…',
+    );
+    fixture.componentRef.setInput('mode', 'edit');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.patient-form__submit').textContent).toContain(
+      'Updating…',
+    );
+  });
   it('prevents duplicate submissions while a request is in progress', async () => {
     let resolveCreate!: () => void;
     store.create.mockReturnValue(new Promise<void>((resolve) => (resolveCreate = resolve)));
